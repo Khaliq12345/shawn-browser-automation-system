@@ -53,7 +53,7 @@ def query_perplexity(prompt: str):
         headless=False,
     ) as browser:
         page = browser.new_page()
-        page.goto("https://www.perplexity.ai/", wait_until="networkidle", timeout=60000)
+        page.goto("https://www.perplexity.ai/", wait_until="load", timeout=MAX_TIMEOUT)
         # To Skip the google login modal once it shows up
         page.evaluate("""
             const targetSrc = "https://accounts.google.com/gsi/iframe/select";
