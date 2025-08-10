@@ -9,9 +9,9 @@ from src.platforms.browser import BrowserBase
 
 class GeminiScraper(BrowserBase):
     def __init__(
-        self, url: str, prompt: str, name: str, headless: bool = False
+        self, url: str, prompt: str, name: str, process_id: str, headless: bool = False
     ) -> None:
-        super().__init__(url, prompt, name, headless)
+        super().__init__(url, prompt, name, process_id, headless)
         self.timeout = 120000
 
     def find_and_fill_input(self) -> bool:
@@ -54,6 +54,6 @@ if __name__ == "__main__":
     prompt = "Explique-moi la théorie de la relativité en termes simples."
 
     with GeminiScraper(
-        url="https://gemini.google.com", prompt=prompt, name="gemini"
+        url="https://gemini.google.com", prompt=prompt, name="gemini", process_id='no_id'
     ) as browser:
         browser.send_prompt()
