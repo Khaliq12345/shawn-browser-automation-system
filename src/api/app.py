@@ -2,12 +2,14 @@ import time
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from multiprocessing import Process
 from fastapi.middleware.cors import CORSMiddleware
-from src.utils.supabase import start_process, get_process_status
+from src.models.model import create_db_and_tables
+from src.utils.database import start_process, get_process_status
 from src.platforms.gemini import GeminiScraper
 from src.platforms.perplexity import PerplexityScraper
 from src.platforms.chatgpt import ChatGPTScraper
 
-app = FastAPI(title="Browser Automation System")
+
+app = FastAPI(title="Browser Automation System", on_startup=[create_db_and_tables])
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
 import sys
-from src.utils.supabase import update_process_status
+from src.utils.database import update_process_status
 
 sys.path.append("..")
 

@@ -4,7 +4,7 @@ def main():
     uvicorn.run(
         "src.api.app:app", 
         host="localhost",
-        port=8000,
+        port=8001,
         reload=True,
     )
 
