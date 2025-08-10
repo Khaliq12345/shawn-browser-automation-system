@@ -7,7 +7,7 @@ from playwright.sync_api import ElementHandle
 from src.platforms.browser import BrowserBase
 
 
-class PerplexityScraper(BrowserBase):
+class ChatGPTScraper(BrowserBase):
     def __init__(
         self, url: str, prompt: str, name: str, headless: bool = False
     ) -> None:
@@ -15,8 +15,16 @@ class PerplexityScraper(BrowserBase):
 
     def find_and_fill_input(self) -> bool:
         try:
-            prompt_input_selector = 'div[id="ask-input"]'
+            # Looking For the close button of modal
+            close_btn_selector = 'button[data-testid="close-button"]'
+            try:
+                self.page.wait_for_selector(close_btn_selector, timeout=self.timeout)
+            except Exception as e:
+                print(f"Unable Modal Close Btn {e}")
+                return False
+            self.page.click(close_btn_selector, timeout=self.timeout)
             # trying to fill the prompt
+            prompt_input_selector = "#prompt-textarea"
             try:
                 self.page.fill(prompt_input_selector, self.prompt, timeout=self.timeout)
             except Exception as e:
@@ -29,14 +37,15 @@ class PerplexityScraper(BrowserBase):
             return False
 
     def extract_response(self) -> Optional[ElementHandle]:
-        share_btn_selector = 'button[data-testid="share-button"]'
-        content_selector = 'div[id="markdown-content-0"]'
-        # Looking for the share button (it appears once the response is generated)
+        content_selector = "div.markdown.prose"
+        copy_selector = 'button[aria-label="Edit in canvas"]'  # 'button[data-testid="copy-turn-action-button"]'
+        # Looking for the edit button (it appears once the response is generated)
         try:
-            self.page.wait_for_selector(share_btn_selector, timeout=self.timeout)
+            self.page.wait_for_selector(copy_selector, timeout=self.timeout)
         except Exception as e:
-            print(f"Unable to find Share button {e}")
+            print(f"Unable to find edit button {e}")
             return None
+        self.page.wait_for_timeout(5000)
         # Looking for the response selector
         try:
             self.page.wait_for_selector(content_selector, timeout=self.timeout)
@@ -50,7 +59,7 @@ class PerplexityScraper(BrowserBase):
 if __name__ == "__main__":
     prompt = "Explique-moi la théorie de la relativité en termes simples."
 
-    with PerplexityScraper(
-        url="https://www.perplexity.ai/", prompt=prompt, name="perplexity"
+    with ChatGPTScraper(
+        url="https://chatgpt.com/", prompt=prompt, name="chatgpt"
     ) as browser:
         browser.send_prompt()

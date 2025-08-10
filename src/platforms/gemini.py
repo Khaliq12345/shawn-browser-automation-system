@@ -12,6 +12,7 @@ class GeminiScraper(BrowserBase):
         self, url: str, prompt: str, name: str, headless: bool = False
     ) -> None:
         super().__init__(url, prompt, name, headless)
+        self.timeout = 120000
 
     def find_and_fill_input(self) -> bool:
         try:
@@ -19,7 +20,7 @@ class GeminiScraper(BrowserBase):
             # trying to fill the prompt
             try:
                 self.page.fill(
-                    prompt_input_selector, prompt, timeout=self.timeout
+                    prompt_input_selector, self.prompt, timeout=self.timeout
                 )
             except Exception as e:
                 print(f"Can not fill the prompt input {e}")
