@@ -1,7 +1,4 @@
-from dotenv import load_dotenv
-import os
+from sqlmodel import create_engine
 
-load_dotenv()
-
-SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+# Database
+ENGINE = create_engine("sqlite:///database.db")
