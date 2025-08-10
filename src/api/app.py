@@ -1,5 +1,5 @@
 import time
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from multiprocessing import Process
 from fastapi.middleware.cors import CORSMiddleware
 from src.utils.supabase import start_process, get_process_status
@@ -31,14 +31,19 @@ def run_browser(name: str, prompt: str, process_id: str):
     with ScraperClass(url=url, prompt=prompt, name=name, process_id=process_id) as browser:
         browser.send_prompt()
 
+def run_browser_in_process(name: str, prompt: str, process_id: str):
+    p = Process(target=run_browser, args=(name, prompt, process_id))
+    p.start()
+
 @app.post("/start-browser")
-def start_browser(name: str, prompt: str):
+def start_browser(name: str, prompt: str, background_tasks: BackgroundTasks):
     # If the name is not supported
     if name not in SCRAPER_CONFIG:
         raise HTTPException(status_code=404, detail="Invalid Parameter 'name'")
     timestamp = int(time.time())
     process_id = f"{name}_{timestamp}"
     # Start process in background
+    background_tasks.add_task(run_browser_in_process, name, prompt, process_id)
     p = Process(target=run_browser, args=(name, prompt, process_id))
     p.start()
     # Save as running in supabase
