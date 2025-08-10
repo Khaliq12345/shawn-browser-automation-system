@@ -6,5 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "camoufox[geoip]>=0.4.11",
+    "fastapi>=0.116.1",
     "ptpython>=3.0.30",
+    "supabase>=2.18.0",
 ]
