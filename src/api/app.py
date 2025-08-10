@@ -44,8 +44,6 @@ def start_browser(name: str, prompt: str, background_tasks: BackgroundTasks):
     process_id = f"{name}_{timestamp}"
     # Start process in background
     background_tasks.add_task(run_browser_in_process, name, prompt, process_id)
-    p = Process(target=run_browser, args=(name, prompt, process_id))
-    p.start()
     # Save as running in supabase
     start_process(process_id, "running")
     return {"message": f"Browser started for {name}", "process_id": process_id}
