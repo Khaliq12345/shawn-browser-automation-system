@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
 import sys
+from src.utils.supabase import update_process_status
 
 sys.path.append("..")
 
 import os
-import time
 from typing import Optional
 from camoufox.sync_api import Camoufox
 from playwright.sync_api import ElementHandle
@@ -14,11 +14,12 @@ from src.utils.globals import save_file
 
 class BrowserBase(ContextDecorator, ABC):
     def __init__(
-        self, url: str, prompt: str, name: str, headless: bool = False
+        self, url: str, prompt: str, name: str, process_id: str, headless: bool = False
     ) -> None:
         self.url = url
         self.prompt = prompt
         self.name = name
+        self.process_id = process_id
         self.camoufox = Camoufox().start()
         self.page = self.camoufox.new_page()
         self.headless = headless
@@ -44,8 +45,7 @@ class BrowserBase(ContextDecorator, ABC):
 
     def save_response(self, content: Optional[ElementHandle]) -> bool:
         """Save the generated output from the prompt in html and text file"""
-        timestamp = int(time.time())
-        save_folder = f"responses/{self.name}/{timestamp}/"
+        save_folder = f"responses/{self.name}/{self.process_id}/"
         html_out = os.path.join(save_folder, "html_res.html")
         txt_out = os.path.join(save_folder, "txt_res.txt")
 
@@ -77,17 +77,23 @@ class BrowserBase(ContextDecorator, ABC):
         # Set 1: Navigate to the platform
         is_navigate = self.navigate()
         if not is_navigate:
+            update_process_status(self.process_id, 'failled')
             return None
 
         # Step 2: Fill and Submit the input
         is_filled = self.find_and_fill_input()
         if not is_filled:
+            update_process_status(self.process_id, 'failled')
             return None
 
         # Step 3: Extract the generated response
         content = self.extract_response()
         if not content:
+            update_process_status(self.process_id, 'failled')
             return None
 
         # Step 4: Save the response
         self.save_response(content)
+        
+        # Step 5: Mark as Sucess on supabase
+        update_process_status(self.process_id, 'success')

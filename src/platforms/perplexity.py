@@ -9,9 +9,9 @@ from src.platforms.browser import BrowserBase
 
 class PerplexityScraper(BrowserBase):
     def __init__(
-        self, url: str, prompt: str, name: str, headless: bool = False
+        self, url: str, prompt: str, name: str, process_id: str, headless: bool = False
     ) -> None:
-        super().__init__(url, prompt, name, headless)
+        super().__init__(url, prompt, name, process_id, headless)
 
     def find_and_fill_input(self) -> bool:
         try:
@@ -51,6 +51,6 @@ if __name__ == "__main__":
     prompt = "Explique-moi la théorie de la relativité en termes simples."
 
     with PerplexityScraper(
-        url="https://www.perplexity.ai/", prompt=prompt, name="perplexity"
+        url="https://www.perplexity.ai/", prompt=prompt, name="perplexity", process_id='no_id'
     ) as browser:
         browser.send_prompt()

@@ -9,20 +9,14 @@ from src.platforms.browser import BrowserBase
 
 class ChatGPTScraper(BrowserBase):
     def __init__(
-        self, url: str, prompt: str, name: str, headless: bool = False
+        self, url: str, prompt: str, name: str, process_id: str, headless: bool = False
     ) -> None:
-        super().__init__(url, prompt, name, headless)
+        super().__init__(url, prompt, name, process_id, headless)
 
     def find_and_fill_input(self) -> bool:
         try:
-            # Looking For the close button of modal
-            close_btn_selector = 'button[data-testid="close-button"]'
-            try:
-                self.page.wait_for_selector(close_btn_selector, timeout=self.timeout)
-            except Exception as e:
-                print(f"Unable Modal Close Btn {e}")
-                return False
-            self.page.click(close_btn_selector, timeout=self.timeout)
+            # Close the modal when it shows up
+            self.page.on("dialog", lambda dialog: dialog.dismiss())
             # trying to fill the prompt
             prompt_input_selector = "#prompt-textarea"
             try:
@@ -38,14 +32,13 @@ class ChatGPTScraper(BrowserBase):
 
     def extract_response(self) -> Optional[ElementHandle]:
         content_selector = "div.markdown.prose"
-        copy_selector = 'button[aria-label="Edit in canvas"]'  # 'button[data-testid="copy-turn-action-button"]'
+        copy_selector = 'button[aria-label="Edit in canvas"]'
         # Looking for the edit button (it appears once the response is generated)
         try:
             self.page.wait_for_selector(copy_selector, timeout=self.timeout)
         except Exception as e:
             print(f"Unable to find edit button {e}")
             return None
-        self.page.wait_for_timeout(5000)
         # Looking for the response selector
         try:
             self.page.wait_for_selector(content_selector, timeout=self.timeout)
@@ -60,6 +53,6 @@ if __name__ == "__main__":
     prompt = "Explique-moi la théorie de la relativité en termes simples."
 
     with ChatGPTScraper(
-        url="https://chatgpt.com/", prompt=prompt, name="chatgpt"
+        url="https://chatgpt.com/", prompt=prompt, name="chatgpt", process_id="no_id"
     ) as browser:
         browser.send_prompt()
