@@ -1,10 +1,11 @@
 import uvicorn
 
+# Launch API
 def main():
     uvicorn.run(
         "src.api.app:app", 
         host="localhost",
-        port=8001,
+        port=8000,
         reload=True,
     )
 

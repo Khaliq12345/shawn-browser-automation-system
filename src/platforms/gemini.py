@@ -48,12 +48,3 @@ class GeminiScraper(BrowserBase):
             return None
         content = self.page.query_selector(content_selector)
         return content
-
-
-if __name__ == "__main__":
-    prompt = "Explique-moi la théorie de la relativité en termes simples."
-
-    with GeminiScraper(
-        url="https://gemini.google.com", prompt=prompt, name="gemini", process_id='no_id'
-    ) as browser:
-        browser.send_prompt()

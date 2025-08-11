@@ -46,11 +46,3 @@ class PerplexityScraper(BrowserBase):
         content = self.page.query_selector(content_selector)
         return content
 
-
-if __name__ == "__main__":
-    prompt = "Explique-moi la théorie de la relativité en termes simples."
-
-    with PerplexityScraper(
-        url="https://www.perplexity.ai/", prompt=prompt, name="perplexity", process_id='no_id'
-    ) as browser:
-        browser.send_prompt()
