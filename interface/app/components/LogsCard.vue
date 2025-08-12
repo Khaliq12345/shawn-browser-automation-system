@@ -1,9 +1,9 @@
 <template>
   <div>
-    <!-- Showing -->
+    <!-- Showing Logs -->
     <UTextarea :rows="20" :autoresize="false" v-model="logGot" :disabled="true"
       class="w-full mb-4 textarea whitespace-pre font-mono " placeholder="Nothing to show ..." />
-    <!-- Refresh -->
+    <!-- Refresh Logs -->
     <div class="justify-start flex">
       <UButton label="Refresh Logs" :disabled="logGot.length == 0" icon="i-heroicons-arrow-path" :loading="loading"
         class="justify-center text-white" @click="getLogs" />
@@ -12,21 +12,25 @@
 </template>
 
 <script setup lang="ts">
-
 // Variables
 const logGot = ref("-djjdkkdll\n-djffof");
 const loading = ref(false);
-// 
+// Routing
+const route = useRoute()
+const currentPlatform = computed(() => route.name);
+// Get Logs
 const getLogs = async () => {
   loading.value = true
   try {
-    // Fetch Logs
-
+    // Fetch Logs for {currentPlatform}
   } catch (error) {
     console.error('Erreur de requete:', error);
   } finally {
     loading.value = false
   }
 }
-
+// On Startup
+onMounted(async () => {
+  getLogs()
+})
 </script>
