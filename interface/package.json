@@ -10,13 +10,13 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@mdi/font": "^7.4.47",
+    "@nuxt/ui": "^3.3.0",
     "nuxt": "^4.0.3",
+    "typescript": "^5.9.2",
     "vue": "^3.5.18",
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
-    "vite-plugin-vuetify": "^2.1.2",
-    "vuetify": "^3.9.4"
+    "@iconify-json/heroicons": "^1.2.2"
   }
 }
