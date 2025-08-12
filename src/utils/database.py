@@ -20,14 +20,13 @@ def get_session():
 # Record a starting process for any platform
 def start_process(
     process_id: str,
-    status: str,
     platform: str,
     prompt: str,
 ):
     with get_session() as session:
         item = ProcessStatus(
             process_id=process_id,
-            status=status,
+            status="running",
             platform=platform,
             prompt=prompt,
             start_time=datetime.now(timezone.utc),

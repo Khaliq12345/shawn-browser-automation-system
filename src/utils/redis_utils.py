@@ -1,47 +1,41 @@
-import redis.asyncio as redis
+from contextlib import contextmanager
+import redis as redis
 
 
-class RedisBaseAsync:
-    def __init__(self, redis_host="localhost", redis_port=6379, redis_db=0):
-        self.redis_client = redis.Redis(
-            host=redis_host, port=redis_port, db=redis_db, decode_responses=True
+class RedisBase:
+    def __init__(self, process_id: str):
+        self.host = "localhost"
+        self.port = 6379
+        self.process_id = process_id
+        self.redis_db = 0
+
+    @contextmanager
+    def redis_session(self):
+        session = redis.Redis(
+            host=self.host, port=self.port, db=self.redis_db, decode_responses=True
         )
+        try:
+            yield session
+        except Exception as e:
+            print(f"REDIS: Session error {e}")
+        finally:
+            session.close()
 
     # To set a log
-    async def set_log(self, process_id: str, message: str, expire_seconds: int = 3600):
-        old = await self.redis_client.get(process_id)
-        old = old if old else ""
-        new_value = f"{old}\n{message}" if old else message
-        await self.redis_client.set(process_id, new_value, ex=expire_seconds)
+    def set_log(self, message: str):
+        with self.redis_session() as session:
+            session.lpush(self.process_id, message)
 
     # To retrieve a log
-    async def get_log(self, process_id: str) -> str:
-        value = await self.redis_client.get(process_id)
-        return value if value else ""
+    def get_log(self) -> str:
+        with self.redis_session() as session:
+            value = session.lrange(self.process_id, 0, -1)
+            value = " \n".join(value)
+            return value
 
 
-class RedisChatGPT(RedisBaseAsync):
-    def __init__(self):
-        super().__init__(redis_host="localhost", redis_port=6379, redis_db=1)
-
-
-class RedisGemini(RedisBaseAsync):
-    def __init__(self):
-        super().__init__(redis_host="localhost", redis_port=6379, redis_db=2)
-
-
-class RedisPerplexity(RedisBaseAsync):
-    def __init__(self):
-        super().__init__(redis_host="localhost", redis_port=6379, redis_db=3)
-
-
-# To get the matching class instance from nam
-def get_redis_instance(name: str):
-    all_class = {
-        "chatgpt": RedisChatGPT,
-        "gemini": RedisGemini,
-        "perplexity": RedisPerplexity,
-    }
-    if name not in all_class:
-        return None
-    return all_class[name]()
+if __name__ == "__main__":
+    redis_base = RedisBase("testid")
+    redis_base.set_log("Hi")
+    out = redis_base.get_log()
+    print(out)

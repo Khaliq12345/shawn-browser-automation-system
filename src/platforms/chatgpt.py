@@ -17,10 +17,15 @@ class ChatGPTScraper(BrowserBase):
         try:
             # Close the modal when it shows up
             self.page.on("dialog", lambda dialog: dialog.dismiss())
+            print("Dialog closed")
             # trying to fill the prompt
-            prompt_input_selector = "#prompt-textarea"
+            prompt_input_selector = (
+                'p[data-placeholder="Ask anything"]'  # "#prompt-textarea"
+            )
             try:
+                print("Filling input")
                 self.page.fill(prompt_input_selector, self.prompt, timeout=self.timeout)
+                print("Done FIlling")
             except Exception as e:
                 print(f"Can not fill the prompt input {e}")
             # Validate
@@ -31,6 +36,7 @@ class ChatGPTScraper(BrowserBase):
             return False
 
     def extract_response(self) -> Optional[ElementHandle]:
+        print("extracting response")
         content_selector = "div.markdown.prose"
         copy_selector = 'button[aria-label="Edit in canvas"]'
         # Looking for the edit button (it appears once the response is generated)
