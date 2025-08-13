@@ -1,12 +1,24 @@
 <template>
   <div>
     <!-- Showing Logs -->
-    <UTextarea :rows="20" :autoresize="false" v-model="logGot" :disabled="true"
-      class="w-full mb-4 textarea whitespace-pre font-mono " placeholder="Nothing to show ..." />
+    <UTextarea
+      :rows="20"
+      :autoresize="false"
+      v-model="logGot"
+      :disabled="true"
+      class="w-full mb-4 textarea whitespace-pre font-mono"
+      placeholder="Nothing to show ..."
+    />
     <!-- Refresh Logs -->
     <div class="justify-start flex">
-      <UButton label="Refresh Logs" :disabled="logGot.length == 0" icon="i-heroicons-arrow-path" :loading="loading"
-        class="justify-center text-white" @click="getLogs" />
+      <UButton
+        label="Refresh Logs"
+        :disabled="logGot.length == 0"
+        icon="i-heroicons-arrow-path"
+        :loading="loading"
+        class="justify-center text-white"
+        @click="getLogs"
+      />
     </div>
   </div>
 </template>
@@ -16,21 +28,21 @@
 const logGot = ref("-djjdkkdll\n-djffof");
 const loading = ref(false);
 // Routing
-const route = useRoute()
+const route = useRoute();
 const currentPlatform = computed(() => route.name);
 // Get Logs
 const getLogs = async () => {
-  loading.value = true
+  loading.value = true;
   try {
     // Fetch Logs for {currentPlatform}
   } catch (error) {
-    console.error('Erreur de requete:', error);
+    console.error("Erreur de requete:", error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 // On Startup
 onMounted(async () => {
-  getLogs()
-})
+  getLogs();
+});
 </script>

@@ -5,14 +5,20 @@
       <Sidebar />
     </div>
     <!-- Main Content -->
-    <div class="flex-1 flex flex-col overflow-hidden w-full ">
+    <div class="flex-1 flex flex-col overflow-hidden w-full">
       <!-- Header -->
       <header class="bg-gray-200 shadow-sm py-4 px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between md:justify-end">
           <!-- Mobile Menu Button -->
-          <UButton @click="isMobileSidebarOpen = true" :disabled="isMobileSidebarOpen"
-            class="bg-gray-100 hover:bg-gray-300 md:hidden cursor-pointer">
-            <UIcon name="i-heroicons-bars-3-bottom-left-20-solid" class="mr-3 text-xl" />
+          <UButton
+            @click="isMobileSidebarOpen = true"
+            :disabled="isMobileSidebarOpen"
+            class="bg-gray-100 hover:bg-gray-300 md:hidden cursor-pointer"
+          >
+            <UIcon
+              name="i-heroicons-bars-3-bottom-left-20-solid"
+              class="mr-3 text-xl"
+            />
             <h3 class="ml-3 text-lg font-semibold text-center">Menu</h3>
           </UButton>
         </div>
@@ -26,11 +32,13 @@
       </main>
     </div>
     <!-- Mobile Drawer Sidebar -->
-    <UDrawer direction="left" v-model:open="isMobileSidebarOpen" class="w-10/12 sm:w-6/12 bg-gray-100 ">
-      <template #title>
-      </template>
-      <template #description>
-      </template>
+    <UDrawer
+      direction="left"
+      v-model:open="isMobileSidebarOpen"
+      class="w-10/12 sm:w-6/12 bg-gray-100"
+    >
+      <template #title> </template>
+      <template #description> </template>
       <template #body>
         <Sidebar />
       </template>

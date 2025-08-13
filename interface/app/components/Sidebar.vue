@@ -11,11 +11,15 @@
     <USeparator class="my-4" color="neutral" size="md" />
     <!-- Listing the menus-->
     <nav class="flex-1 space-y-4 w-full">
-      <UButton v-for="menu in menus" variant="ghost"
+      <UButton
+        v-for="menu in menus"
+        variant="ghost"
         class="text-black hover:bg-gray-700 hover:text-white flex items-center py-2 px-3 rounded-lg w-full"
-        :class="{ 'bg-gray-800 text-white': menu['route'] === useRoute().name}" @click="handleMenuItemClick(menu)">
+        :class="{ 'bg-gray-800 text-white': menu['route'] === useRoute().name }"
+        @click="handleMenuItemClick(menu)"
+      >
         <UIcon :name="menu.icon" class="mr-2 w-5 h-5" />
-        <span class="flex-1 text-left">{{ menu['name'] }}</span>
+        <span class="flex-1 text-left">{{ menu["name"] }}</span>
       </UButton>
     </nav>
   </div>
@@ -25,32 +29,32 @@
 // List of Menus
 const menus = ref([
   {
-    'id': 1,
-    'name': 'Overall',
-    'route': 'home',
-    'icon': 'i-heroicons-lifebuoy'
+    id: 1,
+    name: "Overall",
+    route: "home",
+    icon: "i-heroicons-lifebuoy",
   },
   {
-    'id': 2,
-    'name': 'ChatGPT',
-    'route': 'chatgpt',
-    'icon': 'i-heroicons-bolt'
+    id: 2,
+    name: "ChatGPT",
+    route: "chatgpt",
+    icon: "i-heroicons-bolt",
   },
   {
-    'id': 3,
-    'name': 'Perplexity',
-    'route': 'perplexity',
-    'icon': 'i-heroicons-bolt'
+    id: 3,
+    name: "Perplexity",
+    route: "perplexity",
+    icon: "i-heroicons-bolt",
   },
   {
-    'id': 4,
-    'name': 'Gemini',
-    'route': 'gemini',
-    'icon': 'i-heroicons-bolt'
+    id: 4,
+    name: "Gemini",
+    route: "gemini",
+    icon: "i-heroicons-bolt",
   },
 ]);
 // When click on a menu from the sidebar
 const handleMenuItemClick = async (item: any) => {
-  useRouter().push(`/${item.route}`)
+  useRouter().push(`/${item.route}`);
 };
 </script>
