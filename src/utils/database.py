@@ -73,7 +73,11 @@ def get_job_success_rate(platform: Optional[str], start_date: datetime):
         query_total = select(ProcessStatus).where(
             ProcessStatus.start_time >= start_date
         )
+        query_total = select(ProcessStatus).where(
+            ProcessStatus.start_time >= start_date
+        )
         query_success = select(ProcessStatus).where(
+            ProcessStatus.start_time >= start_date, ProcessStatus.status == "success"
             ProcessStatus.start_time >= start_date, ProcessStatus.status == "success"
         )
         # Filter if per platform
@@ -84,6 +88,9 @@ def get_job_success_rate(platform: Optional[str], start_date: datetime):
         total_count = len(session.exec(query_total).all())
         success_count = len(session.exec(query_success).all())
         # Rate
+        success_rate = (
+            round((success_count / total_count) * 100, 2) if total_count else 0.0
+        )
         success_rate = (
             round((success_count / total_count) * 100, 2) if total_count else 0.0
         )
