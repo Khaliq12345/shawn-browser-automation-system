@@ -9,7 +9,7 @@ class ProcessStatus(SQLModel, table=True):
     process_id: Optional[str] = Field(default=None, primary_key=True)
     status: str
     platform: Optional[str] = None
-    start_time: Optional[datetime] = None
+    start_time: datetime
     end_time: Optional[datetime] = None
     prompt: Optional[str] = None
 

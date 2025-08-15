@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from typing import Optional
 from sqlmodel import Session, select
 from src.models.model import ProcessStatus
 from src.config.config import ENGINE
@@ -58,3 +59,31 @@ def get_process_status(process_id: str):
         if response:
             return response.status
     return None
+
+
+
+# Metrics - job success rate
+def get_job_success_rate(platform: Optional[str], start_date: datetime):
+    with get_session() as session:
+        # Base queries
+        query_total = select(ProcessStatus).where(ProcessStatus.start_time >= start_date)
+        query_success = select(ProcessStatus).where(
+            ProcessStatus.start_time >= start_date,
+            ProcessStatus.status == "success"
+        )
+        # Filter if per platform
+        if platform:
+            query_total = query_total.where(ProcessStatus.platform == platform)
+            query_success = query_success.where(ProcessStatus.platform == platform)
+        # Total Counts
+        total_count = len(session.exec(query_total).all())
+        success_count = len(session.exec(query_success).all())
+        # Rate
+        success_rate = round((success_count / total_count) * 100, 2) if total_count else 0.0
+    return {
+        "platform": platform if platform else "all",
+        "start_date": start_date,
+        "total_jobs": total_count,
+        "success_jobs": success_count,
+        "success_rate_percent": success_rate
+    }

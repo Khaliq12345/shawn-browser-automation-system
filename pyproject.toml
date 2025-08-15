@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "camoufox>=0.4.11",
+    "dateparser>=1.2.2",
     "fastapi[standard]>=0.116.1",
     "ptpython>=3.0.30",
     "redis>=6.4.0",
