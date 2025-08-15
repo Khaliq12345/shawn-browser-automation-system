@@ -29,7 +29,6 @@ def job_success_rate(date: DateOptions, platform: Optional[str] = None):
     # Validation
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
-        raise HTTPException(status_code=400, detail="Impossible de parser la date")
     return get_job_success_rate(platform, parsed_date)
 
 
