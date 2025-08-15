@@ -45,4 +45,3 @@ class PerplexityScraper(BrowserBase):
             return None
         content = self.page.query_selector(content_selector)
         return content
-

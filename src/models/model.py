@@ -12,6 +12,7 @@ class ProcessStatus(SQLModel, table=True):
     start_time: datetime
     end_time: Optional[datetime] = None
     prompt: Optional[str] = None
+    duration: Optional[float] = None
 
 
 # Create all tables of the database

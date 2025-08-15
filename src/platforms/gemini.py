@@ -19,9 +19,7 @@ class GeminiScraper(BrowserBase):
             prompt_input_selector = 'div[role="textbox"].ql-editor.textarea'
             # trying to fill the prompt
             try:
-                self.page.fill(
-                    prompt_input_selector, self.prompt, timeout=self.timeout
-                )
+                self.page.fill(prompt_input_selector, self.prompt, timeout=self.timeout)
             except Exception as e:
                 print(f"Can not fill the prompt input {e}")
             # Validate

@@ -5,9 +5,7 @@ from src.api.routes.metrics import router as metrics_router
 from src.api.routes.globals import router as global_router
 
 
-app = FastAPI(
-    title="Browser Automation System", on_startup=[create_db_and_tables]
-)
+app = FastAPI(title="Browser Automation System", on_startup=[create_db_and_tables])
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
