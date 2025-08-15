@@ -78,7 +78,6 @@ def get_job_success_rate(platform: Optional[str], start_date: datetime):
         )
         query_success = select(ProcessStatus).where(
             ProcessStatus.start_time >= start_date, ProcessStatus.status == "success"
-            ProcessStatus.start_time >= start_date, ProcessStatus.status == "success"
         )
         # Filter if per platform
         if platform:
