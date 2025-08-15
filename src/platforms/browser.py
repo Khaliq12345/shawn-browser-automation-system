@@ -8,7 +8,7 @@ sys.path.append("..")
 import os
 from typing import Optional
 from camoufox.sync_api import Camoufox
-from playwright.sync_api import ElementHandle
+from playwright.sync_api import ElementHandle, Page
 from src.utils.globals import save_file
 from src.utils.redis_utils import RedisBase
 
@@ -21,8 +21,8 @@ class BrowserBase(ContextDecorator, ABC):
         self.prompt = prompt
         self.name = name
         self.process_id = process_id
-        self.camoufox = Camoufox().start()
-        self.page = self.camoufox.new_page()
+        # self.camoufox = Camoufox(window=(1282, 955)).start()
+        self.page: Optional[Page] = None
         self.headless = headless
         self.timeout = 60000
         self.redis = RedisBase(process_id)
@@ -30,14 +30,18 @@ class BrowserBase(ContextDecorator, ABC):
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.page.close()
-        self.camoufox.close()
-        print("Browser instance closed")
-        return True
+    # def __exit__(self, exc_type, exc_val, exc_tb):
+    #     if not self.page:
+    #         return False
+    #     self.page.close()
+    #     self.camoufox.close()
+    #     print("Browser instance closed")
+    #     return True
 
     def navigate(self) -> bool:
         """Start the browser and navigate to the specified URL"""
+        if not self.page:
+            return False
         try:
             self.page.goto(self.url, timeout=self.timeout)
             return True
@@ -80,32 +84,34 @@ class BrowserBase(ContextDecorator, ABC):
         start_process(self.process_id, self.name, self.prompt)
 
         # Set 1: Navigate to the platform
-        is_navigate = self.navigate()
-        if not is_navigate:
-            self.redis.set_log("- Error starting or navigating the page")
-            update_process_status(self.process_id, "failled")
-            return None
-        self.redis.set_log("- Successfully navigated to the page")
+        with Camoufox(window=(1282, 955)) as browser:
+            self.page = browser.new_page()
+            is_navigate = self.navigate()
+            if not is_navigate:
+                self.redis.set_log("- Error starting or navigating the page")
+                update_process_status(self.process_id, "failled")
+                return None
+            self.redis.set_log("- Successfully navigated to the page")
 
-        # Step 2: Fill and Submit the input
-        is_filled = self.find_and_fill_input()
-        if not is_filled:
-            self.redis.set_log("- Error filling the prompt")
-            update_process_status(self.process_id, "failled")
-            return None
-        self.redis.set_log("- Prompt successfully filled")
+            # Step 2: Fill and Submit the input
+            is_filled = self.find_and_fill_input()
+            if not is_filled:
+                self.redis.set_log("- Error filling the prompt")
+                update_process_status(self.process_id, "failled")
+                return None
+            self.redis.set_log("- Prompt successfully filled")
 
-        # Step 3: Extract the generated response
-        content = self.extract_response()
-        if not content:
-            self.redis.set_log("- Error while extracting the response")
-            update_process_status(self.process_id, "failled")
-            return None
-        self.redis.set_log("- Response successfully extracted")
+            # Step 3: Extract the generated response
+            content = self.extract_response()
+            if not content:
+                self.redis.set_log("- Error while extracting the response")
+                update_process_status(self.process_id, "failled")
+                return None
+            self.redis.set_log("- Response successfully extracted")
 
-        # Step 4: Save the response
-        self.save_response(content)
-        self.redis.set_log("- Saving extracted data")
+            # Step 4: Save the response
+            self.save_response(content)
+            self.redis.set_log("- Saving extracted data")
 
         # Step 5: Mark as Sucess on supabase
         update_process_status(self.process_id, "success")

@@ -7,7 +7,7 @@ from src.platforms.gemini import GeminiScraper
 from src.platforms.perplexity import PerplexityScraper
 from src.platforms.chatgpt import ChatGPTScraper
 from src.utils.redis_utils import RedisBase
-
+import dramatiq
 
 app = FastAPI(
     title="Browser Automation System", on_startup=[create_db_and_tables]
@@ -31,6 +31,7 @@ SCRAPER_CONFIG = {
 }
 
 
+@dramatiq.actor
 def run_browser(name: str, prompt: str, process_id: str):
     # Get the matching configs class and url
     config = SCRAPER_CONFIG[name]
@@ -51,7 +52,7 @@ def start_browser(name: str, prompt: str, background_tasks: BackgroundTasks):
     timestamp = int(time.time())
     process_id = f"{name}_{timestamp}"
     # Start process in background
-    background_tasks.add_task(run_browser, name, prompt, process_id)
+    run_browser.send(name, prompt, process_id)
     return {"message": f"Browser started for {name}", "process_id": process_id}
 
 
