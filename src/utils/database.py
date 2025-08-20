@@ -167,6 +167,7 @@ def get_prompt_coverage_rate(start_date: datetime):
             "start_date": start_date,
             "total_jobs": len(results),
         }
+        # For each platform get the coverage
         for platform in platforms:
             platform_query = query.where(ProcessStatus.platform == platform)
             platform_results = session.exec(platform_query).all()
