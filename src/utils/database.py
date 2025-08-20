@@ -49,6 +49,8 @@ def update_process_status(
         if process_status:
             process_status.status = status
             process_status.end_time = datetime.now(timezone.utc)
+            if process_status.start_time.tzinfo is None:
+                process_status.start_time = process_status.start_time.replace(tzinfo=timezone.utc)
             process_status.duration = (
                 (process_status.end_time - process_status.start_time).total_seconds()
                 if process_status.start_time
@@ -196,3 +198,13 @@ def get_last_run_timestamp(platform: str):
                 "platform": platform,
                 "last_successful_run": last_run.end_time if last_run else None,
             }
+
+
+# Get all the process_id of a platform
+def get_processes(platform: str) -> list[str]:
+    with get_session() as session:
+        query = select(ProcessStatus.process_id).where(
+            ProcessStatus.platform == platform
+        )
+        results = session.exec(query).all()
+        return [pid for pid in results if pid is not None]

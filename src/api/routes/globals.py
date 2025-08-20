@@ -4,7 +4,6 @@ from src.utils.database import get_process_status
 from src.platforms.google import GoogleScraper
 from src.platforms.perplexity import PerplexityScraper
 from src.platforms.chatgpt import ChatGPTScraper
-from src.utils.redis_utils import RedisBase
 from multiprocessing import Process
 
 
@@ -54,12 +53,3 @@ def check_status(process_id: str):
     if status:
         return {"process_id": process_id, "status": status}
     raise HTTPException(status_code=404, detail="Process not found")
-
-
-@router.get("/get-logs/{process_id}")
-def get_logs(process_id: str):
-    # Get Matching Instance
-    redis_base = RedisBase(process_id)
-    # Get Logs
-    logs = redis_base.get_log()
-    return {"process_id": process_id, "logs": logs}
