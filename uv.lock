@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.12"
 
 [[package]]
@@ -778,6 +778,12 @@ wheels = [
 ]
 
 [[package]]
+name = "pyperclip"
+version = "1.9.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/30/23/2f0a3efc4d6a32f3b63cdff36cd398d9701d26cda58e3ab97ac79fb5e60d/pyperclip-1.9.0.tar.gz", hash = "sha256:b7de0142ddc81bfc5c7507eea19da920b92252b548b96186caf94a5e2527d310", size = 20961, upload-time = "2024-06-18T20:38:48.401Z" }
+
+[[package]]
 name = "pysocks"
 version = "1.7.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1033,6 +1039,7 @@ dependencies = [
     { name = "dateparser" },
     { name = "fastapi", extra = ["standard"] },
     { name = "ptpython" },
+    { name = "pyperclip" },
     { name = "redis" },
     { name = "sqlmodel" },
     { name = "uvicorn" },
@@ -1044,6 +1051,7 @@ requires-dist = [
     { name = "dateparser", specifier = ">=1.2.2" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.116.1" },
     { name = "ptpython", specifier = ">=3.0.30" },
+    { name = "pyperclip", specifier = ">=1.9.0" },
     { name = "redis", specifier = ">=6.4.0" },
     { name = "sqlmodel", specifier = ">=0.0.24" },
     { name = "uvicorn", specifier = ">=0.35.0" },

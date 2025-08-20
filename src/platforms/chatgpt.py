@@ -1,9 +1,11 @@
 import sys
 
+import pyperclip
+
 sys.path.append("..")
 
 from typing import Optional
-from playwright.sync_api import ElementHandle
+from playwright.sync_api import ElementHandle, expect
 from src.platforms.browser import BrowserBase
 
 
@@ -15,13 +17,9 @@ class ChatGPTScraper(BrowserBase):
 
     def find_and_fill_input(self) -> bool:
         try:
-            # Close the modal when it shows up
-            self.page.on("dialog", lambda dialog: dialog.dismiss())
-            print("Dialog closed")
+            self.page.mouse.click(0, 0)
             # trying to fill the prompt
-            prompt_input_selector = (
-                'p[data-placeholder="Ask anything"]'  # "#prompt-textarea"
-            )
+            prompt_input_selector = 'div[id="prompt-textarea"]'  # "#prompt-textarea"
             try:
                 print("Filling input")
                 self.page.fill(prompt_input_selector, self.prompt, timeout=self.timeout)
@@ -35,21 +33,14 @@ class ChatGPTScraper(BrowserBase):
             print(f"Error in find_and_fill_input {e}")
             return False
 
-    def extract_response(self) -> Optional[ElementHandle]:
+    def extract_response(self) -> Optional[str]:
         print("extracting response")
-        content_selector = "div.markdown.prose"
-        copy_selector = 'button[aria-label="Edit in canvas"]'
-        # Looking for the edit button (it appears once the response is generated)
+        content = None
+        copy_selector = 'button[data-testid="copy-turn-action-button"]'
         try:
-            self.page.wait_for_selector(copy_selector, timeout=self.timeout)
+            self.page.click(copy_selector, timeout=120000)
         except Exception as e:
-            print(f"Unable to find edit button {e}")
+            print(f"Unable to find copy button {e}")
             return None
-        # Looking for the response selector
-        try:
-            self.page.wait_for_selector(content_selector, timeout=self.timeout)
-        except Exception as e:
-            print(f"Unable to find the content {e}")
-            return None
-        content = self.page.query_selector(content_selector)
+        content = pyperclip.paste()
         return content

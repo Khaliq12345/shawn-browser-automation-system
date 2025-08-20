@@ -8,6 +8,7 @@ sys.path.append("..")
 import os
 from typing import Optional
 from camoufox.sync_api import Camoufox
+from browserforge.fingerprints import Screen
 from playwright.sync_api import ElementHandle
 from src.utils.globals import save_file
 from src.utils.redis_utils import RedisBase
@@ -15,13 +16,18 @@ from src.utils.redis_utils import RedisBase
 
 class BrowserBase(ContextDecorator, ABC):
     def __init__(
-        self, url: str, prompt: str, name: str, process_id: str, headless: bool = False
+        self,
+        url: str,
+        prompt: str,
+        name: str,
+        process_id: str,
+        headless: bool = False,
     ) -> None:
         self.url = url
         self.prompt = prompt
         self.name = name
         self.process_id = process_id
-        self.camoufox = Camoufox().start()
+        self.camoufox = Camoufox(screen=Screen(max_width=1920, max_height=1080)).start()
         self.page = self.camoufox.new_page()
         self.headless = headless
         self.timeout = 60000
@@ -45,10 +51,9 @@ class BrowserBase(ContextDecorator, ABC):
             print(f"Error starting or navigating the page - {e}")
             return False
 
-    def save_response(self, content: Optional[ElementHandle]) -> bool:
+    def save_response(self, content: Optional[str]) -> bool:
         """Save the generated output from the prompt in html and text file"""
         save_folder = f"responses/{self.name}/{self.process_id}/"
-        html_out = os.path.join(save_folder, "html_res.html")
         txt_out = os.path.join(save_folder, "txt_res.txt")
 
         # break the flow if no response in found
@@ -57,10 +62,7 @@ class BrowserBase(ContextDecorator, ABC):
             print("No generated output")
             return False
 
-        html_fragment = content.inner_html()
-        text_fragment = content.inner_text()
-        save_file(html_out, html_fragment)
-        save_file(txt_out, text_fragment)
+        save_file(txt_out, content)
         self.redis.set_log(f" Successfully saved -- Output -> {save_folder}")
         return True
 
@@ -70,7 +72,7 @@ class BrowserBase(ContextDecorator, ABC):
         pass
 
     @abstractmethod
-    def extract_response(self) -> Optional[ElementHandle]:
+    def extract_response(self) -> Optional[str]:
         """Platform-specific method to extract the response."""
         pass
 

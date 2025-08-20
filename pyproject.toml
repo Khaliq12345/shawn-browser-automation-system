@@ -9,6 +9,7 @@ dependencies = [
     "dateparser>=1.2.2",
     "fastapi[standard]>=0.116.1",
     "ptpython>=3.0.30",
+    "pyperclip>=1.9.0",
     "redis>=6.4.0",
     "sqlmodel>=0.0.24",
     "uvicorn>=0.35.0",
