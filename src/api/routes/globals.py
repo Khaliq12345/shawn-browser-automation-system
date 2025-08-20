@@ -1,7 +1,7 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException
 import time
 from src.utils.database import get_process_status
-from src.platforms.gemini import GeminiScraper
+from platforms.google import GoogleScraper
 from src.platforms.perplexity import PerplexityScraper
 from src.platforms.chatgpt import ChatGPTScraper
 from src.utils.redis_utils import RedisBase
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/globals")
 # Scrapper configs
 SCRAPER_CONFIG = {
     "chatgpt": {"class": ChatGPTScraper, "url": "https://chatgpt.com/"},
-    "gemini": {"class": GeminiScraper, "url": "https://gemini.google.com"},
+    "gemini": {"class": GoogleScraper, "url": "https://gemini.google.com"},
     "perplexity": {
         "class": PerplexityScraper,
         "url": "https://www.perplexity.ai/",
@@ -35,7 +35,7 @@ def run_browser(name: str, prompt: str, process_id: str):
 
 
 @router.post("/start-browser")
-async def start_browser(name: str, prompt: str, background_tasks: BackgroundTasks):
+async def start_browser(name: str, prompt: str):
     # If the name is not supported
     if name not in SCRAPER_CONFIG:
         raise HTTPException(status_code=404, detail="Invalid Parameter 'name'")
