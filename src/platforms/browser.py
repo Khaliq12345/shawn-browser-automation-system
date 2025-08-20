@@ -7,8 +7,8 @@ sys.path.append("..")
 
 import os
 from typing import Optional
-from camoufox.sync_api import Camoufox
-from playwright.sync_api import ElementHandle
+from camoufox.async_api import AsyncCamoufox
+from browserforge.fingerprints import Screen
 from src.utils.globals import save_file
 from src.utils.redis_utils import RedisBase
 
@@ -21,34 +21,25 @@ class BrowserBase(ContextDecorator, ABC):
         self.prompt = prompt
         self.name = name
         self.process_id = process_id
-        self.camoufox = Camoufox().start()
-        self.page = self.camoufox.new_page()
         self.headless = headless
+        self.camoufox = None
+        self.browser = None
+        self.context = None
         self.timeout = 60000
         self.redis = RedisBase(process_id)
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.page.close()
-        self.camoufox.close()
-        print("Browser instance closed")
-        return True
-
-    def navigate(self) -> bool:
+    async def navigate(self) -> bool:
         """Start the browser and navigate to the specified URL"""
         try:
-            self.page.goto(self.url, timeout=self.timeout)
+            await self.page.goto(self.url, timeout=self.timeout)
             return True
         except Exception as e:
             print(f"Error starting or navigating the page - {e}")
             return False
 
-    def save_response(self, content: Optional[ElementHandle]) -> bool:
+    async def save_response(self, content: Optional[str]) -> bool:
         """Save the generated output from the prompt in html and text file"""
         save_folder = f"responses/{self.name}/{self.process_id}/"
-        html_out = os.path.join(save_folder, "html_res.html")
         txt_out = os.path.join(save_folder, "txt_res.txt")
 
         # break the flow if no response in found
@@ -57,56 +48,60 @@ class BrowserBase(ContextDecorator, ABC):
             print("No generated output")
             return False
 
-        html_fragment = content.inner_html()
-        text_fragment = content.inner_text()
-        save_file(html_out, html_fragment)
-        save_file(txt_out, text_fragment)
+        save_file(txt_out, content)
         self.redis.set_log(f" Successfully saved -- Output -> {save_folder}")
         return True
 
     @abstractmethod
-    def find_and_fill_input(self) -> bool:
+    async def find_and_fill_input(self) -> bool:
         """Platform-specific method to fill and submit the prompt."""
         pass
 
     @abstractmethod
-    def extract_response(self) -> Optional[ElementHandle]:
+    async def extract_response(self) -> Optional[str]:
         """Platform-specific method to extract the response."""
         pass
 
-    def send_prompt(self) -> None:
+    async def send_prompt(self) -> None:
         """Start the workflow"""
-        self.redis.set_log("- Workflow Started")
-        start_process(self.process_id, self.name, self.prompt)
+        async with AsyncCamoufox(
+            screen=Screen(max_width=1920, max_height=1080)
+        ) as self.browser:
+            self.page = await self.browser.new_page()
 
-        # Set 1: Navigate to the platform
-        is_navigate = self.navigate()
-        if not is_navigate:
-            self.redis.set_log("- Error starting or navigating the page")
-            update_process_status(self.process_id, "failled")
-            return None
-        self.redis.set_log("- Successfully navigated to the page")
+            self.redis.set_log("- Workflow Started")
+            start_process(self.process_id, self.name, self.prompt)
 
-        # Step 2: Fill and Submit the input
-        is_filled = self.find_and_fill_input()
-        if not is_filled:
-            self.redis.set_log("- Error filling the prompt")
-            update_process_status(self.process_id, "failled")
-            return None
-        self.redis.set_log("- Prompt successfully filled")
+            # Set 1: Navigate to the platform
+            is_navigate = await self.navigate()
+            if not is_navigate:
+                self.redis.set_log("- Error starting or navigating the page")
+                update_process_status(self.process_id, "failled")
+                return None
+            self.redis.set_log("- Successfully navigated to the page")
 
-        # Step 3: Extract the generated response
-        content = self.extract_response()
-        if not content:
-            self.redis.set_log("- Error while extracting the response")
-            update_process_status(self.process_id, "failled")
-            return None
-        self.redis.set_log("- Response successfully extracted")
+            # Step 2: Fill and Submit the input
+            is_filled = await self.find_and_fill_input()
+            if not is_filled:
+                self.redis.set_log("- Error filling the prompt")
+                update_process_status(self.process_id, "failled")
+                return None
+            self.redis.set_log("- Prompt successfully filled")
 
-        # Step 4: Save the response
-        self.save_response(content)
-        self.redis.set_log("- Saving extracted data")
+            # Step 3: Extract the generated response
+            content = await self.extract_response()
+            if not content:
+                self.redis.set_log("- Error while extracting the response")
+                update_process_status(self.process_id, "failled")
+                return None
+            self.redis.set_log("- Response successfully extracted")
 
-        # Step 5: Mark as Sucess on supabase
-        update_process_status(self.process_id, "success")
-        self.redis.set_log("- Process Successfully ended !")
+            # Step 4: Save the response
+            await self.save_response(content)
+            self.redis.set_log("- Saving extracted data")
+
+            # Step 5: Mark as Sucess on supabase
+            update_process_status(self.process_id, "success")
+            self.redis.set_log("- Process Successfully ended !")
+
+            print("Browser instance closed")

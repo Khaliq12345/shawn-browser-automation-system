@@ -1,9 +1,9 @@
+import asyncio
 import sys
 
 sys.path.append("..")
 
 from typing import Optional
-from playwright.sync_api import ElementHandle
 from src.platforms.browser import BrowserBase
 
 
@@ -14,35 +14,44 @@ class GeminiScraper(BrowserBase):
         super().__init__(url, prompt, name, process_id, headless)
         self.timeout = 120000
 
-    def find_and_fill_input(self) -> bool:
+    async def find_and_fill_input(self) -> bool:
         try:
-            prompt_input_selector = 'div[role="textbox"].ql-editor.textarea'
+            prompt_input_selector = 'textarea[name="q"]'
             # trying to fill the prompt
             try:
-                self.page.fill(prompt_input_selector, self.prompt, timeout=self.timeout)
+                await self.page.fill(
+                    prompt_input_selector, self.prompt, timeout=self.timeout
+                )
             except Exception as e:
                 print(f"Can not fill the prompt input {e}")
+                return False
             # Validate
-            self.page.keyboard.press("Enter")
+            await self.page.keyboard.press("Enter")
             return True
         except Exception as e:
             print(f"Error in find_and_fill_input {e}")
             return False
 
-    def extract_response(self) -> Optional[ElementHandle]:
-        content_selector = ".response-container-content"
-        footer_selector = ".response-container-footer"
-        # Looking for the response footer (it appears once the response is generated)
+    async def extract_response(self) -> Optional[str]:
+        content_selector = 'div[id="m-x-content"]'
+        show_more_button = 'div[class="kHtcsd"]'
+
         try:
-            self.page.wait_for_selector(footer_selector, timeout=self.timeout)
+            await self.page.click(show_more_button, timeout=self.timeout)
+            await self.page.wait_for_timeout(timeout=3000)
         except Exception as e:
-            print(f"Unable to find Response Footer {e}")
+            print(f"Unable to find the Show more button {e}")
             return None
-        # Looking for the response selector
+
         try:
-            self.page.wait_for_selector(content_selector, timeout=self.timeout)
+            await self.page.wait_for_selector(content_selector, timeout=self.timeout)
         except Exception as e:
             print(f"Unable to find the content {e}")
             return None
-        content = self.page.query_selector(content_selector)
+
+        content_element = await self.page.query_selector(content_selector)
+        content = await content_element.inner_html() if content_element else ""
         return content
+
+    def run_browser(self):
+        asyncio.run(self.send_prompt())
