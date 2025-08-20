@@ -7,7 +7,7 @@ from typing import Optional
 from src.platforms.browser import BrowserBase
 
 
-class GeminiScraper(BrowserBase):
+class GoogleScraper(BrowserBase):
     def __init__(
         self, url: str, prompt: str, name: str, process_id: str, headless: bool = False
     ) -> None:

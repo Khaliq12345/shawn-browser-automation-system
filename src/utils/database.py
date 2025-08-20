@@ -1,9 +1,10 @@
 from contextlib import contextmanager
 from typing import Optional
-from sqlmodel import Session, select
+from sqlmodel import Session, select, col
 from src.models.model import ProcessStatus
 from src.config.config import ENGINE
 from datetime import datetime, timezone
+from sqlalchemy import desc
 
 
 # Get the Database Session
@@ -66,7 +67,9 @@ def get_process_status(process_id: str):
     return None
 
 
-# Metrics - job success rate
+#  -------- Metrics ----------
+#
+# Job Success Rate
 def get_job_success_rate(platform: Optional[str], start_date: datetime):
     with get_session() as session:
         # Base queries
@@ -102,6 +105,7 @@ def get_job_success_rate(platform: Optional[str], start_date: datetime):
     }
 
 
+# Avg Job Duration
 def get_average_job_duration(platform: Optional[str], start_date: datetime):
     with get_session() as session:
         query = select(ProcessStatus).where(ProcessStatus.start_time >= start_date)
@@ -110,12 +114,85 @@ def get_average_job_duration(platform: Optional[str], start_date: datetime):
             query = query.where(ProcessStatus.platform == platform)
         results = session.exec(query).all()
         durations = [r.duration for r in results if r.duration is not None]
-        total_jobs = len(durations)
-        avg_duration = round(sum(durations) / total_jobs, 2) if total_jobs else 0.0
+        avg_duration = round(sum(durations) / len(durations), 2) if durations else 0.0
 
     return {
         "platform": platform if platform else "all",
         "start_date": start_date,
-        "total_jobs": total_jobs,
+        "total_jobs": len(durations),
         "average_duration_seconds": avg_duration,
     }
+
+
+# Avg Total Time per Prompt
+def get_average_total_time_per_prompt(start_date: datetime):
+    with get_session() as session:
+        query = select(ProcessStatus).where(ProcessStatus.start_time >= start_date)
+        results = session.exec(query).all()
+        durations = [r.duration for r in results if r.duration is not None]
+        avg_time = round(sum(durations) / len(durations), 2) if durations else 0.0
+        return {
+            "platform": "all",
+            "start_date": start_date,
+            "total_jobs": len(durations),
+            "average_total_time_seconds": avg_time,
+        }
+
+
+# Scraper Error Rate
+def get_scraper_error_rate(start_date: datetime):
+    with get_session() as session:
+        query = select(ProcessStatus).where(ProcessStatus.start_time >= start_date)
+        results = session.exec(query).all()
+        total_runs = len(results)
+        error_runs = sum(1 for r in results if r.status == "failed")
+        rate = round(error_runs / total_runs, 2) if total_runs else 0.0
+        return {
+            "platform": "all",
+            "start_date": start_date,
+            "total_jobs": total_runs,
+            "failed_jobs": error_runs,
+            "scraper_error_rate": rate,
+        }
+
+
+# Prompt Coverage Rate
+def get_prompt_coverage_rate(start_date: datetime):
+    with get_session() as session:
+        platforms = ["google", "chatgpt", "perplexity"]
+        query = select(ProcessStatus).where(ProcessStatus.start_time >= start_date)
+        results = session.exec(query).all()
+        return_data = {
+            "platform": "all",
+            "start_date": start_date,
+            "total_jobs": len(results),
+        }
+        # For each platform get the coverage
+        for platform in platforms:
+            platform_query = query.where(ProcessStatus.platform == platform)
+            platform_results = session.exec(platform_query).all()
+            coverage = (
+                round(len(platform_results) / len(results), 2)
+                if platform_results
+                else 0.0
+            )
+            return_data[f"{platform}_jobs"] = len(platform_results)
+            return_data[f"{platform}_coverage_rate"] = coverage
+        return return_data
+
+
+# Last Run Timestamp per Platform
+def get_last_run_timestamp(platform: str):
+    with get_session() as session:
+        with get_session() as session:
+            query = (
+                select(ProcessStatus)
+                .where(ProcessStatus.status == "success")
+                .where(ProcessStatus.platform == platform)
+                .order_by(desc(col(ProcessStatus.end_time)))
+            )
+            last_run = session.exec(query).first()
+            return {
+                "platform": platform,
+                "last_successful_run": last_run.end_time if last_run else None,
+            }
