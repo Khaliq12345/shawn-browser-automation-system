@@ -40,50 +40,50 @@ async def job_success_rate(date: DateOptions, platform: Optional[str] = None):
 
 # Avg Job Duration
 @router.get("/average-job-duration")
-def average_job_duration(date: DateOptions, platform: Optional[str] = None):
+async def average_job_duration(date: DateOptions, platform: Optional[str] = None):
     # Validation
     parsed_date = dateparser.parse(
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
     )
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
-    return get_average_job_duration(platform, parsed_date)
+    return await get_average_job_duration(platform, parsed_date)
 
 
 # Avg Total Time per Prompt
 @router.get("/average-total-time-per-prompt")
-def average_total_time_per_prompt(date: DateOptions):
+async def average_total_time_per_prompt(date: DateOptions):
     parsed_date = dateparser.parse(
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
     )
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
-    return get_average_total_time_per_prompt(parsed_date)
+    return await get_average_total_time_per_prompt(parsed_date)
 
 
 # Scraper Error Rate
 @router.get("/scraper-error-rate")
-def scraper_error_rate(date: DateOptions):
+async def scraper_error_rate(date: DateOptions):
     parsed_date = dateparser.parse(
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
     )
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
-    return get_scraper_error_rate(parsed_date)
+    return await get_scraper_error_rate(parsed_date)
 
 
 # Prompt Coverage Rate
 @router.get("/prompt-coverage-rate")
-def prompt_coverage_rate(date: DateOptions):
+async def prompt_coverage_rate(date: DateOptions):
     parsed_date = dateparser.parse(
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
     )
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
-    return get_prompt_coverage_rate(parsed_date)
+    return await get_prompt_coverage_rate(parsed_date)
 
 
 # Last Run Timestamp per Platform
 @router.get("/last-run-timestamp")
-def last_run_timestamp(platform: str):
-    return get_last_run_timestamp(platform)
+async def last_run_timestamp(platform: str):
+    return await get_last_run_timestamp(platform)

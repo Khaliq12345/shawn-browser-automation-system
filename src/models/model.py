@@ -1,6 +1,4 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlmodel import Field, SQLModel
-from typing import Optional
 from datetime import datetime
 from src.config import config
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncAttrs
@@ -9,7 +7,7 @@ from sqlalchemy import DateTime, Float, String, Text
 
 def get_engine():
     engine = create_async_engine(
-        f"postgresql+psycopg://{config.DB_USER}:{config.DB_PASSWORD}@{config.DB_HOST}/{config.DB_NAME}"
+        f"postgresql+psycopg://{config.DB_USER}:{config.DB_PASSWORD}@{config.DB_HOST}:5432/{config.DB_NAME}"
     )
     return engine
 
@@ -18,17 +16,7 @@ class Base(DeclarativeBase):
     pass
 
 
-# Process Status Class
-class ProcessStatus(SQLModel, table=True):
-    process_id: Optional[str] = Field(default=None, primary_key=True)
-    status: str
-    platform: Optional[str] = None
-    start_time: datetime
-    end_time: Optional[datetime] = None
-    prompt: Optional[str] = None
-    duration: Optional[float] = None
-
-
+# Process Model
 class Processes(AsyncAttrs, Base):
     __tablename__ = "processes"
 
