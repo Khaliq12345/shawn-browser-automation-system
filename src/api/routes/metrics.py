@@ -16,22 +16,26 @@ router = APIRouter(prefix="/metrics")
 
 
 class DateOptions(str, Enum):
-    hours_24 = "24 hours"
-    one_week = "1 week"
-    one_month = "1 month"
-    one_year = "1 year"
+    hours_24 = "24 hours ago"
+    one_week = "1 week ago"
+    one_month = "1 month ago"
+    one_year = "1 year ago"
 
 
 # Job Success Rate
 @router.get("/job-success-rate")
-def job_success_rate(date: DateOptions, platform: Optional[str] = None):
+async def job_success_rate(date: DateOptions, platform: Optional[str] = None):
     # Validation
     parsed_date = dateparser.parse(
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
     )
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
-    return get_job_success_rate(platform, parsed_date)
+    outputs = await get_job_success_rate(parsed_date)
+    for output in outputs:
+        if output["platform"] == platform:
+            return output
+    return outputs
 
 
 # Avg Job Duration

@@ -21,7 +21,9 @@ class ChatGPTScraper(BrowserBase):
             prompt_input_selector = 'div[id="prompt-textarea"]'  # "#prompt-textarea"
             try:
                 print("Filling input")
-                await self.page.fill(prompt_input_selector, self.prompt, timeout=self.timeout)
+                await self.page.fill(
+                    prompt_input_selector, self.prompt, timeout=self.timeout
+                )
                 print("Done FIlling")
             except Exception as e:
                 print(f"Can not fill the prompt input {e}")

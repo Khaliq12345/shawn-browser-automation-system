@@ -15,7 +15,12 @@ from src.utils.redis_utils import RedisBase
 
 class BrowserBase(ContextDecorator, ABC):
     def __init__(
-        self, url: str, prompt: str, name: str, process_id: str, headless: bool = False
+        self,
+        url: str,
+        prompt: str,
+        name: str,
+        process_id: str,
+        headless: bool = False,
     ) -> None:
         self.url = url
         self.prompt = prompt

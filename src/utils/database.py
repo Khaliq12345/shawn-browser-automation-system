@@ -1,15 +1,16 @@
 from contextlib import contextmanager
 from typing import Optional
-from sqlmodel import Session, select, col
-from src.models.model import ProcessStatus
-from src.config.config import ENGINE
+from sqlmodel import Session, select, col, text
+from src.models.model import ProcessStatus, get_engine
 from datetime import datetime, timezone
 from sqlalchemy import desc
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 # Get the Database Session
 @contextmanager
-def get_session():
+async def get_session():
     session = Session(ENGINE)
     try:
         yield session
@@ -50,7 +51,9 @@ def update_process_status(
             process_status.status = status
             process_status.end_time = datetime.now(timezone.utc)
             if process_status.start_time.tzinfo is None:
-                process_status.start_time = process_status.start_time.replace(tzinfo=timezone.utc)
+                process_status.start_time = process_status.start_time.replace(
+                    tzinfo=timezone.utc
+                )
             process_status.duration = (
                 (process_status.end_time - process_status.start_time).total_seconds()
                 if process_status.start_time
@@ -70,41 +73,30 @@ def get_process_status(process_id: str):
 
 
 #  -------- Metrics ----------
-#
+
+
 # Job Success Rate
-def get_job_success_rate(platform: Optional[str], start_date: datetime):
-    with get_session() as session:
-        # Base queries
-        query_total = select(ProcessStatus).where(
-            ProcessStatus.start_time >= start_date
-        )
-        query_total = select(ProcessStatus).where(
-            ProcessStatus.start_time >= start_date
-        )
-        query_success = select(ProcessStatus).where(
-            ProcessStatus.start_time >= start_date, ProcessStatus.status == "success"
-        )
-        # Filter if per platform
-        if platform:
-            query_total = query_total.where(ProcessStatus.platform == platform)
-            query_success = query_success.where(ProcessStatus.platform == platform)
-        # Total Counts
-        total_count = len(session.exec(query_total).all())
-        success_count = len(session.exec(query_success).all())
-        # Rate
-        success_rate = (
-            round((success_count / total_count) * 100, 2) if total_count else 0.0
-        )
-        success_rate = (
-            round((success_count / total_count) * 100, 2) if total_count else 0.0
-        )
-    return {
-        "platform": platform if platform else "all",
-        "start_date": start_date,
-        "total_jobs": total_count,
-        "success_jobs": success_count,
-        "success_rate_percent": success_rate,
-    }
+async def get_job_success_rate(start_date: datetime):
+    engine = get_engine()
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
+    combined_data = []
+    async with async_session() as session:
+        stmt = f"""
+        SELECT 
+            COUNT(*) AS total_jobs,
+            COALESCE(platform, 'all') AS platform,
+            COUNT(CASE WHEN status = 'success' THEN 1 END) AS success_jobs,
+            ((COUNT(CASE WHEN status = 'success' THEN 1 END)::float / COUNT(*)) * 100) AS success_rate
+        FROM processes
+        WHERE start_time > '{start_date}'
+        GROUP BY ROLLUP(platform)
+        """
+        success_table = await session.execute(text(stmt))
+        keys = success_table.keys()
+        values = success_table.fetchall()
+        combined_data = [dict(zip(keys, row)) for row in values]
+    await engine.dispose()
+    return combined_data
 
 
 # Avg Job Duration
