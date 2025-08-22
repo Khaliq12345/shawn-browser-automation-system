@@ -13,7 +13,7 @@ router = APIRouter(prefix="/globals")
 # Scrapper configs
 SCRAPER_CONFIG = {
     "chatgpt": {"class": ChatGPTScraper, "url": "https://chatgpt.com/"},
-    "google": {"class": GoogleScraper, "url": "https://gemini.google.com"},
+    "google": {"class": GoogleScraper, "url": "https://google.com"},
     "perplexity": {
         "class": PerplexityScraper,
         "url": "https://www.perplexity.ai/",

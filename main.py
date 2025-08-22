@@ -20,7 +20,7 @@ def main():
 
 def test():
     matching_scraper = GoogleScraper(
-        url="https://gemini.google.com",
+        url="https://google.com",
         prompt="All about python in 3 sentences",
         name="google",
         process_id="google_535348448",
@@ -30,5 +30,5 @@ def test():
 
 
 if __name__ == "__main__":
-    main()
-    # test()
+    # main()
+    test()

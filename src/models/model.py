@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from datetime import datetime
 from src.config import config
@@ -24,9 +25,9 @@ class Processes(AsyncAttrs, Base):
     status: Mapped[str] = mapped_column(String(15))
     platform: Mapped[str] = mapped_column(String(15))
     start_time: Mapped[datetime] = mapped_column(DateTime())
-    end_time: Mapped[datetime] = mapped_column(DateTime())
+    end_time: Mapped[Optional[datetime]] = mapped_column(DateTime(), nullable=True)
     prompt: Mapped[str] = mapped_column(Text())
-    duration: Mapped[float] = mapped_column(Float())
+    duration: Mapped[float] = mapped_column(Float(), default=0.0)
 
 
 # Create all tables of the database

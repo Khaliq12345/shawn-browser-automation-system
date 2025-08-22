@@ -4,11 +4,11 @@ import sys
 from src.utils.database import update_process_status, start_process
 
 sys.path.append("..")
-
+from playwright.async_api import async_playwright
 import os
 from typing import Optional
-from camoufox.async_api import AsyncCamoufox
-from browserforge.fingerprints import Screen
+# from camoufox.async_api import AsyncCamoufox
+# from browserforge.fingerprints import Screen
 from src.utils.globals import save_file
 from src.utils.redis_utils import AsyncRedisBase
 
@@ -69,9 +69,8 @@ class BrowserBase(ContextDecorator, ABC):
 
     async def send_prompt(self) -> None:
         """Start the workflow"""
-        async with AsyncCamoufox(
-            screen=Screen(max_width=1920, max_height=1080),
-        ) as self.browser:
+        async with async_playwright() as p:
+            self.browser = await p.firefox.launch(headless=self.headless)
             self.page = await self.browser.new_page()
 
             await self.redis.set_log("- Workflow Started")

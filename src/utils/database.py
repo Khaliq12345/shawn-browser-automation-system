@@ -36,8 +36,8 @@ async def update_process_status(
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session() as session:
         stmt = select(Processes).where(Processes.process_id == process_id)
-        process = await session.execute(stmt)
-        process = process.one_or_none()
+        process = await session.scalars(stmt)
+        process = process.one()
         if process:
             process.status = status
             process.end_time = datetime.now(timezone.utc)
@@ -58,8 +58,8 @@ async def get_process_status(process_id: str):
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session() as session:
         stmt = select(Processes).where(Processes.process_id == process_id)
-        process = await session.execute(stmt)
-        process = process.one_or_none()
+        process = await session.scalars(stmt)
+        process = process.one()
         if process:
             return process.status
     await engine.dispose()
