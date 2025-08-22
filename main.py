@@ -1,11 +1,7 @@
 import asyncio
 import uvicorn
-import sys
 
 from src.platforms.google import GoogleScraper
-
-if sys.platform.startswith("win"):
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 # Launch API
@@ -21,12 +17,11 @@ def main():
 def test():
     matching_scraper = GoogleScraper(
         url="https://google.com",
-        prompt="All about python in 3 sentences",
+        prompt="Who is Patrick Lumumba",
         name="google",
-        process_id="google_535348448",
+        process_id="google_535349999999",
     )
-    matching_scraper.run_browser()
-    pass
+    asyncio.run(matching_scraper.send_prompt())
 
 
 if __name__ == "__main__":

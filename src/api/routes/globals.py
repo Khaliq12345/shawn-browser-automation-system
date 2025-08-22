@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, HTTPException
 import time
 from src.utils.database import get_process_status, get_all_platform_processes
@@ -30,7 +31,7 @@ def run_browser(name: str, prompt: str, process_id: str):
     matching_scraper = ScraperClass(
         url=url, prompt=prompt, name=name, process_id=process_id
     )
-    matching_scraper.run_browser()
+    asyncio.run(matching_scraper.send_prompt())
 
 
 @router.post("/start-browser")
