@@ -19,31 +19,59 @@
           <UCard
             variant="soft"
             class="text-center shadow-2xl"
-            :class="iconAndColorFromStatus[last_run.status]['bgColor']"
+            :class="
+              last_run
+                ? iconAndColorFromStatus[last_run.status]['bgColor']
+                : 'bg-green-200'
+            "
           >
             <div class="flex items-center justify-start">
               <div class="text-left">
                 <div class="flex mb-2">
                   <UIcon
-                    :name="iconAndColorFromStatus[last_run.status]['icon']"
+                    :name="
+                      last_run
+                        ? iconAndColorFromStatus[last_run.status]['icon']
+                        : 'i-heroicons-check'
+                    "
                     size="25"
                     class="mr-5"
                   />
-                  <p class="font-bold">Last Run</p>
+                  <p class="font-bold">Last Run Details</p>
                 </div>
-                <div class="flex justify-center">
-                  <USeparator class="my-3" />
+                <div class="flex justify-center w-full">
+                  <USeparator class="my-3 w-full" />
                 </div>
-                <div class="mb-2" v-for="col in columns">
+                <div v-if="!last_run">Nothing to Show !</div>
+                <div v-else class="mb-2" v-for="col in columns">
                   <span class="font-semibold"> {{ col.title }} :</span>
                   <span class="ml-1">
-                    {{ last_run[col.key] }}
+                    {{ last_run[col.key] ?? " - " }}
                   </span>
                 </div>
               </div>
             </div>
           </UCard>
         </div>
+
+        <!-- Date -->
+        <div class="flex justify-end my-8">
+          <UFormField>
+            <USelect
+              v-model="selectedDate"
+              icon="i-heroicons-calendar"
+              :items="dateList"
+              clearable
+              :placeholder="dateList.length ? 'From date' : 'No Available Date'"
+              @update:model-value="fetchallData"
+            >
+            </USelect>
+          </UFormField>
+        </div>
+
+        <!-- Shared Metrics -->
+        <SharedMetrics :platformsMetrics="platformsMetrics" />
+
         <!-- Logs -->
         <UCollapsible :default-open="false">
           <UButton
@@ -61,42 +89,84 @@
 </template>
 
 <script lang="ts" setup>
-import { iconAndColorFromStatus } from "~/utils/globals";
 // To Manage Page Loading
 const loadingData = ref(false);
 // Columns to show
 const columns: any[] = [
   {
-    title: "Last Run Status",
+    title: "Process Id",
+    key: "process_id",
+  },
+  {
+    title: "Status",
     key: "status",
   },
   {
-    title: "Last Run Start",
+    title: "Start Time",
     key: "start_time",
   },
   {
-    title: "Last Run End",
+    title: "End Time",
     key: "end_time",
+  },
+  {
+    title: "Prompt",
+    key: "prompt",
+  },
+  {
+    title: "Duration (s)",
+    key: "duration",
   },
 ];
 // Last Run of the platform
-const last_run: any = {
-  status: "success",
-  start_time: "2025-08-12 10:40:56",
-  end_time: "2025-08-12 10:47:09",
-};
+const last_run = ref();
 // Routing
 const route = useRoute();
-const currentPlatform = computed(() => route.name);
+const currentPlatform: any = computed(() => route.name);
 // On Mounted
 onMounted(async () => {
-  loadingData.value = true;
-  try {
-    // Fetch platform data for {currentPlatform}
-  } catch (err) {
-    console.error("Errors:", err);
-  } finally {
-    loadingData.value = false;
-  }
+  fetchallData();
 });
+// Dates
+const dateList = ref([
+  "24 hours ago",
+  "1 week ago",
+  "1 month ago",
+  "1 year ago",
+]);
+const selectedDate: Ref<any> = ref(dateList.value[0]);
+// Fetch All Data
+//
+const fetchallData = async () => {
+  loadingData.value = true;
+  // Last Run Timestamp
+  let result = await getLastRunTimestamp(currentPlatform.value);
+  last_run.value = result;
+  // Job Success Rate
+  result = await getJobSuccessRate(selectedDate.value, currentPlatform.value);
+  platformsMetrics.find((item) => item.id === 0).data = result;
+  // Average Job Duration
+  result = await getAverageJobDuration(
+    selectedDate.value,
+    currentPlatform.value
+  );
+  platformsMetrics.find((item) => item.id === 1).data = result;
+  // Scraper Error Rate
+  result = await getScraperErrorRate(selectedDate.value, currentPlatform.value);
+  platformsMetrics.find((item) => item.id === 2).data = result;
+  loadingData.value = false;
+};
+
+// Metrics Functions
+//
+const {
+  getJobSuccessRate,
+  getAverageJobDuration,
+  getScraperErrorRate,
+  getLastRunTimestamp,
+} = useMetricsFunctions();
+
+// Shared Metrics Var
+//
+const { platformsMetrics } = useSharedMetricsVar();
 </script>
