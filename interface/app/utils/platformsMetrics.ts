@@ -1,7 +1,4 @@
-export function useSharedMetricsVar() {
-  // Shared Metrics Variables
-  //
-  const platformsMetrics: any[] = [
+export const platformsMetrics: any[] = [
     {
       id: 0,
       title: "Job Success Rate",
@@ -56,8 +53,3 @@ export function useSharedMetricsVar() {
       ],
     },
   ];
-
-  return {
-    platformsMetrics,
-  };
-}
