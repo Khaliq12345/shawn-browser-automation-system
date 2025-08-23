@@ -44,7 +44,8 @@ async def start_browser(name: str, prompt: str):
     # Start Process
     p = Process(target=run_browser, args=(name, prompt, process_id))
     p.start()
-    return {"message": f"Browser started for {name}", "process_id": process_id}
+    output = {"message": f"Browser started for {name}", "process_id": process_id}
+    return {"details": output}
 
 
 @router.get("/check-status/{process_id}")
@@ -52,10 +53,12 @@ async def check_status(process_id: str):
     # Get the process status
     status = await get_process_status(process_id)
     if status:
-        return {"process_id": process_id, "status": status}
+        output = {"process_id": process_id, "status": status}
+        return {"details": output}
     raise HTTPException(status_code=404, detail="Process not found")
 
 
 @router.get("/get-processes/{platform}")
 async def get_processes(platform: str):
-    return await get_all_platform_processes(platform)
+    outputs = await get_all_platform_processes(platform)
+    return {"details": outputs}

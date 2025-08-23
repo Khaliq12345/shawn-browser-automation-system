@@ -35,7 +35,7 @@ async def job_success_rate(date: DateOptions, platform: Optional[str] = None):
     for output in outputs:
         if output["platform"] == platform:
             return output
-    return outputs
+    return {"details": outputs}
 
 
 # Avg Job Duration
@@ -47,7 +47,8 @@ async def average_job_duration(date: DateOptions, platform: Optional[str] = None
     )
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
-    return await get_average_job_duration(platform, parsed_date)
+    outputs = await get_average_job_duration(platform, parsed_date)
+    return {"details": outputs}
 
 
 # Avg Total Time per Prompt
@@ -58,7 +59,8 @@ async def average_total_time_per_prompt(date: DateOptions):
     )
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
-    return await get_average_total_time_per_prompt(parsed_date)
+    outputs = await get_average_total_time_per_prompt(parsed_date)
+    return {"details": outputs}
 
 
 # Scraper Error Rate
@@ -69,7 +71,8 @@ async def scraper_error_rate(date: DateOptions):
     )
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
-    return await get_scraper_error_rate(parsed_date)
+    outputs = await get_scraper_error_rate(parsed_date)
+    return {"details": outputs}
 
 
 # Prompt Coverage Rate
@@ -80,10 +83,12 @@ async def prompt_coverage_rate(date: DateOptions):
     )
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
-    return await get_prompt_coverage_rate(parsed_date)
+    output = await get_prompt_coverage_rate(parsed_date)
+    return {"details": output}
 
 
 # Last Run Timestamp per Platform
 @router.get("/last-run-timestamp")
 async def last_run_timestamp(platform: str):
-    return await get_last_run_timestamp(platform)
+    output = await get_last_run_timestamp(platform)
+    return {"details": output}

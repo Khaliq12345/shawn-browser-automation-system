@@ -97,6 +97,7 @@ async def get_job_success_rate(start_date: datetime):
 async def get_average_job_duration(platform: Optional[str], start_date: datetime):
     engine = get_engine()
     async_session = async_sessionmaker(engine, expire_on_commit=False)
+    output = {}
     async with async_session() as session:
         stmt = f"""
         SELECT 
@@ -108,7 +109,7 @@ async def get_average_job_duration(platform: Optional[str], start_date: datetime
         """
         result = await session.execute(text(stmt))
         row = result.fetchone()
-        return {
+        output = {
             "platform": platform if platform else "all",
             "start_date": start_date,
             "total_jobs": row.total_jobs if row else 0,
@@ -116,121 +117,110 @@ async def get_average_job_duration(platform: Optional[str], start_date: datetime
             if row
             else 0.0,
         }
+    await engine.dispose()
+    return output
 
 
 # Avg Total Time per Prompt
 async def get_average_total_time_per_prompt(start_date: datetime):
     engine = get_engine()
     async_session = async_sessionmaker(engine, expire_on_commit=False)
+    combined_data = []
     async with async_session() as session:
         stmt = f"""
         SELECT 
             COUNT(duration) AS total_jobs,
-            COALESCE(AVG(duration), 0) AS average_total_time_seconds
+            COALESCE(AVG(duration), 0) AS average_total_time_seconds,
+            prompt as prompt
         FROM processes
         WHERE start_time >= '{start_date}'
+        GROUP BY prompt
         """
         result = await session.execute(text(stmt))
-        row = result.fetchone()
-        return {
-            "platform": "all",
-            "start_date": start_date,
-            "total_jobs": row.total_jobs if row else 0,
-            "average_total_time_seconds": round(row.average_total_time_seconds, 2)
-            if row
-            else 0.0,
-        }
+        keys = result.keys()
+        values = result.fetchall()
+        combined_data = [dict(zip(keys, row)) for row in values]
+    await engine.dispose()
+    return combined_data
 
 
 # Scraper Error Rate
 async def get_scraper_error_rate(start_date: datetime):
     engine = get_engine()
     async_session = async_sessionmaker(engine, expire_on_commit=False)
+    outputs = []
     async with async_session() as session:
         stmt = f"""
         SELECT 
+            COALESCE(platform, 'all') as platform,
             COUNT(*) AS total_jobs,
-            COUNT(CASE WHEN status = 'failed' THEN 1 END) AS failed_jobs
+            COUNT(CASE WHEN status = 'failed' THEN 1 END) AS failed_jobs,
+            ((COUNT(CASE WHEN status = 'failed' THEN 1 END)::float / COUNT(*)) * 100) as failed_rate
         FROM processes
         WHERE start_time >= '{start_date}'
+        GROUP BY ROLLUP(platform)
         """
         result = await session.execute(text(stmt))
-        row = result.fetchone()
-        total_jobs = row.total_jobs if row else 0
-        failed_jobs = row.failed_jobs if row else 0
-        return {
-            "platform": "all",
-            "start_date": start_date,
-            "total_jobs": total_jobs,
-            "failed_jobs": failed_jobs,
-            "scraper_error_rate": round(failed_jobs / total_jobs, 2)
-            if total_jobs
-            else 0.0,
-        }
+        keys = result.keys()
+        values = result.fetchall()
+        outputs = [dict(zip(keys, row)) for row in values]
+
+    await engine.dispose()
+    return outputs
 
 
 # Prompt Coverage Rate
 async def get_prompt_coverage_rate(start_date: datetime):
     engine = get_engine()
     async_session = async_sessionmaker(engine, expire_on_commit=False)
+    outputs = []
     async with async_session() as session:
-        platforms = ["google", "chatgpt", "perplexity"]
-
-        stmt_all = f"""
-        SELECT COUNT(*) AS total_jobs
+        stmt = f"""
+        SELECT 
+            DISTINCT prompt as total
         FROM processes
         WHERE start_time >= '{start_date}'
         """
-        all_result = await session.execute(text(stmt_all))
-        all_jobs = all_result.scalar() or 0
+        result = await session.execute(text(stmt))
+        keys = result.keys()
+        values = result.fetchall()
+        outputs = [dict(zip(keys, row)) for row in values]
+        print(outputs)
 
-        return_data = {
-            "platform": "all",
-            "start_date": start_date,
-            "total_jobs": all_jobs,
-        }
-
-        for platform in platforms:
-            stmt_platform = f"""
-            SELECT COUNT(*) AS platform_jobs
-            FROM processes
-            WHERE start_time >= '{start_date}' AND platform = '{platform}'
-            """
-            result = await session.execute(text(stmt_platform))
-            platform_jobs = result.scalar() or 0
-            coverage = round(platform_jobs / all_jobs, 2) if all_jobs else 0.0
-            return_data[f"{platform}_jobs"] = platform_jobs
-            return_data[f"{platform}_coverage_rate"] = coverage
-
-        return return_data
+    await engine.dispose()
+    return outputs
 
 
 # Last Run Timestamp per Platform
 async def get_last_run_timestamp(platform: str):
     engine = get_engine()
-    async_session = async_sessionmaker(engine, expire_on_commit=False)
-    async with async_session() as session:
+    output = {}
+    async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+        # Use parameterized query to prevent SQL injection
         stmt = f"""
-        SELECT end_time
-        FROM processes
-        WHERE status = 'success' AND platform = '{platform}'
+        SELECT * FROM public.processes
+        WHERE platform = '{platform}'
         ORDER BY end_time DESC
         LIMIT 1
         """
         result = await session.execute(text(stmt))
-        row = result.fetchone()
-        return {
-            "platform": platform,
-            "last_successful_run": row.end_time if row else None,
-        }
+        keys = result.keys()
+        values = result.first()
+        output = dict(zip(keys, values))
+
+    await engine.dispose()
+    return output
 
 
 # Get all the process_id of a platform
 async def get_all_platform_processes(platform: str) -> list[str]:
     engine = get_engine()
     async_session = async_sessionmaker(engine, expire_on_commit=False)
+    outputs = []
     async with async_session() as session:
         query = select(Processes.process_id).where(Processes.platform == platform)
         results = await session.execute(query)
         results = results.fetchall()
-        return [process.process_id for process in results if process is not None]
+        outputs = [process.process_id for process in results if process is not None]
+    await engine.dispose()
+    return outputs

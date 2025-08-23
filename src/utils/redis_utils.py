@@ -13,7 +13,10 @@ class AsyncRedisBase:
     @asynccontextmanager
     async def redis_session(self):
         session = redis.Redis(
-            host=self.host, port=self.port, db=self.redis_db, decode_responses=True
+            host=self.host,
+            port=self.port,
+            db=self.redis_db,
+            decode_responses=True,
         )
         try:
             yield session

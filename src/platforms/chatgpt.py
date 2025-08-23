@@ -16,6 +16,7 @@ class ChatGPTScraper(BrowserBase):
     async def find_and_fill_input(self) -> bool:
         try:
             await self.page.mouse.click(0, 0)
+            await self.page.wait_for_timeout(30000)
             # trying to fill the prompt
             prompt_input_selector = 'div[id="prompt-textarea"]'  # "#prompt-textarea"
             try:
