@@ -14,7 +14,6 @@
       <div class="my-4 text-start">
         <!-- Date -->
         <div class="flex justify-end my-8">
-          <UFormField>
             <USelect
               v-model="selectedDate"
               icon="i-heroicons-calendar"
@@ -24,7 +23,6 @@
               @update:model-value="fetchallData"
             >
             </USelect>
-          </UFormField>
         </div>
 
         <!-- Shared Metrics -->
@@ -120,21 +118,10 @@ const platformLikeTableMetrics: any[] = [
     cols: averageTTPPcolumns,
     color: "bg-amber-200",
   },
-  {
-    title: "Prompt Coverage Rate",
-    data: promptCRateData,
-    cols: promptCRatecolumns,
-    color: "bg-cyan-200",
-  },
 ];
 //
 // To Manage Page Loading
 const loadingData = ref(false);
-
-// On Mounted
-onMounted(async () => {
-  fetchallData();
-});
 // Dates
 const dateList = ref([
   "24 hours ago",
@@ -156,26 +143,13 @@ const fetchallData = async () => {
   // Scraper Error Rate
   result = await getScraperErrorRate(selectedDate.value, "all");
   platformsMetrics.find((item) => item.id === 2).data = result;
-  // Prompt Coverage Rate
-  result = await getPromptCoverageRate(selectedDate.value);
-  promptCRateData.value = result;
   // Average Total Time Per Prompt
   result = await getAverageTotalTimePerPrompt(selectedDate.value);
   averageTTPPData.value = result;
   loadingData.value = false;
 };
-
-// Metrics Functions
-//
-const {
-  getJobSuccessRate,
-  getAverageJobDuration,
-  getScraperErrorRate,
-  getPromptCoverageRate,
-  getAverageTotalTimePerPrompt,
-} = useMetricsFunctions();
-
-// Shared Metrics Var
-//
-const { platformsMetrics } = useSharedMetricsVar();
+// On Mounted
+onMounted(async () => {
+  fetchallData();
+});
 </script>

@@ -55,6 +55,4 @@ const getLogs = async () => {
 onMounted(async () => {
   getLogs();
 });
-//
-const { getLastRunTimestamp } = useMetricsFunctions();
 </script>

@@ -34,6 +34,7 @@ class AsyncRedisBase:
     async def get_log(self) -> str:
         async with self.redis_session() as session:
             values = await session.lrange(self.process_id, 0, -1)
+            values.reverse()
             return " \n".join(values)
 
 
