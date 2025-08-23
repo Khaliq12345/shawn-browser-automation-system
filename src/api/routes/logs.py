@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from src.utils.redis_utils import AsyncRedisBase
 
 router = APIRouter(prefix="/logs")
@@ -6,8 +6,11 @@ router = APIRouter(prefix="/logs")
 
 @router.get("/{process_id}")
 async def get_logs(process_id: str):
-    # Get Matching Instance
-    redis_base = AsyncRedisBase(process_id)
-    # Get Logs
-    logs = await redis_base.get_log()
+    try:
+        # Get Matching Instance
+        redis_base = AsyncRedisBase(process_id)
+        # Get Logs
+        logs = await redis_base.get_log()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unable to retrieve Logs : {e}")
     return {"details": logs}

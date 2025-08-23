@@ -38,27 +38,40 @@ def run_browser(name: str, prompt: str, process_id: str):
 async def start_browser(name: str, prompt: str):
     # If the name is not supported
     if name not in SCRAPER_CONFIG:
-        raise HTTPException(status_code=404, detail="Invalid Parameter 'name'")
+        raise HTTPException(status_code=400, detail="Invalid Parameter 'name'")
     timestamp = int(time.time())
     process_id = f"{name}_{timestamp}"
     # Start Process
-    p = Process(target=run_browser, args=(name, prompt, process_id))
-    p.start()
+    try:
+        p = Process(target=run_browser, args=(name, prompt, process_id))
+        p.start()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Unable to create the process : {e}"
+        )
     output = {"message": f"Browser started for {name}", "process_id": process_id}
     return {"details": output}
 
 
 @router.get("/check-status/{process_id}")
 async def check_status(process_id: str):
-    # Get the process status
-    status = await get_process_status(process_id)
-    if status:
-        output = {"process_id": process_id, "status": status}
-        return {"details": output}
-    raise HTTPException(status_code=404, detail="Process not found")
+    try:
+        # Get the process status
+        status = await get_process_status(process_id)
+        if status:
+            output = {"process_id": process_id, "status": status}
+            return {"details": output}
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Process not found : {e}")
 
 
 @router.get("/get-processes/{platform}")
 async def get_processes(platform: str):
-    outputs = await get_all_platform_processes(platform)
-    return {"details": outputs}
+    try:
+        outputs = await get_all_platform_processes(platform)
+        return {"details": outputs}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unable to retrieve processes for the platform : {e}",
+        )
