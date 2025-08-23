@@ -6,7 +6,15 @@ from src.api.routes.globals import router as global_router
 from src.api.routes.logs import router as logs_router
 
 
-app = FastAPI(title="Browser Automation System", on_startup=[create_db_and_tables])
+app = FastAPI(
+    title="Browser Automation System",
+    on_startup=[create_db_and_tables],
+    responses={
+        400: {"description": "Bad Request"},
+        404: {"description": "Not Found"},
+        500: {"description": "Internal Server Error"},
+    },
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
