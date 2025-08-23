@@ -1,6 +1,6 @@
 from sqlmodel import select, text
 from src.models.model import Processes, get_engine
-from datetime import datetime, timezone
+from datetime import datetime
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 
@@ -18,7 +18,7 @@ async def start_process(
             status="running",
             platform=platform,
             prompt=prompt,
-            start_time=datetime.now(timezone.utc),
+            start_time=datetime.now(),
             end_time=None,
         )
         session.add(item)
@@ -39,9 +39,7 @@ async def update_process_status(
         process = process.one()
         if process:
             process.status = status
-            process.end_time = datetime.now(timezone.utc)
-            if process.start_time.tzinfo is None:
-                process.start_time = process.start_time.replace(tzinfo=timezone.utc)
+            process.end_time = datetime.now()
             process.duration = (
                 (process.end_time - process.start_time).total_seconds()
                 if process.start_time
