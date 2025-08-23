@@ -17,9 +17,9 @@ def main():
 def test():
     matching_scraper = GoogleScraper(
         url="https://google.com",
-        prompt="Who is Patrick Lumumba",
+        prompt="Who is Patrick Lumumba ?",
         name="google",
-        process_id="google_535349999999",
+        process_id="google_52222999",
     )
     asyncio.run(matching_scraper.send_prompt())
 
