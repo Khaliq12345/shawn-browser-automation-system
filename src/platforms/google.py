@@ -1,4 +1,3 @@
-import asyncio
 import sys
 
 sys.path.append("..")
@@ -52,6 +51,3 @@ class GoogleScraper(BrowserBase):
         content_element = await self.page.query_selector(content_selector)
         content = await content_element.inner_html() if content_element else ""
         return content
-
-    def run_browser(self):
-        asyncio.run(self.send_prompt())

@@ -5,3 +5,4 @@ responses
 .env
 test.py
 database.db
+test.txt

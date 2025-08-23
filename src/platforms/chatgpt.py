@@ -1,4 +1,3 @@
-import asyncio
 import sys
 import pyperclip
 
@@ -46,6 +45,3 @@ class ChatGPTScraper(BrowserBase):
             return None
         content = pyperclip.paste()
         return content
-
-    def run_browser(self):
-        asyncio.run(self.send_prompt())
