@@ -34,7 +34,7 @@ async def job_success_rate(date: DateOptions, platform: Optional[str] = None):
     outputs = await get_job_success_rate(parsed_date)
     for output in outputs:
         if output["platform"] == platform:
-            return output
+            return {"details": output}
     return {"details": outputs}
 
 
@@ -47,7 +47,10 @@ async def average_job_duration(date: DateOptions, platform: Optional[str] = None
     )
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
-    outputs = await get_average_job_duration(platform, parsed_date)
+    outputs = await get_average_job_duration(parsed_date)
+    for output in outputs:
+        if output["platform"] == platform:
+            return {"details": output}
     return {"details": outputs}
 
 
@@ -65,13 +68,18 @@ async def average_total_time_per_prompt(date: DateOptions):
 
 # Scraper Error Rate
 @router.get("/scraper-error-rate")
-async def scraper_error_rate(date: DateOptions):
+async def scraper_error_rate(date: DateOptions, platform: Optional[str] = None):
     parsed_date = dateparser.parse(
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
     )
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
     outputs = await get_scraper_error_rate(parsed_date)
+    if not outputs:
+        return {"details": outputs}
+    for output in outputs:
+        if output["platform"] == platform:
+            return {"details": output}
     return {"details": outputs}
 
 

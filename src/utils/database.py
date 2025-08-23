@@ -1,4 +1,3 @@
-from typing import Optional
 from sqlmodel import select, text
 from src.models.model import Processes, get_engine
 from datetime import datetime, timezone
@@ -94,29 +93,24 @@ async def get_job_success_rate(start_date: datetime):
 
 
 # Avg Job Duration
-async def get_average_job_duration(platform: Optional[str], start_date: datetime):
+async def get_average_job_duration(start_date: datetime):
     engine = get_engine()
     async_session = async_sessionmaker(engine, expire_on_commit=False)
-    output = {}
+    output = []
     async with async_session() as session:
         stmt = f"""
         SELECT 
+            COALESCE(platform, 'all') AS platform,
             COUNT(duration) AS total_jobs,
             COALESCE(AVG(duration), 0) AS average_duration_seconds
         FROM processes
         WHERE start_time >= '{start_date}'
-        {f"AND platform = '{platform}'" if platform else ""}
+        GROUP BY ROLLUP(platform)
         """
-        result = await session.execute(text(stmt))
-        row = result.fetchone()
-        output = {
-            "platform": platform if platform else "all",
-            "start_date": start_date,
-            "total_jobs": row.total_jobs if row else 0,
-            "average_duration_seconds": round(row.average_duration_seconds, 2)
-            if row
-            else 0.0,
-        }
+        success_table = await session.execute(text(stmt))
+        keys = success_table.keys()
+        values = success_table.fetchall()
+        output = [dict(zip(keys, row)) for row in values]
     await engine.dispose()
     return output
 
