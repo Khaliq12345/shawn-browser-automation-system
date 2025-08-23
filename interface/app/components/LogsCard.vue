@@ -25,16 +25,26 @@
 
 <script setup lang="ts">
 // Variables
-const logGot = ref("-djjdkkdll\n-djffof");
+const logGot = ref("-Nothing to Show !");
 const loading = ref(false);
 // Routing
 const route = useRoute();
-const currentPlatform = computed(() => route.name);
+const currentPlatform: any = computed(() => route.name);
 // Get Logs
 const getLogs = async () => {
+  logGot.value = "";
   loading.value = true;
   try {
-    // Fetch Logs for {currentPlatform}
+    // Fetch Logs for {currentPlatform}'s last process '
+    let lastrun = await getLastRunTimestamp(currentPlatform.value);
+    if (!lastrun) {
+      return;
+    }
+    const process_id = lastrun.process_id;
+    const response = (await $fetch(`/api/logs/${process_id}`, {
+      method: "GET",
+    })) as any;
+    logGot.value = response.details;
   } catch (error) {
     console.error("Erreur de requete:", error);
   } finally {
@@ -45,4 +55,6 @@ const getLogs = async () => {
 onMounted(async () => {
   getLogs();
 });
+//
+const { getLastRunTimestamp } = useMetricsFunctions();
 </script>

@@ -1,12 +1,12 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2025-07-15',
+  compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
-  modules: ['@nuxt/ui'],
-  css: ['~/assets/css/main.css'],
+  modules: ["@nuxt/ui"],
+  css: ["~/assets/css/main.css"],
   runtimeConfig: {
     public: {
-      urlAPI: process.env.API_URL
-     },
+      API_URL: process.env.API_URL,
+    },
   },
-})
+});

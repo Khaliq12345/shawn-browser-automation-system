@@ -48,8 +48,8 @@ const menus = ref([
   },
   {
     id: 4,
-    name: "Gemini",
-    route: "gemini",
+    name: "Google",
+    route: "google",
     icon: "i-heroicons-bolt",
   },
 ]);

@@ -12,38 +12,53 @@
     <!-- When Loaded -->
     <div v-else>
       <div class="my-4 text-start">
-        <!-- General Metrics -->
-        <div
-          class="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-5 items-center justify-center text-black"
-        >
-          <div class="" v-for="item in platformsMetrics">
-            <UCard
-              variant="soft"
-              class="text-center shadow-2xl"
-              :class="iconAndColorFromStatus[item.last_run_status]['bgColor']"
+        <!-- Date -->
+        <div class="flex justify-end my-8">
+          <UFormField>
+            <USelect
+              v-model="selectedDate"
+              icon="i-heroicons-calendar"
+              :items="dateList"
+              clearable
+              :placeholder="dateList.length ? 'From date' : 'No Available Date'"
+              @update:model-value="fetchallData"
             >
-              <div class="flex items-center justify-start">
-                <div class="text-left">
-                  <div class="flex mb-2">
-                    <UIcon
-                      :name="
-                        iconAndColorFromStatus[item.last_run_status]['icon']
-                      "
-                      size="25"
-                      class="mr-5"
-                    />
-                    <p class="font-bold">{{ item.title }}</p>
-                  </div>
-                  <div class="mb-2" v-for="col in columns">
-                    <span class="font-semibold"> {{ col.title }} :</span>
-                    <span class="ml-1">
-                      {{ item[col.key] }}
-                    </span>
-                  </div>
+            </USelect>
+          </UFormField>
+        </div>
+
+        <!-- Shared Metrics -->
+        <SharedMetrics :platformsMetrics="platformsMetrics" />
+
+        <!-- Like Table Metrics -->
+        <div
+          class="grid grid-cols-1 gap-5 items-center justify-center text-black"
+          v-for="item in platformLikeTableMetrics"
+        >
+          <UCard
+            variant="solid"
+            class="text-center shadow-2xl p-0 mb-10"
+            :class="item.color"
+          >
+            <div class="flex items-center justify-center w-full">
+              <div class="text-left">
+                <div class="flex mb-2 justify-center">
+                  <p class="font-bold text-xl">{{ item.title }}</p>
+                </div>
+                <div class="flex justify-center w-full">
+                  <USeparator class="my-3 w-full" />
+                </div>
+                <div v-if="!item.data">Nothing to Show !</div>
+                <div v-else class="m-2">
+                  <TableModel
+                    :columns0="item.cols"
+                    :data0="item.data"
+                    :key="item.title"
+                  />
                 </div>
               </div>
-            </UCard>
-          </div>
+            </div>
+          </UCard>
         </div>
       </div>
     </div>
@@ -51,57 +66,116 @@
 </template>
 
 <script lang="ts" setup>
-import { iconAndColorFromStatus } from "~/utils/globals";
+// Average Total Time Per Prompt
+const averageTTPPData = ref();
+const averageTTPPcols: string[] = [
+  "prompt",
+  "total_jobs",
+  "average_total_time_seconds",
+];
+const averageTTPPcolumns: any = [];
+averageTTPPcols.forEach((col) => {
+  let keyName = "";
+  let cell = "";
+  keyName = col.replaceAll("_", " ").toUpperCase();
+  cell = "";
+  averageTTPPcolumns.push({
+    accessorKey: col,
+    header: keyName,
+    cell: ({ row }: any) => `${cell}${formatValue(row.getValue(col))}`,
+    meta: {
+      class: {
+        th: "font-bold text-center",
+        td: "text-black font-semibold",
+      },
+    },
+  });
+});
+// Prompt Coverage Rate
+const promptCRateData = ref();
+const promptCRatecols: string[] = ["total"];
+const promptCRatecolumns: any = [];
+promptCRatecols.forEach((col, i) => {
+  let keyName = "";
+  let cell = "";
+  keyName = col.replaceAll("_", " ").toUpperCase();
+  cell = "";
+  promptCRatecolumns.push({
+    accessorKey: col,
+    header: keyName,
+    cell: ({ row }: any) => `${cell}${formatValue(row.getValue(col))}`,
+    meta: {
+      class: {
+        th: "font-bold text-center",
+        td: "text-black font-semibold",
+      },
+    },
+  });
+});
+// For Showing Overall Metrics as Table
+const platformLikeTableMetrics: any[] = [
+  {
+    title: "Average Total Time Per Prompt",
+    data: averageTTPPData,
+    cols: averageTTPPcolumns,
+    color: "bg-amber-200",
+  },
+  {
+    title: "Prompt Coverage Rate",
+    data: promptCRateData,
+    cols: promptCRatecolumns,
+    color: "bg-cyan-200",
+  },
+];
+//
 // To Manage Page Loading
 const loadingData = ref(false);
-// Columns to show
-const columns: any[] = [
-  {
-    title: "Sucessful Runs",
-    key: "success",
-  },
-  {
-    title: "Failed Runs",
-    key: "failled",
-  },
-  {
-    title: "Last Run Status",
-    key: "last_run_status",
-  },
-];
-// For Showing Overall Metrics
-const platformsMetrics: any[] = [
-  {
-    title: "Chat GPT",
-    success: 3,
-    failled: 7,
-    total: 10,
-    last_run_status: "success",
-  },
-  {
-    title: "Perplexity",
-    success: 3,
-    failled: 0,
-    total: 4,
-    last_run_status: "running",
-  },
-  {
-    title: "Gemini",
-    success: 2,
-    failled: 1,
-    total: 3,
-    last_run_status: "error",
-  },
-];
+
 // On Mounted
 onMounted(async () => {
-  loadingData.value = true;
-  try {
-    // Fetch home data
-  } catch (err) {
-    console.error("Errors:", err);
-  } finally {
-    loadingData.value = false;
-  }
+  fetchallData();
 });
+// Dates
+const dateList = ref([
+  "24 hours ago",
+  "1 week ago",
+  "1 month ago",
+  "1 year ago",
+]);
+const selectedDate: Ref<any> = ref(dateList.value[0]);
+// Fetch All Data
+//
+const fetchallData = async () => {
+  loadingData.value = true;
+  // Job Success Rate
+  let result = await getJobSuccessRate(selectedDate.value, "all");
+  platformsMetrics.find((item) => item.id === 0).data = result;
+  // Average Job Duration
+  result = await getAverageJobDuration(selectedDate.value, "all");
+  platformsMetrics.find((item) => item.id === 1).data = result;
+  // Scraper Error Rate
+  result = await getScraperErrorRate(selectedDate.value, "all");
+  platformsMetrics.find((item) => item.id === 2).data = result;
+  // Prompt Coverage Rate
+  result = await getPromptCoverageRate(selectedDate.value);
+  promptCRateData.value = result;
+  // Average Total Time Per Prompt
+  result = await getAverageTotalTimePerPrompt(selectedDate.value);
+  averageTTPPData.value = result;
+  loadingData.value = false;
+};
+
+// Metrics Functions
+//
+const {
+  getJobSuccessRate,
+  getAverageJobDuration,
+  getScraperErrorRate,
+  getPromptCoverageRate,
+  getAverageTotalTimePerPrompt,
+} = useMetricsFunctions();
+
+// Shared Metrics Var
+//
+const { platformsMetrics } = useSharedMetricsVar();
 </script>

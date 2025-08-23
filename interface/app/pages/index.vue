@@ -9,4 +9,3 @@ onMounted(async () => {
   router.push("/home");
 });
 </script>
-
