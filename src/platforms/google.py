@@ -14,7 +14,7 @@ class GoogleScraper(BrowserBase):
         prompt: str,
         name: str,
         process_id: str,
-        headless: bool = True,
+        headless: bool = False,
     ) -> None:
         super().__init__(url, prompt, name, process_id, headless)
         self.timeout = 120000
@@ -50,9 +50,7 @@ class GoogleScraper(BrowserBase):
             return None
 
         try:
-            await self.page.wait_for_selector(
-                content_selector, timeout=self.timeout
-            )
+            await self.page.wait_for_selector(content_selector, timeout=self.timeout)
         except Exception as e:
             print(f"Unable to find the content {e}")
             return None

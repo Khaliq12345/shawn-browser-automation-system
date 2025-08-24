@@ -8,7 +8,7 @@ from src.utils.database import (
     get_scraper_error_rate,
     get_prompt_coverage_rate,
     get_last_run_timestamp,
-    get_total_running_jobs
+    get_total_running_jobs,
 )
 
 
@@ -131,6 +131,7 @@ async def last_run_timestamp(platform: str):
             status_code=500, detail=f"Unable to execute the request: {e}"
         )
 
+
 # Total Running Jobs
 @router.get("/total-running-jobs")
 async def total_running_jobs(date: DateOptions, platform: str):
@@ -151,3 +152,4 @@ async def total_running_jobs(date: DateOptions, platform: str):
         raise HTTPException(
             status_code=500, detail=f"Unable to execute the request: {e}"
         )
+

@@ -22,20 +22,24 @@ SCRAPER_CONFIG = {
 }
 
 
-def run_browser(name: str, prompt: str, process_id: str):
+def run_browser(name: str, prompt: str, process_id: str, headless: bool):
     # Get the matching configs class and url
     config = SCRAPER_CONFIG[name]
     ScraperClass = config["class"]
     url = config["url"]
     # Launch the matching browser class
     matching_scraper = ScraperClass(
-        url=url, prompt=prompt, name=name, process_id=process_id
+        url=url,
+        prompt=prompt,
+        name=name,
+        process_id=process_id,
+        headless=headless,
     )
     asyncio.run(matching_scraper.send_prompt())
 
 
 @router.post("/start-browser")
-async def start_browser(name: str, prompt: str):
+async def start_browser(name: str, prompt: str, headless: bool = True):
     # If the name is not supported
     if name not in SCRAPER_CONFIG:
         raise HTTPException(status_code=400, detail="Invalid Parameter 'name'")
@@ -43,13 +47,18 @@ async def start_browser(name: str, prompt: str):
     process_id = f"{name}_{timestamp}"
     # Start Process
     try:
-        p = Process(target=run_browser, args=(name, prompt, process_id))
+        p = Process(
+            target=run_browser, args=(name, prompt, process_id, headless)
+        )
         p.start()
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Unable to create the process : {e}"
         )
-    output = {"message": f"Browser started for {name}", "process_id": process_id}
+    output = {
+        "message": f"Browser started for {name}",
+        "process_id": process_id,
+    }
     return {"details": output}
 
 
