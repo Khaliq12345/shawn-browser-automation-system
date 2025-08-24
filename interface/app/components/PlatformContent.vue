@@ -10,8 +10,20 @@
       </div>
     </div>
 
+    <!-- Prompt Section -->
+    <UCollapsible :default-open="false">
+      <UButton
+        class="w-full p-4 my-4 rounded-bl-none rounded-br-none bg-primary-100 hover:bg-primary-200"
+      >
+        <span class="font-bold text-sm md:text-lg"> Prompt Section </span>
+      </UButton>
+      <template #content>
+        <PromptSection class="w-full" />
+      </template>
+    </UCollapsible>
+
     <!-- Refresh Data -->
-    <div class="flex justify-end my-4">
+    <div class="flex justify-end mt-2 mb-4">
       <UButton
         label="Refresh Data"
         icon="i-heroicons-arrow-path"
