@@ -12,6 +12,17 @@
     <!-- When Loaded -->
     <div v-else>
       <div class="my-4 text-start">
+        <!-- Refresh Data -->
+        <div class="flex justify-end my-8">
+          <UButton
+            label="Refresh Data"
+            icon="i-heroicons-arrow-path"
+            :loading="loadingData"
+            class="justify-center text-white mb-4"
+            @click="fetchallData"
+          />
+        </div>
+
         <!-- Last Run Metrics -->
         <div
           class="mb-10 gap-2 md:gap-5 items-center justify-center text-black"
@@ -56,15 +67,15 @@
 
         <!-- Date -->
         <div class="flex justify-end my-8">
-            <USelect
-              v-model="selectedDate"
-              icon="i-heroicons-calendar"
-              :items="dateList"
-              clearable
-              :placeholder="dateList.length ? 'From date' : 'No Available Date'"
-              @update:model-value="fetchallData"
-            >
-            </USelect>
+          <USelect
+            v-model="selectedDate"
+            icon="i-heroicons-calendar"
+            :items="dateList"
+            clearable
+            :placeholder="dateList.length ? 'From date' : 'No Available Date'"
+            @update:model-value="fetchallData"
+          >
+          </USelect>
         </div>
 
         <!-- Shared Metrics -->
