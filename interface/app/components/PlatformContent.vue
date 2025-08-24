@@ -10,6 +10,17 @@
       </div>
     </div>
 
+    <!-- Refresh Data -->
+        <div class="flex justify-end my-5">
+          <UButton
+            label="Refresh Data"
+            icon="i-heroicons-arrow-path"
+            :loading="loadingData"
+            class="justify-center text-white mb-4"
+            @click="fetchallData"
+          />
+        </div>
+
     <!-- When Loaded -->
     <div v-if="last_run">
       <div class="my-4 text-start">
@@ -36,7 +47,10 @@
                 />
                 <p class="font-bold">Last Run Details</p>
               </div>
-              <div class="flex justify-center w-full">
+              <div v-if="last_run.status == 'running'" class="flex justify-center w-full my-3" >
+                <UProgress animation="swing" color="neutral" />
+              </div>
+              <div v-else class="flex justify-center w-full">
                 <USeparator class="my-3 w-full" />
               </div>
               <div v-if="!last_run">Nothing to Show !</div>
@@ -150,7 +164,7 @@ const fetchallData = async () => {
     // Scraper Error Rate
     result = await getScraperErrorRate(
       selectedDate.value,
-      currentPlatform.value,
+      currentPlatform.value, 
     );
     platformsMetrics.find((item) => item.id === 2).data = result;
   } catch (error) {
