@@ -77,7 +77,7 @@ async def get_job_success_rate(start_date: datetime):
             COUNT(*) AS total_jobs,
             COALESCE(platform, 'all') AS platform,
             COUNT(CASE WHEN status = 'success' THEN 1 END) AS success_jobs,
-            ((COUNT(CASE WHEN status = 'success' THEN 1 END)::float / COUNT(*)) * 100) AS success_rate
+            COALESCE(((COUNT(CASE WHEN status = 'success' THEN 1 END)::float / NULLIF(COUNT(*), 0)) * 100), 0) AS success_rate
         FROM processes
         WHERE start_time > '{start_date}'
         GROUP BY ROLLUP(platform)
@@ -147,7 +147,7 @@ async def get_scraper_error_rate(start_date: datetime):
             COALESCE(platform, 'all') as platform,
             COUNT(*) AS total_jobs,
             COUNT(CASE WHEN status = 'failed' THEN 1 END) AS failed_jobs,
-            ((COUNT(CASE WHEN status = 'failed' THEN 1 END)::float / COUNT(*)) * 100) as failed_rate
+            COALESCE(((COUNT(CASE WHEN status = 'failed' THEN 1 END)::float / NULLIF(COUNT(*), 0)) * 100), 0) as failed_rate
         FROM processes
         WHERE start_time >= '{start_date}'
         GROUP BY ROLLUP(platform)
