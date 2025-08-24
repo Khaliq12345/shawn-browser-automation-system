@@ -11,15 +11,15 @@
     </div>
 
     <!-- Refresh Data -->
-        <div class="flex justify-end my-5">
-          <UButton
-            label="Refresh Data"
-            icon="i-heroicons-arrow-path"
-            :loading="loadingData"
-            class="justify-center text-white mb-4"
-            @click="fetchallData"
-          />
-        </div>
+    <div class="flex justify-end my-4">
+      <UButton
+        label="Refresh Data"
+        icon="i-heroicons-arrow-path"
+        :loading="loadingData"
+        class="justify-center text-white mb-4"
+        @click="fetchallData"
+      />
+    </div>
 
     <!-- When Loaded -->
     <div v-if="last_run">
@@ -47,7 +47,10 @@
                 />
                 <p class="font-bold">Last Run Details</p>
               </div>
-              <div v-if="last_run.status == 'running'" class="flex justify-center w-full my-3" >
+              <div
+                v-if="last_run.status == 'running'"
+                class="flex justify-center w-full my-3"
+              >
                 <UProgress animation="swing" color="neutral" />
               </div>
               <div v-else class="flex justify-center w-full">
@@ -85,7 +88,7 @@
     </div>
 
     <!-- Shared Metrics -->
-    <SharedMetrics :platformsMetrics="platformsMetrics" />
+    <SharedMetrics :platforms-metrics="platformsMetrics" />
 
     <!-- Logs -->
     <UCollapsible :default-open="false">
@@ -102,6 +105,8 @@
 </template>
 
 <script lang="ts" setup>
+// Platform Metrics
+const { platformsMetrics } = usePlateformMetrics();
 // To Manage Page Loading
 const loadingData = ref(false);
 // Columns to show
@@ -147,6 +152,7 @@ const selectedDate: Ref<any> = ref(dateList.value[0]);
 // Fetch All Data
 //
 const fetchallData = async () => {
+  console.log("route ", currentPlatform.value);
   try {
     loadingData.value = true;
     // Last Run Timestamp
@@ -154,19 +160,19 @@ const fetchallData = async () => {
     last_run.value = result;
     // Job Success Rate
     result = await getJobSuccessRate(selectedDate.value, currentPlatform.value);
-    platformsMetrics.find((item) => item.id === 0).data = result;
+    platformsMetrics.value.find((item) => item.id === 0).data = result;
     // Average Job Duration
     result = await getAverageJobDuration(
       selectedDate.value,
-      currentPlatform.value,
+      currentPlatform.value
     );
-    platformsMetrics.find((item) => item.id === 1).data = result;
+    platformsMetrics.value.find((item) => item.id === 1).data = result;
     // Scraper Error Rate
     result = await getScraperErrorRate(
       selectedDate.value,
-      currentPlatform.value, 
+      currentPlatform.value
     );
-    platformsMetrics.find((item) => item.id === 2).data = result;
+    platformsMetrics.value.find((item) => item.id === 2).data = result;
   } catch (error) {
     console.log(`Error Fetching data - ${error}`);
   } finally {

@@ -1,4 +1,7 @@
-export const platformsMetrics: any[] = [
+export function usePlateformMetrics() {
+  // Platform Metrics Variables
+  //
+  const platformsMetrics: Ref<Array<any>> = ref([
     {
       id: 0,
       title: "Job Success Rate",
@@ -52,4 +55,9 @@ export const platformsMetrics: any[] = [
         },
       ],
     },
-  ];
+  ]);
+
+  return {
+    platformsMetrics,
+  };
+}
