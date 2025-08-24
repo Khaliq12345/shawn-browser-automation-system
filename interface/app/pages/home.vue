@@ -146,6 +146,9 @@ const fetchallData = async () => {
     // Scraper Error Rate
     result = await getScraperErrorRate(selectedDate.value, "all");
     platformsMetrics.value.find((item) => item.id === 2).data = result;
+    // Total Running Jobs
+    result = await getTotalRunningJobs(selectedDate.value, "all");
+    platformsMetrics.value.find((item) => item.id === 3).data = result;
     // Average Total Time Per Prompt
     result = await getAverageTotalTimePerPrompt(selectedDate.value);
     averageTTPPData.value = result;

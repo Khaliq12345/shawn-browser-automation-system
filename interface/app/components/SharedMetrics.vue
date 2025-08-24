@@ -2,7 +2,7 @@
   <div>
     <!-- General Metrics -->
     <div
-      class="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-5 items-center justify-left lg:justify-center text-black"
+      class="mb-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2 md:gap-5 items-center justify-left lg:justify-center text-black"
     >
       <div class="" v-for="item in platformsMetrics">
         <UCard

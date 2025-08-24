@@ -8,6 +8,7 @@ from src.utils.database import (
     get_scraper_error_rate,
     get_prompt_coverage_rate,
     get_last_run_timestamp,
+    get_total_running_jobs
 )
 
 
@@ -125,6 +126,27 @@ async def last_run_timestamp(platform: str):
     try:
         output = await get_last_run_timestamp(platform)
         return {"details": output}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Unable to execute the request: {e}"
+        )
+
+# Total Running Jobs
+@router.get("/total-running-jobs")
+async def total_running_jobs(date: DateOptions, platform: str):
+    parsed_date = dateparser.parse(
+        date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
+    )
+    if not parsed_date:
+        raise HTTPException(status_code=400, detail="Impossible de parser la date")
+    try:
+        outputs = await get_total_running_jobs(parsed_date)
+        if not outputs:
+            return {"details": outputs}
+        for output in outputs:
+            if output["platform"] == platform:
+                return {"details": output}
+        return {"details": {}}
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Unable to execute the request: {e}"

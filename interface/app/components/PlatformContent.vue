@@ -173,6 +173,12 @@ const fetchallData = async () => {
       currentPlatform.value
     );
     platformsMetrics.value.find((item) => item.id === 2).data = result;
+    // Total Running Jobs
+    result = await getTotalRunningJobs(
+      selectedDate.value,
+      currentPlatform.value
+    );
+    platformsMetrics.value.find((item) => item.id === 3).data = result;
   } catch (error) {
     console.log(`Error Fetching data - ${error}`);
   } finally {

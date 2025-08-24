@@ -37,6 +37,25 @@ export function usePlateformMetrics() {
       ],
     },
     {
+      id: 3,
+      title: "Total Running Jobs",
+      color: "bg-amber-200",
+      columns: [
+        {
+          title: "Total Jobs",
+          key: "total_jobs",
+        },
+        {
+          title: "Running Jobs",
+          key: "running_jobs",
+        },
+        // {
+        //   title: "Running Rate (%)",
+        //   key: "running_rate",
+        // },
+      ],
+    },
+    {
       id: 2,
       title: "Scraper Error Rate",
       color: "bg-red-200",
