@@ -217,3 +217,30 @@ async def get_all_platform_processes(platform: str) -> list[str]:
         outputs = [process.process_id for process in results if process is not None]
     await engine.dispose()
     return outputs
+
+
+# Total Running Jobs
+async def get_total_running_jobs(start_date: datetime):
+    engine = get_engine()
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
+    outputs = None
+    async with async_session() as session:
+        stmt = f"""
+        SELECT 
+            COALESCE(platform, 'all') as platform,
+            COUNT(*) AS total_jobs,
+            COUNT(CASE WHEN status = 'running' THEN 1 END) AS running_jobs,
+            COALESCE(
+                (COUNT(CASE WHEN status = 'running' THEN 1 END)::float / NULLIF(COUNT(*), 0)) * 100, 0
+            ) AS running_rate
+        FROM processes
+        WHERE start_time >= '{start_date}'
+        GROUP BY ROLLUP(platform)
+        """
+        result = await session.execute(text(stmt))
+        keys = result.keys()
+        values = result.fetchall()
+        outputs = [dict(zip(keys, row)) for row in values]
+
+    await engine.dispose()
+    return outputs
