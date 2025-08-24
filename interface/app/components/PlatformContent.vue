@@ -6,84 +6,84 @@
     >
       <UProgress animation="swing" color="neutral" />
       <div class="container mx-auto p-4 text-center">
-        <p>Loading Data ...</p>
+        <p>Loading Data ... {{ loadingData }}</p>
       </div>
     </div>
+
     <!-- When Loaded -->
-    <div v-else>
+    <div v-if="last_run">
       <div class="my-4 text-start">
-        <!-- Last Run Metrics -->
-        <div
-          class="mb-10 gap-2 md:gap-5 items-center justify-center text-black"
-          v-if="last_run"
+        <UCard
+          variant="soft"
+          class="text-center shadow-2xl text-black"
+          :class="
+            last_run
+              ? iconAndColorFromStatus[last_run.status]['bgColor']
+              : 'bg-green-200'
+          "
         >
-          <UCard
-            variant="soft"
-            class="text-center shadow-2xl"
-            :class="
-              last_run
-                ? iconAndColorFromStatus[last_run.status]['bgColor']
-                : 'bg-green-200'
-            "
-          >
-            <div class="flex items-center justify-start">
-              <div class="text-left">
-                <div class="flex mb-2">
-                  <UIcon
-                    :name="
-                      last_run
-                        ? iconAndColorFromStatus[last_run.status]['icon']
-                        : 'i-heroicons-check'
-                    "
-                    size="25"
-                    class="mr-5"
-                  />
-                  <p class="font-bold">Last Run Details</p>
-                </div>
-                <div class="flex justify-center w-full">
-                  <USeparator class="my-3 w-full" />
-                </div>
-                <div v-if="!last_run">Nothing to Show !</div>
-                <div v-else class="mb-2" v-for="col in columns">
-                  <span class="font-semibold"> {{ col.title }} :</span>
-                  <span class="ml-1">
-                    {{ last_run[col.key] ?? " - " }}
-                  </span>
-                </div>
+          <div class="flex items-center justify-start">
+            <div class="text-left">
+              <div class="flex mb-2">
+                <UIcon
+                  :name="
+                    last_run
+                      ? iconAndColorFromStatus[last_run.status]['icon']
+                      : 'i-heroicons-check'
+                  "
+                  size="25"
+                  class="mr-5"
+                />
+                <p class="font-bold">Last Run Details</p>
+              </div>
+              <div class="flex justify-center w-full">
+                <USeparator class="my-3 w-full" />
+              </div>
+              <div v-if="!last_run">Nothing to Show !</div>
+              <div v-else class="mb-2" v-for="col in columns">
+                <span class="font-semibold"> {{ col.title }} :</span>
+                <span class="ml-1">
+                  {{ last_run[col.key] ?? " - " }}
+                </span>
               </div>
             </div>
-          </UCard>
-        </div>
-
-        <!-- Date -->
-        <div class="flex justify-end my-8">
-          <USelect
-            v-model="selectedDate"
-            icon="i-heroicons-calendar"
-            :items="dateList"
-            clearable
-            :placeholder="dateList.length ? 'From date' : 'No Available Date'"
-            @update:model-value="fetchallData"
-          >
-          </USelect>
-        </div>
-
-        <!-- Shared Metrics -->
-        <SharedMetrics :platformsMetrics="platformsMetrics" />
-
-        <!-- Logs -->
-        <UCollapsible :default-open="false">
-          <UButton
-            class="w-full p-4 rounded-bl-none rounded-br-none bg-primary-100 hover:bg-primary-200"
-          >
-            <span class="font-bold text-sm md:text-lg"> Logs </span>
-          </UButton>
-          <template #content>
-            <LogsCard class="w-full" />
-          </template>
-        </UCollapsible>
+          </div>
+        </UCard>
       </div>
     </div>
+
+    <!-- Last Run Metrics -->
+    <div
+      class="mb-10 gap-2 md:gap-5 items-center justify-center text-black"
+    ></div>
+
+    <!-- Date -->
+    <div class="flex justify-end my-8">
+      <USelect
+        v-model="selectedDate"
+        icon="i-heroicons-calendar"
+        :items="dateList"
+        clearable
+        :placeholder="dateList.length ? 'From date' : 'No Available Date'"
+        @update:model-value="fetchallData"
+      >
+      </USelect>
+    </div>
+
+    <!-- Shared Metrics -->
+    <SharedMetrics :platformsMetrics="platformsMetrics" />
+
+    <!-- Logs -->
+    <UCollapsible :default-open="false">
+      <UButton
+        class="w-full p-4 rounded-bl-none rounded-br-none bg-primary-100 hover:bg-primary-200"
+      >
+        <span class="font-bold text-sm md:text-lg"> Logs </span>
+      </UButton>
+      <template #content>
+        <LogsCard class="w-full" />
+      </template>
+    </UCollapsible>
   </NuxtLayout>
 </template>
 
@@ -118,7 +118,7 @@ const columns: any[] = [
   },
 ];
 // Last Run of the platform
-const last_run = ref();
+const last_run = ref(null);
 // Routing
 const route = useRoute();
 const currentPlatform: any = computed(() => route.name);
