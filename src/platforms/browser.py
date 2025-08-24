@@ -81,7 +81,7 @@ class BrowserBase(ContextDecorator, ABC):
             is_navigate = await self.navigate()
             if not is_navigate:
                 await self.redis.set_log("- Error starting or navigating the page")
-                await update_process_status(self.process_id, "failled")
+                await update_process_status(self.process_id, "failed")
                 return None
             await self.redis.set_log("- Successfully navigated to the page")
 
@@ -89,7 +89,7 @@ class BrowserBase(ContextDecorator, ABC):
             is_filled = await self.find_and_fill_input()
             if not is_filled:
                 await self.redis.set_log("- Error filling the prompt")
-                await update_process_status(self.process_id, "failled")
+                await update_process_status(self.process_id, "failed")
                 return None
             await self.redis.set_log("- Prompt successfully filled")
 
@@ -97,7 +97,7 @@ class BrowserBase(ContextDecorator, ABC):
             content = await self.extract_response()
             if not content:
                 await self.redis.set_log("- Error while extracting the response")
-                await update_process_status(self.process_id, "failled")
+                await update_process_status(self.process_id, "failed")
                 return None
             await self.redis.set_log("- Response successfully extracted")
 
