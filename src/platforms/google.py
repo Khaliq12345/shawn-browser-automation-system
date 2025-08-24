@@ -4,11 +4,17 @@ sys.path.append("..")
 
 from typing import Optional
 from src.platforms.browser import BrowserBase
+from html_to_markdown import convert_to_markdown
 
 
 class GoogleScraper(BrowserBase):
     def __init__(
-        self, url: str, prompt: str, name: str, process_id: str, headless: bool = False
+        self,
+        url: str,
+        prompt: str,
+        name: str,
+        process_id: str,
+        headless: bool = True,
     ) -> None:
         super().__init__(url, prompt, name, process_id, headless)
         self.timeout = 120000
@@ -32,6 +38,7 @@ class GoogleScraper(BrowserBase):
             return False
 
     async def extract_response(self) -> Optional[str]:
+        print("Extracting response")
         content_selector = 'div[id="m-x-content"]'
         show_more_button = 'div[class="kHtcsd"]'
 
@@ -43,11 +50,14 @@ class GoogleScraper(BrowserBase):
             return None
 
         try:
-            await self.page.wait_for_selector(content_selector, timeout=self.timeout)
+            await self.page.wait_for_selector(
+                content_selector, timeout=self.timeout
+            )
         except Exception as e:
             print(f"Unable to find the content {e}")
             return None
 
         content_element = await self.page.query_selector(content_selector)
         content = await content_element.inner_html() if content_element else ""
-        return content
+        content_markdown = convert_to_markdown(content)
+        return content_markdown

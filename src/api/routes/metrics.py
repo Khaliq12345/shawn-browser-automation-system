@@ -32,7 +32,6 @@ async def job_success_rate(date: DateOptions, platform: str):
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
     try:
         outputs = await get_job_success_rate(parsed_date)
-        print(outputs)
         for output in outputs:
             if output["platform"] == platform:
                 return {"details": output}

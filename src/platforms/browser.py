@@ -70,7 +70,7 @@ class BrowserBase(ContextDecorator, ABC):
     async def send_prompt(self) -> None:
         """Start the workflow"""
         async with AsyncCamoufox(
-            screen=Screen(max_width=1920, max_height=1080)
+            screen=Screen(max_width=1920, max_height=1080), headless=self.headless
         ) as self.browser:
             self.page = await self.browser.new_page()
 

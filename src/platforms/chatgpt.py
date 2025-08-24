@@ -1,4 +1,5 @@
 import sys
+from playwright.async_api import expect
 import pyperclip
 
 sys.path.append("..")
@@ -9,16 +10,24 @@ from src.platforms.browser import BrowserBase
 
 class ChatGPTScraper(BrowserBase):
     def __init__(
-        self, url: str, prompt: str, name: str, process_id: str, headless: bool = False
+        self,
+        url: str,
+        prompt: str,
+        name: str,
+        process_id: str,
+        headless: bool = False,
     ) -> None:
         super().__init__(url, prompt, name, process_id, headless)
 
     async def find_and_fill_input(self) -> bool:
         try:
+            await self.page.wait_for_timeout(5000)
             await self.page.mouse.click(0, 0)
-            await self.page.wait_for_timeout(30000)
+            await self.page.wait_for_timeout(5000)
             # trying to fill the prompt
-            prompt_input_selector = 'div[id="prompt-textarea"]'  # "#prompt-textarea"
+            prompt_input_selector = (
+                'div[id="prompt-textarea"]'  # "#prompt-textarea"
+            )
             try:
                 print("Filling input")
                 await self.page.fill(
@@ -38,9 +47,13 @@ class ChatGPTScraper(BrowserBase):
     async def extract_response(self) -> Optional[str]:
         print("extracting response")
         content = None
-        copy_selector = 'button[data-testid="copy-turn-action-button"]'
+        copy_selector = (
+            'div.justify-start button[data-testid="copy-turn-action-button"]'
+        )
         try:
-            await self.page.click(copy_selector, timeout=120000)
+            await self.page.locator(copy_selector).last.click(
+                timeout=120000, force=True
+            )
         except Exception as e:
             print(f"Unable to find copy button {e}")
             return None

@@ -10,7 +10,7 @@ from src.platforms.browser import BrowserBase
 
 class PerplexityScraper(BrowserBase):
     def __init__(
-        self, url: str, prompt: str, name: str, process_id: str, headless: bool = False
+        self, url: str, prompt: str, name: str, process_id: str, headless: bool = True
     ) -> None:
         super().__init__(url, prompt, name, process_id, headless)
 
