@@ -26,7 +26,7 @@
         </div>
 
         <!-- Shared Metrics -->
-        <SharedMetrics :platformsMetrics="platformsMetrics" />
+        <SharedMetrics :platforms-metrics="platformsMetrics" />
 
         <!-- Like Table Metrics -->
         <div
@@ -64,6 +64,8 @@
 </template>
 
 <script lang="ts" setup>
+// Platform Metrics
+const { platformsMetrics } = usePlateformMetrics();
 // Average Total Time Per Prompt
 const averageTTPPData = ref();
 const averageTTPPcols: string[] = [
@@ -137,13 +139,13 @@ const fetchallData = async () => {
     loadingData.value = true;
     // Job Success Rate
     let result = await getJobSuccessRate(selectedDate.value, "all");
-    platformsMetrics.find((item) => item.id === 0).data = result;
+    platformsMetrics.value.find((item) => item.id === 0).data = result;
     // Average Job Duration
     result = await getAverageJobDuration(selectedDate.value, "all");
-    platformsMetrics.find((item) => item.id === 1).data = result;
+    platformsMetrics.value.find((item) => item.id === 1).data = result;
     // Scraper Error Rate
     result = await getScraperErrorRate(selectedDate.value, "all");
-    platformsMetrics.find((item) => item.id === 2).data = result;
+    platformsMetrics.value.find((item) => item.id === 2).data = result;
     // Average Total Time Per Prompt
     result = await getAverageTotalTimePerPrompt(selectedDate.value);
     averageTTPPData.value = result;

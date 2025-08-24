@@ -1,6 +1,5 @@
 import dateparser
 from fastapi import APIRouter, HTTPException
-from typing import Optional
 from enum import Enum
 from src.utils.database import (
     get_job_success_rate,
@@ -24,7 +23,7 @@ class DateOptions(str, Enum):
 
 # Job Success Rate
 @router.get("/job-success-rate")
-async def job_success_rate(date: DateOptions, platform: Optional[str] = None):
+async def job_success_rate(date: DateOptions, platform: str):
     # Validation
     parsed_date = dateparser.parse(
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
@@ -33,17 +32,20 @@ async def job_success_rate(date: DateOptions, platform: Optional[str] = None):
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
     try:
         outputs = await get_job_success_rate(parsed_date)
+        print(outputs)
         for output in outputs:
             if output["platform"] == platform:
                 return {"details": output}
-        return {"details": outputs}
+        return {"details": {}}
     except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Unable to execute the request: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Unable to execute the request: {e}"
+        )
 
 
 # Avg Job Duration
 @router.get("/average-job-duration")
-async def average_job_duration(date: DateOptions, platform: Optional[str] = None):
+async def average_job_duration(date: DateOptions, platform: str):
     # Validation
     parsed_date = dateparser.parse(
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
@@ -55,9 +57,11 @@ async def average_job_duration(date: DateOptions, platform: Optional[str] = None
         for output in outputs:
             if output["platform"] == platform:
                 return {"details": output}
-        return {"details": outputs}
+        return {"details": {}}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unable to execute the request: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Unable to execute the request: {e}"
+        )
 
 
 # Avg Total Time per Prompt
@@ -72,12 +76,14 @@ async def average_total_time_per_prompt(date: DateOptions):
         outputs = await get_average_total_time_per_prompt(parsed_date)
         return {"details": outputs}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unable to execute the request: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Unable to execute the request: {e}"
+        )
 
 
 # Scraper Error Rate
 @router.get("/scraper-error-rate")
-async def scraper_error_rate(date: DateOptions, platform: Optional[str] = None):
+async def scraper_error_rate(date: DateOptions, platform: str):
     parsed_date = dateparser.parse(
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
     )
@@ -90,9 +96,11 @@ async def scraper_error_rate(date: DateOptions, platform: Optional[str] = None):
         for output in outputs:
             if output["platform"] == platform:
                 return {"details": output}
-        return {"details": outputs}
+        return {"details": {}}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unable to execute the request: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Unable to execute the request: {e}"
+        )
 
 
 # Prompt Coverage Rate
@@ -107,7 +115,9 @@ async def prompt_coverage_rate(date: DateOptions):
         output = await get_prompt_coverage_rate(parsed_date)
         return {"details": output}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unable to execute the request: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Unable to execute the request: {e}"
+        )
 
 
 # Last Run Timestamp per Platform
@@ -117,4 +127,6 @@ async def last_run_timestamp(platform: str):
         output = await get_last_run_timestamp(platform)
         return {"details": output}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unable to execute the request: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Unable to execute the request: {e}"
+        )

@@ -1,25 +1,24 @@
 <template>
   <div>
+    <!-- Refresh Logs -->
+    <div class="justify-end flex">
+      <UButton
+        label="Refresh Logs"
+        icon="i-heroicons-arrow-path"
+        :loading="loading"
+        class="justify-center text-white my-4"
+        @click="getLogs"
+      />
+    </div>
     <!-- Showing Logs -->
     <UTextarea
       :rows="20"
       :autoresize="false"
       v-model="logGot"
       :disabled="true"
-      class="w-full mb-4 textarea whitespace-pre font-mono"
+      class="w-full textarea whitespace-pre font-mono"
       placeholder="Nothing to show ..."
     />
-    <!-- Refresh Logs -->
-    <div class="justify-start flex">
-      <UButton
-        label="Refresh Logs"
-        :disabled="logGot.length == 0"
-        icon="i-heroicons-arrow-path"
-        :loading="loading"
-        class="justify-center text-white"
-        @click="getLogs"
-      />
-    </div>
   </div>
 </template>
 
