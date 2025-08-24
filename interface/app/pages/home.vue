@@ -14,15 +14,15 @@
       <div class="my-4 text-start">
         <!-- Date -->
         <div class="flex justify-end my-8">
-            <USelect
-              v-model="selectedDate"
-              icon="i-heroicons-calendar"
-              :items="dateList"
-              clearable
-              :placeholder="dateList.length ? 'From date' : 'No Available Date'"
-              @update:model-value="fetchallData"
-            >
-            </USelect>
+          <USelect
+            v-model="selectedDate"
+            icon="i-heroicons-calendar"
+            :items="dateList"
+            clearable
+            :placeholder="dateList.length ? 'From date' : 'No Available Date'"
+            @update:model-value="fetchallData"
+          >
+          </USelect>
         </div>
 
         <!-- Shared Metrics -->
@@ -133,23 +133,28 @@ const selectedDate: Ref<any> = ref(dateList.value[0]);
 // Fetch All Data
 //
 const fetchallData = async () => {
-  loadingData.value = true;
-  // Job Success Rate
-  let result = await getJobSuccessRate(selectedDate.value, "all");
-  platformsMetrics.find((item) => item.id === 0).data = result;
-  // Average Job Duration
-  result = await getAverageJobDuration(selectedDate.value, "all");
-  platformsMetrics.find((item) => item.id === 1).data = result;
-  // Scraper Error Rate
-  result = await getScraperErrorRate(selectedDate.value, "all");
-  platformsMetrics.find((item) => item.id === 2).data = result;
-  // Average Total Time Per Prompt
-  result = await getAverageTotalTimePerPrompt(selectedDate.value);
-  averageTTPPData.value = result;
-  loadingData.value = false;
+  try {
+    loadingData.value = true;
+    // Job Success Rate
+    let result = await getJobSuccessRate(selectedDate.value, "all");
+    platformsMetrics.find((item) => item.id === 0).data = result;
+    // Average Job Duration
+    result = await getAverageJobDuration(selectedDate.value, "all");
+    platformsMetrics.find((item) => item.id === 1).data = result;
+    // Scraper Error Rate
+    result = await getScraperErrorRate(selectedDate.value, "all");
+    platformsMetrics.find((item) => item.id === 2).data = result;
+    // Average Total Time Per Prompt
+    result = await getAverageTotalTimePerPrompt(selectedDate.value);
+    averageTTPPData.value = result;
+  } catch (error) {
+    console.log(`Requests error - ${error}`);
+  } finally {
+    loadingData.value = false;
+  }
 };
 // On Mounted
 onMounted(async () => {
-  fetchallData();
+  await fetchallData();
 });
 </script>

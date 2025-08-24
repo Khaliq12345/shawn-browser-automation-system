@@ -15,6 +15,7 @@
         <!-- Last Run Metrics -->
         <div
           class="mb-10 gap-2 md:gap-5 items-center justify-center text-black"
+          v-if="last_run"
         >
           <UCard
             variant="soft"
@@ -56,15 +57,15 @@
 
         <!-- Date -->
         <div class="flex justify-end my-8">
-            <USelect
-              v-model="selectedDate"
-              icon="i-heroicons-calendar"
-              :items="dateList"
-              clearable
-              :placeholder="dateList.length ? 'From date' : 'No Available Date'"
-              @update:model-value="fetchallData"
-            >
-            </USelect>
+          <USelect
+            v-model="selectedDate"
+            icon="i-heroicons-calendar"
+            :items="dateList"
+            clearable
+            :placeholder="dateList.length ? 'From date' : 'No Available Date'"
+            @update:model-value="fetchallData"
+          >
+          </USelect>
         </div>
 
         <!-- Shared Metrics -->
@@ -132,26 +133,34 @@ const selectedDate: Ref<any> = ref(dateList.value[0]);
 // Fetch All Data
 //
 const fetchallData = async () => {
-  loadingData.value = true;
-  // Last Run Timestamp
-  let result = await getLastRunTimestamp(currentPlatform.value);
-  last_run.value = result;
-  // Job Success Rate
-  result = await getJobSuccessRate(selectedDate.value, currentPlatform.value);
-  platformsMetrics.find((item) => item.id === 0).data = result;
-  // Average Job Duration
-  result = await getAverageJobDuration(
-    selectedDate.value,
-    currentPlatform.value
-  );
-  platformsMetrics.find((item) => item.id === 1).data = result;
-  // Scraper Error Rate
-  result = await getScraperErrorRate(selectedDate.value, currentPlatform.value);
-  platformsMetrics.find((item) => item.id === 2).data = result;
-  loadingData.value = false;
+  try {
+    loadingData.value = true;
+    // Last Run Timestamp
+    let result = await getLastRunTimestamp(currentPlatform.value);
+    last_run.value = result;
+    // Job Success Rate
+    result = await getJobSuccessRate(selectedDate.value, currentPlatform.value);
+    platformsMetrics.find((item) => item.id === 0).data = result;
+    // Average Job Duration
+    result = await getAverageJobDuration(
+      selectedDate.value,
+      currentPlatform.value,
+    );
+    platformsMetrics.find((item) => item.id === 1).data = result;
+    // Scraper Error Rate
+    result = await getScraperErrorRate(
+      selectedDate.value,
+      currentPlatform.value,
+    );
+    platformsMetrics.find((item) => item.id === 2).data = result;
+  } catch (error) {
+    console.log(`Error Fetching data - ${error}`);
+  } finally {
+    loadingData.value = false;
+  }
 };
 // On Mounted
 onMounted(async () => {
-  fetchallData();
+  await fetchallData();
 });
 </script>

@@ -32,9 +32,9 @@ const route = useRoute();
 const currentPlatform: any = computed(() => route.name);
 // Get Logs
 const getLogs = async () => {
-  logGot.value = "";
-  loading.value = true;
   try {
+    logGot.value = "";
+    loading.value = true;
     // Fetch Logs for {currentPlatform}'s last process '
     let lastrun = await getLastRunTimestamp(currentPlatform.value);
     if (!lastrun) {

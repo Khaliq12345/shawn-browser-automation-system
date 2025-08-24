@@ -37,15 +37,14 @@ async def update_process_status(
         stmt = select(Processes).where(Processes.process_id == process_id)
         process = await session.scalars(stmt)
         process = process.one()
-        if process:
-            process.status = status
-            process.end_time = datetime.now()
-            process.duration = (
-                (process.end_time - process.start_time).total_seconds()
-                if process.start_time
-                else None
-            )
-            await session.commit()
+        process.status = status
+        process.end_time = datetime.now()
+        process.duration = (
+            (process.end_time - process.start_time).total_seconds()
+            if process.start_time
+            else None
+        )
+        await session.commit()
     await engine.dispose()
 
 
@@ -57,8 +56,6 @@ async def get_process_status(process_id: str):
         stmt = select(Processes).where(Processes.process_id == process_id)
         process = await session.scalars(stmt)
         process = process.one()
-        if process:
-            return process.status
     await engine.dispose()
     return None
 
@@ -70,7 +67,7 @@ async def get_process_status(process_id: str):
 async def get_job_success_rate(start_date: datetime):
     engine = get_engine()
     async_session = async_sessionmaker(engine, expire_on_commit=False)
-    combined_data = []
+    combined_data = None
     async with async_session() as session:
         stmt = f"""
         SELECT 
@@ -94,7 +91,7 @@ async def get_job_success_rate(start_date: datetime):
 async def get_average_job_duration(start_date: datetime):
     engine = get_engine()
     async_session = async_sessionmaker(engine, expire_on_commit=False)
-    output = []
+    output = None
     async with async_session() as session:
         stmt = f"""
         SELECT 
@@ -117,7 +114,7 @@ async def get_average_job_duration(start_date: datetime):
 async def get_average_total_time_per_prompt(start_date: datetime):
     engine = get_engine()
     async_session = async_sessionmaker(engine, expire_on_commit=False)
-    combined_data = []
+    combined_data = None
     async with async_session() as session:
         stmt = f"""
         SELECT 
@@ -140,7 +137,7 @@ async def get_average_total_time_per_prompt(start_date: datetime):
 async def get_scraper_error_rate(start_date: datetime):
     engine = get_engine()
     async_session = async_sessionmaker(engine, expire_on_commit=False)
-    outputs = []
+    outputs = None
     async with async_session() as session:
         stmt = f"""
         SELECT 
@@ -165,7 +162,7 @@ async def get_scraper_error_rate(start_date: datetime):
 async def get_prompt_coverage_rate(start_date: datetime):
     engine = get_engine()
     async_session = async_sessionmaker(engine, expire_on_commit=False)
-    outputs = []
+    outputs = None
     async with async_session() as session:
         stmt = f"""
         SELECT 
@@ -177,7 +174,6 @@ async def get_prompt_coverage_rate(start_date: datetime):
         keys = result.keys()
         values = result.fetchall()
         outputs = [dict(zip(keys, row)) for row in values]
-        print(outputs)
 
     await engine.dispose()
     return outputs
@@ -186,7 +182,7 @@ async def get_prompt_coverage_rate(start_date: datetime):
 # Last Run Timestamp per Platform
 async def get_last_run_timestamp(platform: str):
     engine = get_engine()
-    output = {}
+    output = None
     async with async_sessionmaker(engine, expire_on_commit=False)() as session:
         # Use parameterized query to prevent SQL injection
         stmt = f"""
@@ -198,7 +194,8 @@ async def get_last_run_timestamp(platform: str):
         result = await session.execute(text(stmt))
         keys = result.keys()
         values = result.first()
-        output = dict(zip(keys, values))
+        if values:
+            output = dict(zip(keys, values))
 
     await engine.dispose()
     return output
@@ -208,11 +205,15 @@ async def get_last_run_timestamp(platform: str):
 async def get_all_platform_processes(platform: str) -> list[str]:
     engine = get_engine()
     async_session = async_sessionmaker(engine, expire_on_commit=False)
-    outputs = []
+    outputs = None
     async with async_session() as session:
-        query = select(Processes.process_id).where(Processes.platform == platform)
+        query = select(Processes.process_id).where(
+            Processes.platform == platform
+        )
         results = await session.execute(query)
         results = results.fetchall()
-        outputs = [process.process_id for process in results if process is not None]
+        outputs = [
+            process.process_id for process in results if process is not None
+        ]
     await engine.dispose()
     return outputs
