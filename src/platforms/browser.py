@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
+import shutil
 import sys
 from src.utils.database import update_process_status, start_process
 
@@ -44,14 +45,25 @@ class BrowserBase(ContextDecorator, ABC):
 
     async def save_response(self, content: Optional[str]) -> bool:
         """Save the generated output from the prompt in html and text file"""
+        uid = self.process_id.split('_')[1]
         save_folder = f"responses/{self.name}/{self.process_id}/"
-        txt_out = os.path.join(save_folder, "txt_res.txt")
+        txt_out = os.path.join(save_folder, f"output_{uid}.txt")
 
         # break the flow if no response in found
         if not content:
             await self.redis.set_log("No generated output")
             print("No generated output")
             return False
+
+        video = self.page.video
+        if video:
+            await self.redis.set_log("Successfully recorded video")
+            video_path = await video.path()
+            custom_name = f"output_{uid}.webm"
+            destination = os.path.join(f"responses/{self.name}/{self.process_id}/", custom_name)
+            shutil.move(video_path, destination)
+        else:
+            await self.redis.set_log("Unable to record video")
 
         save_file(txt_out, content)
         await self.redis.set_log(f" Successfully saved -- Output -> {save_folder}")
@@ -72,7 +84,12 @@ class BrowserBase(ContextDecorator, ABC):
         async with AsyncCamoufox(
             screen=Screen(max_width=1920, max_height=1080), headless=self.headless
         ) as self.browser:
-            self.page = await self.browser.new_page()
+            self.context = await self.browser.new_context(
+                record_video_dir=f"responses/{self.name}/{self.process_id}/",
+                record_video_size={"width": 1280, "height": 720},
+            )
+            self.page = await self.context.new_page()
+            # self.page = await self.browser.new_page()
 
             await self.redis.set_log("- Workflow Started")
             await start_process(self.process_id, self.name, self.prompt)
