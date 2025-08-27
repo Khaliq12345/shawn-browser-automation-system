@@ -3,6 +3,7 @@ from contextlib import ContextDecorator
 import shutil
 import sys
 from src.utils.database import update_process_status, start_process
+from src.utils.aws_storage import AWSStorage
 
 sys.path.append("..")
 # from playwright.async_api import async_playwright
@@ -33,6 +34,7 @@ class BrowserBase(ContextDecorator, ABC):
         self.context = None
         self.timeout = 60000
         self.redis = AsyncRedisBase(process_id)
+        self.storage = AWSStorage("browser-outputs")
 
     async def navigate(self) -> bool:
         """Start the browser and navigate to the specified URL"""
@@ -45,7 +47,7 @@ class BrowserBase(ContextDecorator, ABC):
 
     async def save_response(self, content: Optional[str]) -> bool:
         """Save the generated output from the prompt in html and text file"""
-        uid = self.process_id.split('_')[1]
+        uid = self.process_id.split("_")[1]
         save_folder = f"responses/{self.name}/{self.process_id}/"
         txt_out = os.path.join(save_folder, f"output_{uid}.txt")
 
@@ -55,17 +57,29 @@ class BrowserBase(ContextDecorator, ABC):
             print("No generated output")
             return False
 
+        save_file(txt_out, content)
+        # Save Text Result
+        self.storage.save_file(
+            f"{self.name}/{self.process_id}/output_{uid}.txt", txt_out
+        )
+
         video = self.page.video
         if video:
             await self.redis.set_log("Successfully recorded video")
             video_path = await video.path()
             custom_name = f"output_{uid}.webm"
-            destination = os.path.join(f"responses/{self.name}/{self.process_id}/", custom_name)
+            destination = os.path.join(
+                f"responses/{self.name}/{self.process_id}/", custom_name
+            )
             shutil.move(video_path, destination)
+            # Save Video to aws
+            self.storage.save_file(
+                f"{self.name}/{self.process_id}/{custom_name}", destination
+            )
+
         else:
             await self.redis.set_log("Unable to record video")
 
-        save_file(txt_out, content)
         await self.redis.set_log(f" Successfully saved -- Output -> {save_folder}")
         return True
 
