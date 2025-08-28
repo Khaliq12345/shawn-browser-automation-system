@@ -4,11 +4,11 @@ from src.models.model import create_db_and_tables
 from src.api.routes.metrics import router as metrics_router
 from src.api.routes.globals import router as global_router
 from src.api.routes.logs import router as logs_router
+from src.utils.celery_app import start_browser
 
-browser = None
 app = FastAPI(
     title="Browser Automation System",
-    on_startup=[create_db_and_tables],
+    on_startup=[create_db_and_tables, start_browser.apply_async],
     responses={
         400: {"description": "Bad Request"},
         404: {"description": "Not Found"},

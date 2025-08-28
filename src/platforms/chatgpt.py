@@ -11,13 +11,14 @@ from src.platforms.browser import BrowserBase
 class ChatGPTScraper(BrowserBase):
     def __init__(
         self,
+        browser,
         url: str,
         prompt: str,
         name: str,
         process_id: str,
         headless: bool = False,
     ) -> None:
-        super().__init__(url, prompt, name, process_id, headless)
+        super().__init__(browser, url, prompt, name, process_id, headless)
 
     async def find_and_fill_input(self) -> bool:
         try:
@@ -25,9 +26,7 @@ class ChatGPTScraper(BrowserBase):
             await self.page.mouse.click(0, 0)
             await self.page.wait_for_timeout(5000)
             # trying to fill the prompt
-            prompt_input_selector = (
-                'div[id="prompt-textarea"]'  # "#prompt-textarea"
-            )
+            prompt_input_selector = 'div[id="prompt-textarea"]'  # "#prompt-textarea"
             try:
                 print("Filling input")
                 await self.page.fill(
