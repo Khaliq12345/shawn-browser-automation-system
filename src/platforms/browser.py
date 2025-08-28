@@ -3,7 +3,7 @@ from contextlib import ContextDecorator
 import shutil
 import sys
 from src.utils.database import update_process_status, start_process
-from src.utils.aws_storage import AWSStorage
+from src.utils.aws_storage import AWSStorageAsync
 
 sys.path.append("..")
 # from playwright.async_api import async_playwright
@@ -34,7 +34,8 @@ class BrowserBase(ContextDecorator, ABC):
         self.context = None
         self.timeout = 60000
         self.redis = AsyncRedisBase(process_id)
-        self.storage = AWSStorage("browser-outputs")
+        self.storage = AWSStorageAsync("browser-outputs")
+        self.uid = self.process_id.split("_")[1]
 
     async def navigate(self) -> bool:
         """Start the browser and navigate to the specified URL"""
@@ -47,9 +48,10 @@ class BrowserBase(ContextDecorator, ABC):
 
     async def save_response(self, content: Optional[str]) -> bool:
         """Save the generated output from the prompt in html and text file"""
-        uid = self.process_id.split("_")[1]
-        save_folder = f"responses/{self.name}/{self.process_id}/"
-        txt_out = os.path.join(save_folder, f"output_{uid}.txt")
+
+        basekey = f"{self.name}/{self.uid}"
+        save_folder = f"responses/{basekey}/"
+        txt_out = os.path.join(save_folder, "output.txt")
 
         # break the flow if no response in found
         if not content:
@@ -59,23 +61,17 @@ class BrowserBase(ContextDecorator, ABC):
 
         save_file(txt_out, content)
         # Save Text Result
-        self.storage.save_file(
-            f"{self.name}/{self.process_id}/output_{uid}.txt", txt_out
-        )
+        await self.storage.save_file(f"{basekey}/output.txt", txt_out)
 
         video = self.page.video
         if video:
             await self.redis.set_log("Successfully recorded video")
             video_path = await video.path()
-            custom_name = f"output_{uid}.webm"
-            destination = os.path.join(
-                f"responses/{self.name}/{self.process_id}/", custom_name
-            )
+            custom_name = "output.webm"
+            destination = os.path.join(f"responses/{basekey}/", custom_name)
             shutil.move(video_path, destination)
             # Save Video to aws
-            self.storage.save_file(
-                f"{self.name}/{self.process_id}/{custom_name}", destination
-            )
+            await self.storage.save_file(f"{basekey}/{custom_name}", destination)
 
         else:
             await self.redis.set_log("Unable to record video")
@@ -99,7 +95,7 @@ class BrowserBase(ContextDecorator, ABC):
             screen=Screen(max_width=1920, max_height=1080), headless=self.headless
         ) as self.browser:
             self.context = await self.browser.new_context(
-                record_video_dir=f"responses/{self.name}/{self.process_id}/",
+                record_video_dir=f"responses/{self.name}/{self.uid}/",
                 record_video_size={"width": 1280, "height": 720},
             )
             self.page = await self.context.new_page()
