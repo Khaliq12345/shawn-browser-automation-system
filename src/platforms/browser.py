@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
 import sys
-from src.utils.database import update_process_status, start_process
+from src.utils.database import update_process_status, start_process, save_awsupload
 from src.utils.aws_storage import AWSStorageAsync
 
 sys.path.append("..")
@@ -33,7 +33,8 @@ class BrowserBase(ContextDecorator, ABC):
         self.context = None
         self.timeout = 60000
         self.redis = AsyncRedisBase(process_id)
-        self.storage = AWSStorageAsync("browser-outputs")
+        self.bucket = "browser-outputs"
+        self.storage = AWSStorageAsync(self.bucket)
         self.uid = self.process_id.split("_")[1]
 
     async def navigate(self) -> bool:
@@ -61,13 +62,15 @@ class BrowserBase(ContextDecorator, ABC):
 
         save_file(txt_out, content)
         # Save Text Result
-        await self.storage.save_file(f"{basekey}/{text_name}", txt_out)
+        await self.aws_upload_file(f"{basekey}/{text_name}", txt_out)
+        # await self.storage.save_file(f"{basekey}/{text_name}", txt_out)
 
         # Save ScreenShot
         screenshot_name = "screenshot.png"
         screeshot_path = f"responses/{self.name}/{self.uid}/{screenshot_name}"
         await self.page.screenshot(path=screeshot_path, full_page=True)
-        await self.storage.save_file(f"{basekey}/{screenshot_name}", screeshot_path)
+        await self.aws_upload_file(f"{basekey}/{screenshot_name}", screeshot_path)
+        # await self.storage.save_file(f"{basekey}/{screenshot_name}", screeshot_path)
 
         # Save Video
         video = self.page.video
@@ -78,12 +81,17 @@ class BrowserBase(ContextDecorator, ABC):
             video_path = os.path.join(f"responses/{basekey}/", video_name)
             await video.save_as(video_path)
             # Save Video to aws
-            await self.storage.save_file(f"{basekey}/{video_name}", video_path)
+            await self.aws_upload_file(f"{basekey}/{video_name}", video_path)
+            # await self.storage.save_file(f"{basekey}/{video_name}", video_path)
         else:
             await self.redis.set_log("Unable to record video")
 
         await self.redis.set_log(f" Successfully saved -- Output -> {save_folder}")
         return True
+
+    async def aws_upload_file(self, key: str, path: str) -> None:
+        await self.storage.save_file(key, path)
+        await save_awsupload(f"{self.bucket}/{key}", self.name, self.prompt)
 
     @abstractmethod
     async def find_and_fill_input(self) -> bool:

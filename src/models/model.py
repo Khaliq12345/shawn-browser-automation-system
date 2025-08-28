@@ -30,6 +30,16 @@ class Processes(AsyncAttrs, Base):
     duration: Mapped[float] = mapped_column(Float(), default=0.0)
 
 
+# AWS Upload Tracking Model
+class AWSUploads(AsyncAttrs, Base):
+    __tablename__ = "awsuploads"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement="auto")
+    aws_key: Mapped[str] = mapped_column(Text())
+    browser: Mapped[str] = mapped_column(String(15))
+    prompt: Mapped[str] = mapped_column(Text())
+
+
 # Create all tables of the database
 async def create_db_and_tables():
     engine = get_engine()
