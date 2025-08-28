@@ -1,5 +1,4 @@
 import sys
-from playwright.async_api import expect
 import pyperclip
 
 sys.path.append("..")

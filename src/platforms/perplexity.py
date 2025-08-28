@@ -10,6 +10,7 @@ from src.platforms.browser import BrowserBase
 
 class PerplexityScraper(BrowserBase):
     def __init__(
+<<<<<<< HEAD
         self,
         browser,
         url: str,
@@ -17,6 +18,9 @@ class PerplexityScraper(BrowserBase):
         name: str,
         process_id: str,
         headless: bool = False,
+=======
+        self, browser, url: str, prompt: str, name: str, process_id: str, headless: bool = False
+>>>>>>> 05c1193 (Celery started)
     ) -> None:
         super().__init__(browser, url, prompt, name, process_id, headless)
 

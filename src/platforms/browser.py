@@ -9,13 +9,14 @@ from src.utils.database import (
 from src.utils.aws_storage import AWSStorageAsync
 
 sys.path.append("..")
-# from playwright.async_api import async_playwright
 import os
 from typing import Optional
-from camoufox.async_api import AsyncCamoufox
-from browserforge.fingerprints import Screen
+# from camoufox.async_api import AsyncCamoufox
+# from browserforge.fingerprints import Screen
 from src.utils.globals import save_file
 from src.utils.redis_utils import AsyncRedisBase
+from src.utils import globals
+# from src.utils.celery_app import app as celery_app
 
 
 class BrowserBase(ContextDecorator, ABC):

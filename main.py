@@ -1,11 +1,14 @@
 import asyncio
 import uvicorn
-
+import subprocess
 from src.platforms.google import GoogleScraper
 
 
 # Launch API
 def main():
+    # Start Celery
+    subprocess.Popen(["celery", "-A", "src.utils.celery_app", "worker", "--loglevel=info"])
+    # Start Fast API
     uvicorn.run(
         "src.api.app:app",
         host="localhost",

@@ -5,9 +5,15 @@ from src.utils.database import get_process_status, get_all_platform_processes
 from src.platforms.google import GoogleScraper
 from src.platforms.perplexity import PerplexityScraper
 from src.platforms.chatgpt import ChatGPTScraper
+<<<<<<< HEAD
 
 # from multiprocessing import Process
 from src.utils.celery_app import app
+=======
+# from multiprocessing import Process
+from src.utils.celery_app import app as celery_app
+from src.utils import globals
+>>>>>>> 05c1193 (Celery started)
 
 
 router = APIRouter(prefix="/globals")
@@ -23,11 +29,16 @@ SCRAPER_CONFIG = {
     },
 }
 
+<<<<<<< HEAD
 
 @app.task
 def run_browser(name: str, prompt: str, process_id: str, headless: bool):
     from src.utils.globals import browser_dict
 
+=======
+@celery_app.task
+def run_browser(browser, name: str, prompt: str, process_id: str, headless: bool):
+>>>>>>> 05c1193 (Celery started)
     # Get the matching configs class and url
     config = SCRAPER_CONFIG[name]
     ScraperClass = config["class"]
@@ -35,12 +46,18 @@ def run_browser(name: str, prompt: str, process_id: str, headless: bool):
     print(config)
 
     # Launch the matching browser class
+<<<<<<< HEAD
     if not browser_dict.get("browser"):
         raise HTTPException(status_code=500, detail="Browser not created")
 
     print(browser_dict)
     matching_scraper = ScraperClass(
         browser=browser_dict.get("browser"),
+=======
+    print("laun")
+    matching_scraper = ScraperClass(
+        browser,
+>>>>>>> 05c1193 (Celery started)
         url=url,
         prompt=prompt,
         name=name,
@@ -59,10 +76,20 @@ async def start_browser(name: str, prompt: str, headless: bool = True):
     process_id = f"{name}_{timestamp}"
     # Start Process
     try:
+<<<<<<< HEAD
         run_browser.apply_async(args=(name, prompt, process_id, headless))
+=======
+        print("browser before")
+        browser = globals.browser
+        print(browser)
+        p = run_browser.apply_async(args=(browser, name, prompt, process_id, headless))
+        print(p)
+        print(p.id)
+>>>>>>> 05c1193 (Celery started)
         # p = Process(target=run_browser, args=(name, prompt, process_id, headless))
         # p.start()
     except Exception as e:
+        print(f"errororr {e}")
         raise HTTPException(
             status_code=500, detail=f"Unable to create the process : {e}"
         )
