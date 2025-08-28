@@ -1,33 +1,29 @@
+import boto3
 import os
-
-import aioboto3.session
-import aioboto3
-from botocore.exceptions import NoCredentialsError, ClientError
 from src.config import config
+from botocore.exceptions import NoCredentialsError, ClientError
 
 
-class AWSStorageAsync:
+class AWSStorage:
     def __init__(self, bucket_name, region_name="eu-north-1"):
         self.bucket_name = bucket_name
         self.region_name = region_name
 
-    async def save_file(self, key, path):
-        if not os.path.isfile(path):
-            print(f"Le fichier {path} n'existe pas.")
-            return False
+        self.s3 = boto3.client(
+            "s3",
+            region_name=region_name,
+            aws_access_key_id=config.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY,
+        )
 
-        session = aioboto3.Session()
-
+    def save_file(self, key, path):
         try:
-            async with session.client(
-                "s3",
-                region_name=self.region_name,
-                aws_access_key_id=config.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY,
-            ) as s3_client:
-                await s3_client.upload_file(path, self.bucket_name, key)
-                print(f"Fichier uploadé avec succès : s3://{self.bucket_name}/{key}")
-                return True
+            if not os.path.isfile(path):
+                raise FileNotFoundError(f"Le fichier {path} n'existe pas.")
+
+            self.s3.upload_file(path, self.bucket_name, key)
+            print(f"Fichier uploadé avec succès : s3://{self.bucket_name}/{key}")
+            return True
 
         except FileNotFoundError as e:
             print("Erreur fichier :", e)
@@ -40,12 +36,6 @@ class AWSStorageAsync:
             return False
 
 
-# Exécution de manière asynchrone
 if __name__ == "__main__":
-    import asyncio
-
-    async def main():
-        storage = AWSStorageAsync("browser-outputs")
-        await storage.save_file("chatgpt/file.md", "README.md")
-
-    asyncio.run(main())
+    str0 = AWSStorage("browser-outputs")
+    str0.save_file("chatgpt/file.md", "README.md")

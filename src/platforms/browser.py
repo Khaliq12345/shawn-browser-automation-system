@@ -6,17 +6,13 @@ from src.utils.database import (
     start_process,
     save_awsupload,
 )
-from src.utils.aws_storage import AWSStorageAsync
+from src.utils.aws_storage import AWSStorage
 
 sys.path.append("..")
 import os
 from typing import Optional
-# from camoufox.async_api import AsyncCamoufox
-# from browserforge.fingerprints import Screen
 from src.utils.globals import save_file
-from src.utils.redis_utils import AsyncRedisBase
-from src.utils import globals
-# from src.utils.celery_app import app as celery_app
+from src.utils.redis_utils import RedisBase
 
 
 class BrowserBase(ContextDecorator, ABC):
@@ -37,26 +33,26 @@ class BrowserBase(ContextDecorator, ABC):
         self.camoufox = None
         self.browser = browser
         self.context = None
-        self.timeout = 60000
-        self.redis = AsyncRedisBase(process_id)
+        self.timeout = 240000
+        self.redis = RedisBase(process_id)
         self.bucket = "browser-outputs"
-        self.storage = AWSStorageAsync(self.bucket)
+        self.storage = AWSStorage(self.bucket)
         self.uid = self.process_id.split("_")[1]
 
-    async def navigate(self) -> bool:
+    def navigate(self) -> bool:
         """Start the browser and navigate to the specified URL"""
         try:
-            await self.page.goto(self.url, timeout=self.timeout)
+            self.page.goto(self.url, timeout=self.timeout)
             return True
         except Exception as e:
             print(f"Error starting or navigating the page - {e}")
             return False
 
-    async def aws_upload_file(self, key: str, path: str) -> None:
-        await self.storage.save_file(key, path)
-        await save_awsupload(f"{self.bucket}/{key}", self.name, self.prompt)
+    def aws_upload_file(self, key: str, path: str) -> None:
+        self.storage.save_file(key, path)
+        save_awsupload(f"{self.bucket}/{key}", self.name, self.prompt)
 
-    async def save_response(self, content: Optional[str]) -> bool:
+    def save_response(self, content: Optional[str]) -> bool:
         """Save the generated output from the prompt in html and text file"""
 
         basekey = f"{self.name}/{self.uid}"
@@ -66,52 +62,52 @@ class BrowserBase(ContextDecorator, ABC):
 
         # break the flow if no response in found
         if not content:
-            await self.redis.set_log("No generated output")
+            self.redis.set_log("No generated output")
             print("No generated output")
             return False
 
         # Save Text Result
         try:
             save_file(txt_out, content)
-            await self.aws_upload_file(f"{basekey}/{text_name}", txt_out)
+            self.aws_upload_file(f"{basekey}/{text_name}", txt_out)
         except Exception as e:
-            await self.redis.set_log(f"Unable to save output - {e}")
+            self.redis.set_log(f"Unable to save output - {e}")
             return False
 
         # Save ScreenShot
         try:
             screenshot_name = "screenshot.png"
             screeshot_path = f"responses/{self.name}/{self.uid}/{screenshot_name}"
-            await self.page.screenshot(path=screeshot_path, full_page=True)
-            await self.aws_upload_file(f"{basekey}/{screenshot_name}", screeshot_path)
+            self.page.screenshot(path=screeshot_path, full_page=True)
+            self.aws_upload_file(f"{basekey}/{screenshot_name}", screeshot_path)
         except Exception as e:
-            await self.redis.set_log(f"Unable to save screenshot - {e}")
+            self.redis.set_log(f"Unable to save screenshot - {e}")
 
         # Save Video
         try:
             video = self.page.video
             if video:
-                await self.redis.set_log("Successfully recorded video")
-                await self.page.close()
+                self.redis.set_log("Successfully recorded video")
+                self.page.close()
                 video_name = "video.mp4"
                 video_path = os.path.join(f"responses/{basekey}/", video_name)
-                await video.save_as(video_path)
-                await self.aws_upload_file(f"{basekey}/{video_name}", video_path)
+                video.save_as(video_path)
+                self.aws_upload_file(f"{basekey}/{video_name}", video_path)
             else:
-                await self.redis.set_log("No video was recorded")
+                self.redis.set_log("No video was recorded")
         except Exception as e:
-            await self.redis.set_log(f"Unable to record video - {e}")
+            self.redis.set_log(f"Unable to record video - {e}")
 
-        await self.redis.set_log(f" Successfully saved -- Output -> {save_folder}")
+        self.redis.set_log(f" Successfully saved -- Output -> {save_folder}")
         return True
 
     @abstractmethod
-    async def find_and_fill_input(self) -> bool:
+    def find_and_fill_input(self) -> bool:
         """Platform-specific method to fill and submit the prompt."""
         pass
 
     @abstractmethod
-    async def extract_response(self) -> Optional[str]:
+    def extract_response(self) -> Optional[str]:
         """Platform-specific method to extract the response."""
         pass
 
@@ -122,44 +118,43 @@ class BrowserBase(ContextDecorator, ABC):
             record_video_dir=f"responses/{self.name}/{self.uid}/",
             record_video_size={"width": 1280, "height": 720},
         )
-        self.page = self.context.new_page()
-        print("Creating new page")
-        self.page.goto("https://www.brainyquote.com/quotes/nelson_mandela_121685")
-        self.page.pause()
+        try:
+            self.page = self.context.new_page()
+            self.redis.set_log("- Workflow Started")
+            start_process(self.process_id, self.name, self.prompt)
 
-        # await self.redis.set_log("- Workflow Started")
-        # await start_process(self.process_id, self.name, self.prompt)
-        #
-        # # Set 1: Navigate to the platform
-        # is_navigate = await self.navigate()
-        # if not is_navigate:
-        #     await self.redis.set_log("- Error starting or navigating the page")
-        #     await update_process_status(self.process_id, "failed")
-        #     return None
-        # await self.redis.set_log("- Successfully navigated to the page")
-        #
-        # # Step 2: Fill and Submit the input
-        # is_filled = await self.find_and_fill_input()
-        # if not is_filled:
-        #     await self.redis.set_log("- Error filling the prompt")
-        #     await update_process_status(self.process_id, "failed")
-        #     return None
-        # await self.redis.set_log("- Prompt successfully filled")
-        #
-        # # Step 3: Extract the generated response
-        # content = await self.extract_response()
-        # if not content:
-        #     await self.redis.set_log("- Error while extracting the response")
-        #     await update_process_status(self.process_id, "failed")
-        #     return None
-        # await self.redis.set_log("- Response successfully extracted")
-        #
-        # # Step 4: Save the response
-        # await self.save_response(content)
-        # await self.redis.set_log("- Saving extracted data")
-        #
-        # # Step 5: Mark as Sucess on supabase
-        # await update_process_status(self.process_id, "success")
-        # await self.redis.set_log("- Process Successfully ended !")
-        #
-        # print("Browser instance closed")
+            # Set 1: Navigate to the platform
+            is_navigate = self.navigate()
+            if not is_navigate:
+                self.redis.set_log("- Error starting or navigating the page")
+                update_process_status(self.process_id, "failed")
+                return None
+            self.redis.set_log("- Successfully navigated to the page")
+
+            # Step 2: Fill and Submit the input
+            is_filled = self.find_and_fill_input()
+            if not is_filled:
+                self.redis.set_log("- Error filling the prompt")
+                update_process_status(self.process_id, "failed")
+                return None
+            self.redis.set_log("- Prompt successfully filled")
+
+            # Step 3: Extract the generated response
+            content = self.extract_response()
+            if not content:
+                self.redis.set_log("- Error while extracting the response")
+                update_process_status(self.process_id, "failed")
+                return None
+            self.redis.set_log("- Response successfully extracted")
+
+            # Step 4: Save the response
+            self.save_response(content)
+            self.redis.set_log("- Saving extracted data")
+
+            # Step 5: Mark as Sucess on supabase
+            update_process_status(self.process_id, "success")
+            self.redis.set_log("- Process Successfully ended !")
+
+        finally:
+            print("Browser instance closed")
+            self.context.close()
