@@ -51,13 +51,15 @@ async def update_process_status(
 # Retrieve a process status
 async def get_process_status(process_id: str):
     engine = get_engine()
+    result = None
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session() as session:
         stmt = select(Processes).where(Processes.process_id == process_id)
         process = await session.scalars(stmt)
         process = process.one()
+        result = process.status
     await engine.dispose()
-    return None
+    return result
 
 
 #  -------- Metrics ----------

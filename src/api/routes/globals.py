@@ -47,9 +47,7 @@ async def start_browser(name: str, prompt: str, headless: bool = True):
     process_id = f"{name}_{timestamp}"
     # Start Process
     try:
-        p = Process(
-            target=run_browser, args=(name, prompt, process_id, headless)
-        )
+        p = Process(target=run_browser, args=(name, prompt, process_id, headless))
         p.start()
     except Exception as e:
         raise HTTPException(
