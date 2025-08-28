@@ -2,12 +2,11 @@ from typing import Optional
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from datetime import datetime
 from src.config import config
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncAttrs
-from sqlalchemy import DateTime, Float, String, Text
+from sqlalchemy import create_engine, DateTime, Float, String, Text
 
 
 def get_engine():
-    engine = create_async_engine(
+    engine = create_engine(
         f"postgresql+psycopg://{config.DB_USER}:{config.DB_PASSWORD}@{config.DB_HOST}:5432/{config.DB_NAME}"
     )
     return engine
@@ -18,7 +17,7 @@ class Base(DeclarativeBase):
 
 
 # Process Model
-class Processes(AsyncAttrs, Base):
+class Processes(Base):
     __tablename__ = "processes"
 
     process_id: Mapped[str] = mapped_column(primary_key=True)
@@ -31,7 +30,7 @@ class Processes(AsyncAttrs, Base):
 
 
 # AWS Upload Tracking Model
-class AWSUploads(AsyncAttrs, Base):
+class AWSUploads(Base):
     __tablename__ = "awsuploads"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement="auto")
@@ -41,7 +40,8 @@ class AWSUploads(AsyncAttrs, Base):
 
 
 # Create all tables of the database
-async def create_db_and_tables():
+def create_db_and_tables():
     engine = get_engine()
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    with engine.begin() as conn:
+        Base.metadata.create_all(conn)
+    engine.dispose()

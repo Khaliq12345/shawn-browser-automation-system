@@ -1,34 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.models.model import create_db_and_tables
-from contextlib import asynccontextmanager
 from src.api.routes.metrics import router as metrics_router
 from src.api.routes.globals import router as global_router
 from src.api.routes.logs import router as logs_router
-<<<<<<< HEAD
 from src.utils.celery_app import start_browser
 
 app = FastAPI(
     title="Browser Automation System",
     on_startup=[create_db_and_tables, start_browser.apply_async],
-=======
-from src.utils.celery_app import create_browser
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Démarrage de l'app
-    await create_db_and_tables()
-    await create_browser()
-
-    yield
-
-
-app = FastAPI(
-    title="Browser Automation System",
-    # on_startup=[create_db_and_tables, create_browser],
-    lifespan=lifespan,
->>>>>>> 05c1193 (Celery started)
     responses={
         400: {"description": "Bad Request"},
         404: {"description": "Not Found"},
