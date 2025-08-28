@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
-import shutil
 import sys
 from src.utils.database import update_process_status, start_process
 from src.utils.aws_storage import AWSStorageAsync
@@ -51,7 +50,8 @@ class BrowserBase(ContextDecorator, ABC):
 
         basekey = f"{self.name}/{self.uid}"
         save_folder = f"responses/{basekey}/"
-        txt_out = os.path.join(save_folder, "output.txt")
+        text_name = "output.txt"
+        txt_out = os.path.join(save_folder, text_name)
 
         # break the flow if no response in found
         if not content:
@@ -61,18 +61,24 @@ class BrowserBase(ContextDecorator, ABC):
 
         save_file(txt_out, content)
         # Save Text Result
-        await self.storage.save_file(f"{basekey}/output.txt", txt_out)
+        await self.storage.save_file(f"{basekey}/{text_name}", txt_out)
 
+        # Save ScreenShot
+        screenshot_name = "screenshot.png"
+        screeshot_path = f"responses/{self.name}/{self.uid}/{screenshot_name}"
+        await self.page.screenshot(path=screeshot_path, full_page=True)
+        await self.storage.save_file(f"{basekey}/{screenshot_name}", screeshot_path)
+
+        # Save Video
         video = self.page.video
         if video:
             await self.redis.set_log("Successfully recorded video")
-            video_path = await video.path()
-            custom_name = "output.webm"
-            destination = os.path.join(f"responses/{basekey}/", custom_name)
-            shutil.move(video_path, destination)
+            await self.page.close()
+            video_name = "video.mp4"
+            video_path = os.path.join(f"responses/{basekey}/", video_name)
+            await video.save_as(video_path)
             # Save Video to aws
-            await self.storage.save_file(f"{basekey}/{custom_name}", destination)
-
+            await self.storage.save_file(f"{basekey}/{video_name}", video_path)
         else:
             await self.redis.set_log("Unable to record video")
 
@@ -99,7 +105,6 @@ class BrowserBase(ContextDecorator, ABC):
                 record_video_size={"width": 1280, "height": 720},
             )
             self.page = await self.context.new_page()
-            # self.page = await self.browser.new_page()
 
             await self.redis.set_log("- Workflow Started")
             await start_process(self.process_id, self.name, self.prompt)
