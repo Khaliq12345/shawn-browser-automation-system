@@ -6,6 +6,7 @@ from src.platforms.google import GoogleScraper
 from src.platforms.perplexity import PerplexityScraper
 from src.platforms.chatgpt import ChatGPTScraper
 from multiprocessing import Process
+import task
 
 
 router = APIRouter(prefix="/globals")
@@ -82,3 +83,15 @@ async def get_processes(platform: str):
             status_code=500,
             detail=f"Unable to retrieve processes for the platform : {e}",
         )
+
+
+@router.get("/test-celery")
+async def send_message(message: str):
+    result = task.add.apply_async(args=(message,))
+    print(result)
+    print(result.get())
+
+
+@router.get("/get-celery")
+async def get_message(message: str):
+    task.add

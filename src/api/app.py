@@ -5,7 +5,7 @@ from src.api.routes.metrics import router as metrics_router
 from src.api.routes.globals import router as global_router
 from src.api.routes.logs import router as logs_router
 
-
+browser = None
 app = FastAPI(
     title="Browser Automation System",
     on_startup=[create_db_and_tables],
