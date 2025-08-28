@@ -1,5 +1,7 @@
 import os
 
+browser = None
+
 
 # Write down the output files
 def save_file(file_path: str, content: str):
