@@ -1,7 +1,26 @@
 from sqlmodel import select, text
-from src.models.model import Processes, get_engine
+from src.models.model import Processes, AWSUploads, get_engine
 from datetime import datetime
 from sqlalchemy.ext.asyncio import async_sessionmaker
+
+
+# Record an Upload on aws
+async def save_awsupload(
+    aws_key: str,
+    browser: str,
+    prompt: str,
+):
+    engine = get_engine()
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
+    async with async_session() as session:
+        item = AWSUploads(
+            aws_key=aws_key,
+            browser=browser,
+            prompt=prompt,
+        )
+        session.add(item)
+        await session.commit()
+    await engine.dispose()
 
 
 # Record a starting process for any platform
