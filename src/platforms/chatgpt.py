@@ -1,5 +1,4 @@
 import sys
-from playwright.async_api import expect
 import pyperclip
 
 sys.path.append("..")
@@ -11,13 +10,14 @@ from src.platforms.browser import BrowserBase
 class ChatGPTScraper(BrowserBase):
     def __init__(
         self,
+        browser,
         url: str,
         prompt: str,
         name: str,
         process_id: str,
         headless: bool = False,
     ) -> None:
-        super().__init__(url, prompt, name, process_id, headless)
+        super().__init__(browser, url, prompt, name, process_id, headless)
 
     async def find_and_fill_input(self) -> bool:
         try:

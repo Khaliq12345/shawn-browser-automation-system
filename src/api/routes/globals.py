@@ -5,8 +5,9 @@ from src.utils.database import get_process_status, get_all_platform_processes
 from src.platforms.google import GoogleScraper
 from src.platforms.perplexity import PerplexityScraper
 from src.platforms.chatgpt import ChatGPTScraper
-from multiprocessing import Process
-import task
+# from multiprocessing import Process
+from src.utils.celery_app import app as celery_app
+from src.utils import globals
 
 
 router = APIRouter(prefix="/globals")
@@ -22,14 +23,16 @@ SCRAPER_CONFIG = {
     },
 }
 
-
-def run_browser(name: str, prompt: str, process_id: str, headless: bool):
+@celery_app.task
+def run_browser(browser, name: str, prompt: str, process_id: str, headless: bool):
     # Get the matching configs class and url
     config = SCRAPER_CONFIG[name]
     ScraperClass = config["class"]
     url = config["url"]
     # Launch the matching browser class
+    print("laun")
     matching_scraper = ScraperClass(
+        browser,
         url=url,
         prompt=prompt,
         name=name,
@@ -48,9 +51,16 @@ async def start_browser(name: str, prompt: str, headless: bool = True):
     process_id = f"{name}_{timestamp}"
     # Start Process
     try:
-        p = Process(target=run_browser, args=(name, prompt, process_id, headless))
-        p.start()
+        print("browser before")
+        browser = globals.browser
+        print(browser)
+        p = run_browser.apply_async(args=(browser, name, prompt, process_id, headless))
+        print(p)
+        print(p.id)
+        # p = Process(target=run_browser, args=(name, prompt, process_id, headless))
+        # p.start()
     except Exception as e:
+        print(f"errororr {e}")
         raise HTTPException(
             status_code=500, detail=f"Unable to create the process : {e}"
         )
@@ -83,15 +93,3 @@ async def get_processes(platform: str):
             status_code=500,
             detail=f"Unable to retrieve processes for the platform : {e}",
         )
-
-
-@router.get("/test-celery")
-async def send_message(message: str):
-    result = task.add.apply_async(args=(message,))
-    print(result)
-    print(result.get())
-
-
-@router.get("/get-celery")
-async def get_message(message: str):
-    task.add

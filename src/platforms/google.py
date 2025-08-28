@@ -10,13 +10,14 @@ from html_to_markdown import convert_to_markdown
 class GoogleScraper(BrowserBase):
     def __init__(
         self,
+        browser,
         url: str,
         prompt: str,
         name: str,
         process_id: str,
         headless: bool = False,
     ) -> None:
-        super().__init__(url, prompt, name, process_id, headless)
+        super().__init__(browser, url, prompt, name, process_id, headless)
         self.timeout = 120000
 
     async def find_and_fill_input(self) -> bool:

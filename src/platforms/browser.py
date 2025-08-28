@@ -9,18 +9,20 @@ from src.utils.database import (
 from src.utils.aws_storage import AWSStorageAsync
 
 sys.path.append("..")
-# from playwright.async_api import async_playwright
 import os
 from typing import Optional
-from camoufox.async_api import AsyncCamoufox
-from browserforge.fingerprints import Screen
+# from camoufox.async_api import AsyncCamoufox
+# from browserforge.fingerprints import Screen
 from src.utils.globals import save_file
 from src.utils.redis_utils import AsyncRedisBase
+from src.utils import globals
+# from src.utils.celery_app import app as celery_app
 
 
 class BrowserBase(ContextDecorator, ABC):
     def __init__(
         self,
+        browser,
         url: str,
         prompt: str,
         name: str,
@@ -33,7 +35,7 @@ class BrowserBase(ContextDecorator, ABC):
         self.process_id = process_id
         self.headless = headless
         self.camoufox = None
-        self.browser = None
+        self.browser = browser
         self.context = None
         self.timeout = 60000
         self.redis = AsyncRedisBase(process_id)
@@ -79,13 +81,9 @@ class BrowserBase(ContextDecorator, ABC):
         # Save ScreenShot
         try:
             screenshot_name = "screenshot.png"
-            screeshot_path = (
-                f"responses/{self.name}/{self.uid}/{screenshot_name}"
-            )
+            screeshot_path = f"responses/{self.name}/{self.uid}/{screenshot_name}"
             await self.page.screenshot(path=screeshot_path, full_page=True)
-            await self.aws_upload_file(
-                f"{basekey}/{screenshot_name}", screeshot_path
-            )
+            await self.aws_upload_file(f"{basekey}/{screenshot_name}", screeshot_path)
         except Exception as e:
             await self.redis.set_log(f"Unable to save screenshot - {e}")
 
@@ -98,17 +96,13 @@ class BrowserBase(ContextDecorator, ABC):
                 video_name = "video.mp4"
                 video_path = os.path.join(f"responses/{basekey}/", video_name)
                 await video.save_as(video_path)
-                await self.aws_upload_file(
-                    f"{basekey}/{video_name}", video_path
-                )
+                await self.aws_upload_file(f"{basekey}/{video_name}", video_path)
             else:
                 await self.redis.set_log("No video was recorded")
         except Exception as e:
             await self.redis.set_log(f"Unable to record video - {e}")
 
-        await self.redis.set_log(
-            f" Successfully saved -- Output -> {save_folder}"
-        )
+        await self.redis.set_log(f" Successfully saved -- Output -> {save_folder}")
         return True
 
     @abstractmethod
@@ -121,12 +115,17 @@ class BrowserBase(ContextDecorator, ABC):
         """Platform-specific method to extract the response."""
         pass
 
+    # @celery_app.task
     async def send_prompt(self) -> None:
+        print("starting global")
+        print(globals.browser)
         """Start the workflow"""
-        async with AsyncCamoufox(
-            screen=Screen(max_width=1920, max_height=1080),
-            headless=self.headless,
-        ) as self.browser:
+        # async with globals.browser as self.browser:
+        # async with AsyncCamoufox(
+        #     screen=Screen(max_width=1920, max_height=1080),
+        #     headless=self.headless,
+        # ) as self.browser:
+        async with self.browser:
             self.context = await self.browser.new_context(
                 record_video_dir=f"responses/{self.name}/{self.uid}/",
                 record_video_size={"width": 1280, "height": 720},
@@ -139,9 +138,7 @@ class BrowserBase(ContextDecorator, ABC):
             # Set 1: Navigate to the platform
             is_navigate = await self.navigate()
             if not is_navigate:
-                await self.redis.set_log(
-                    "- Error starting or navigating the page"
-                )
+                await self.redis.set_log("- Error starting or navigating the page")
                 await update_process_status(self.process_id, "failed")
                 return None
             await self.redis.set_log("- Successfully navigated to the page")
@@ -157,9 +154,7 @@ class BrowserBase(ContextDecorator, ABC):
             # Step 3: Extract the generated response
             content = await self.extract_response()
             if not content:
-                await self.redis.set_log(
-                    "- Error while extracting the response"
-                )
+                await self.redis.set_log("- Error while extracting the response")
                 await update_process_status(self.process_id, "failed")
                 return None
             await self.redis.set_log("- Response successfully extracted")
