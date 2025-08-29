@@ -4,18 +4,8 @@ from src.platforms.chatgpt import ChatGPTScraper
 from celery import Celery, signals
 from camoufox.sync_api import Camoufox
 import logging
+from src.utils.redis_utils import RedisBase, RedisLogHandler
 
-from src.utils.redis_utils import RedisBase
-
-
-# logger = logging.getLogger(__name__)
-# logger.setLevel(logging.INFO)
-
-# if not logger.handlers:
-#     file_handler = logging.FileHandler("celery_tasks.log")
-#     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-#     file_handler.setFormatter(formatter)
-#     logger.addHandler(file_handler)
 
 app = Celery(
     "tasks",
@@ -106,16 +96,3 @@ def run_browser(name: str, prompt: str, process_id: str, headless: bool):
 def add(message: str):
     print(f"Your message is - {message}")
     return message
-
-
-class RedisLogHandler(logging.Handler):
-    def __init__(self, redis_logger: RedisBase):
-        super().__init__()
-        self.redis_logger = redis_logger
-
-    def emit(self, record):
-        try:
-            log_entry = self.format(record)
-            self.redis_logger.set_log(log_entry)
-        except Exception as e:
-            print(f"RedisLogHandler error: {e}")
