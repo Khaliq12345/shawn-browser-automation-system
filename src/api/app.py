@@ -39,7 +39,7 @@ app.include_router(prefix="/api", router=metrics_router, tags=["Metrics"])
 app.include_router(prefix="/api", router=logs_router, tags=["Logs"])
 
 
-@app.post("/api/start-browser")
+@app.post("/api/globals/start-browser")
 def start_browser(name: str, prompt: str, headless: bool = True):
     # If the name is not supported
     if name not in celery_app.SCRAPER_CONFIG:
@@ -61,7 +61,7 @@ def start_browser(name: str, prompt: str, headless: bool = True):
     return {"details": output}
 
 
-@app.get("/api/check-status/{process_id}")
+@app.get("/api/globals/check-status/{process_id}")
 def check_status(process_id: str):
     try:
         # Get the process status
@@ -73,7 +73,7 @@ def check_status(process_id: str):
         raise HTTPException(status_code=404, detail=f"Process not found : {e}")
 
 
-@app.get("/api/get-processes/{platform}")
+@app.get("/api/globals/get-processes/{platform}")
 def get_processes(platform: str):
     try:
         outputs = get_all_platform_processes(platform)

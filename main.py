@@ -1,13 +1,8 @@
 import uvicorn
-# import subprocess
 
 
 # Launch API
 def main():
-    # Start Celery
-    # subprocess.Popen(
-    #     ["celery", "-A", "src.utils.celery_app", "worker", "--loglevel=info"]
-    # )
     # Start Fast API
     uvicorn.run(
         "src.api.app:app",
@@ -19,3 +14,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # celery -A src.utils.celery_app worker --loglevel=info

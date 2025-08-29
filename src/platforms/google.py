@@ -11,13 +11,14 @@ class GoogleScraper(BrowserBase):
     def __init__(
         self,
         browser,
+        logger,
         url: str,
         prompt: str,
         name: str,
         process_id: str,
         headless: bool = False,
     ) -> None:
-        super().__init__(browser, url, prompt, name, process_id, headless)
+        super().__init__(browser, logger, url, prompt, name, process_id, headless)
         self.timeout = 120000
 
     def find_and_fill_input(self) -> bool:

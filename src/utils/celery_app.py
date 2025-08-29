@@ -2,7 +2,20 @@ from src.platforms.google import GoogleScraper
 from src.platforms.perplexity import PerplexityScraper
 from src.platforms.chatgpt import ChatGPTScraper
 from celery import Celery, signals
-from playwright.sync_api import sync_playwright
+from camoufox.sync_api import Camoufox
+import logging
+
+from src.utils.redis_utils import RedisBase
+
+
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
+
+# if not logger.handlers:
+#     file_handler = logging.FileHandler("celery_tasks.log")
+#     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+#     file_handler.setFormatter(formatter)
+#     logger.addHandler(file_handler)
 
 app = Celery(
     "tasks",
@@ -21,35 +34,51 @@ SCRAPER_CONFIG = {
     },
 }
 
-playwright = None
+camoufox = None
 browser = None
 
 
 @signals.worker_process_init.connect
 def init_worker(**kwargs):
     """Called once per worker process"""
-    global playwright, browser
+    global camoufox, browser
     print("🔵 Starting browser for worker...")
-
-    playwright = sync_playwright().start()
-    browser = playwright.firefox.launch(headless=False)
+    # logger.info("🔵 Starting Camoufox browser for worker...")
+    camoufox = Camoufox(headless=False)
+    browser = camoufox.start()
 
 
 @signals.worker_shutdown.connect
 def shutdown_worker(**kwargs):
     """Called when worker process shuts down"""
-    global playwright, browser
+    global camoufox, browser
     print("🔴 Closing browser for worker...")
-
+    # logger.info("🔴 Closing Camoufox browser for worker...")
     if browser:
         browser.close()
-    if playwright:
-        playwright.stop()
+    if camoufox:
+        camoufox.stop()
 
 
 @app.task
 def run_browser(name: str, prompt: str, process_id: str, headless: bool):
-    global playwright, browser
+    global camoufox, browser
+    # Redis log wrapper
+    redis_logger = RedisBase(process_id)
+
+    # Crée un logger spécifique pour cette tâche
+    task_logger = logging.getLogger(f"{__name__}.{process_id}")
+    task_logger.setLevel(logging.INFO)
+
+    # Ajoute le handler Redis si pas déjà présent
+    if not any(isinstance(h, RedisLogHandler) for h in task_logger.handlers):
+        redis_handler = RedisLogHandler(redis_logger)
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        redis_handler.setFormatter(formatter)
+        task_logger.addHandler(redis_handler)
+
+    task_logger.info("Getting matching class...")
+
     # Get the matching configs class and url
     config = SCRAPER_CONFIG[name]
     ScraperClass = config["class"]
@@ -57,11 +86,13 @@ def run_browser(name: str, prompt: str, process_id: str, headless: bool):
 
     # Launch the matching browser class
     if not browser:
+        task_logger.error("Browser not created")
         print("Browser not created")
         # raise HTTPException(status_code=500, detail="Browser not created")
 
     matching_scraper = ScraperClass(
         browser=browser,
+        logger=task_logger,
         url=url,
         prompt=prompt,
         name=name,
@@ -76,3 +107,15 @@ def add(message: str):
     print(f"Your message is - {message}")
     return message
 
+
+class RedisLogHandler(logging.Handler):
+    def __init__(self, redis_logger: RedisBase):
+        super().__init__()
+        self.redis_logger = redis_logger
+
+    def emit(self, record):
+        try:
+            log_entry = self.format(record)
+            self.redis_logger.set_log(log_entry)
+        except Exception as e:
+            print(f"RedisLogHandler error: {e}")
