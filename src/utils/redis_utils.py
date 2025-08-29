@@ -1,4 +1,5 @@
 import redis
+import logging
 
 
 class RedisBase:
@@ -39,6 +40,19 @@ class RedisBase:
             return ""
         finally:
             session.close()
+
+
+class RedisLogHandler(logging.Handler):
+    def __init__(self, redis_logger: RedisBase):
+        super().__init__()
+        self.redis_logger = redis_logger
+
+    def emit(self, record):
+        try:
+            log_entry = self.format(record)
+            self.redis_logger.set_log(log_entry)
+        except Exception as e:
+            print(f"RedisLogHandler error: {e}")
 
 
 def main():
