@@ -13,6 +13,9 @@ import os
 from typing import Optional
 from src.utils.globals import save_file
 from src.utils.redis_utils import RedisBase
+# from browserforge.injectors.playwright import NewContext
+# from browserforge.fingerprints import Screen, FingerprintGenerator
+# from playwright_stealth import Stealth
 
 
 class BrowserBase(ContextDecorator, ABC):
@@ -38,6 +41,9 @@ class BrowserBase(ContextDecorator, ABC):
         self.bucket = "browser-outputs"
         self.storage = AWSStorage(self.bucket)
         self.uid = self.process_id.split("_")[1]
+        # screen = Screen(min_width=100, max_width=1280, min_height=400, max_height=720)
+        # fingerprints = FingerprintGenerator(screen=screen, browser="firefox")
+        # self.fingerprints = fingerprints.generate()
 
     def navigate(self) -> bool:
         """Start the browser and navigate to the specified URL"""
@@ -111,7 +117,7 @@ class BrowserBase(ContextDecorator, ABC):
         """Platform-specific method to extract the response."""
         pass
 
-    def send_prompt(self) -> None:
+    async def send_prompt(self) -> None:
         """Start the workflow"""
         print("Creating context")
         self.context = self.browser.new_context(
@@ -157,4 +163,5 @@ class BrowserBase(ContextDecorator, ABC):
 
         finally:
             print("Browser instance closed")
+            self.page.close()
             self.context.close()

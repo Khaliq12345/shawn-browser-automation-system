@@ -12,6 +12,7 @@ dependencies = [
     "dateparser>=1.2.2",
     "fastapi[standard]>=0.116.1",
     "html-to-markdown[lxml]>=1.9.0",
+    "playwright-stealth>=2.0.0",
     "psycopg[binary]>=3.2.9",
     "ptpython>=3.0.30",
     "pyperclip>=1.9.0",

@@ -13,7 +13,7 @@ def main():
         "src.api.app:app",
         host="localhost",
         port=8001,
-        reload=True,
+        reload=False,
     )
 
 
