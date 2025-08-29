@@ -11,13 +11,14 @@ class ChatGPTScraper(BrowserBase):
     def __init__(
         self,
         browser,
+        logger,
         url: str,
         prompt: str,
         name: str,
         process_id: str,
         headless: bool = False,
     ) -> None:
-        super().__init__(browser, url, prompt, name, process_id, headless)
+        super().__init__(browser, logger, url, prompt, name, process_id, headless)
 
     def find_and_fill_input(self) -> bool:
         try:
