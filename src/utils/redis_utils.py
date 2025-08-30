@@ -1,13 +1,14 @@
 import redis
 import logging
+from src.config import config
 
 
 class RedisBase:
     def __init__(self, process_id: str):
-        self.host = "localhost"
-        self.port = 6379
+        self.host = config.REDIS_HOST
+        self.port = config.REDIS_PORT
         self.process_id = process_id
-        self.redis_db = 0
+        self.redis_db = config.REDIS_DB
 
     # Redis session (synchronous)
     def redis_session(self):

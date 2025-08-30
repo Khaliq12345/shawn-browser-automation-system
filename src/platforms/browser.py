@@ -158,6 +158,6 @@ class BrowserBase(ContextDecorator, ABC):
             self.logger.info("- Process Successfully ended !")
 
         finally:
-            print("Browser instance closed")
             self.page.close()
             self.context.close()
+            print("Context and Page instance closed")

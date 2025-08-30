@@ -1,4 +1,5 @@
 import uvicorn
+from src.config.config import ENV, APP_PORT
 
 
 # Launch API
@@ -6,9 +7,9 @@ def main():
     # Start Fast API
     uvicorn.run(
         "src.api.app:app",
-        host="localhost",
-        port=8001,
-        reload=False,
+        host="0.0.0.0",
+        port=int(APP_PORT),
+        reload=ENV == "dev",
     )
 
 

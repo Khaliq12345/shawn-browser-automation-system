@@ -1,0 +1,32 @@
+version: "3.8"
+services:
+  api:
+    build: .
+    env_file:
+      - .env
+    command: uv run main.py
+    ports:
+      - "${APP_PORT}:8000"
+    depends_on:
+      - redis
+
+  worker:
+    build: .
+    env_file:
+      - .env
+    command: uv run celery --app src.utils.celery_app worker --loglevel=INFO -c 2
+    depends_on:
+      - redis
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+  redis:
+    image: redis:7-alpine
+

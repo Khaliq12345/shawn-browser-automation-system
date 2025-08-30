@@ -5,12 +5,13 @@ from celery import Celery, signals
 from camoufox.sync_api import Camoufox
 import logging
 from src.utils.redis_utils import RedisBase, RedisLogHandler
+from src.config.config import REDIS_URL, HEADLESS
 
 
 app = Celery(
     "tasks",
-    broker="redis://localhost",
-    backend="redis://localhost",
+    broker=REDIS_URL,
+    backend=REDIS_URL,
 )
 
 
@@ -34,11 +35,11 @@ def init_worker(**kwargs):
     global camoufox, browser
     print("🔵 Starting browser for worker...")
     # logger.info("🔵 Starting Camoufox browser for worker...")
-    camoufox = Camoufox(headless=False)
+    camoufox = Camoufox(headless=HEADLESS == "true")
     browser = camoufox.start()
 
 
-@signals.worker_shutdown.connect
+@signals.worker_process_shutdown.connect
 def shutdown_worker(**kwargs):
     """Called when worker process shuts down"""
     global camoufox, browser
@@ -52,6 +53,7 @@ def shutdown_worker(**kwargs):
 
 @app.task
 def run_browser(name: str, prompt: str, process_id: str, headless: bool):
+    redis_handler = None
     global camoufox, browser
     # Redis log wrapper
     redis_logger = RedisBase(process_id)
@@ -90,6 +92,8 @@ def run_browser(name: str, prompt: str, process_id: str, headless: bool):
         headless=headless,
     )
     matching_scraper.send_prompt()
+    if redis_handler:
+        task_logger.removeHandler(redis_handler)
 
 
 @app.task
