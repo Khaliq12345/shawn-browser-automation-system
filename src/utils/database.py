@@ -17,6 +17,7 @@ def save_awsupload(
             aws_key=aws_key,
             browser=browser,
             prompt=prompt,
+            date=datetime.now(),
         )
         session.add(item)
         session.commit()

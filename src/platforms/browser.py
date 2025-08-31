@@ -23,6 +23,7 @@ class BrowserBase(ContextDecorator, ABC):
         prompt: str,
         name: str,
         process_id: str,
+        timeout: int,
         headless: bool = False,
     ) -> None:
         self.url = url
@@ -34,7 +35,7 @@ class BrowserBase(ContextDecorator, ABC):
         self.browser = browser
         self.logger = logger
         self.context = None
-        self.timeout = 240000
+        self.timeout = timeout
         self.bucket = "browser-outputs"
         self.storage = AWSStorage(self.bucket)
         self.uid = self.process_id.split("_")[1]

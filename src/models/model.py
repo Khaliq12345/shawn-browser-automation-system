@@ -37,6 +37,7 @@ class AWSUploads(Base):
     aws_key: Mapped[str] = mapped_column(Text())
     browser: Mapped[str] = mapped_column(String(15))
     prompt: Mapped[str] = mapped_column(Text())
+    date: Mapped[datetime] = mapped_column(DateTime())
 
 
 # Create all tables of the database
