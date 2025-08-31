@@ -21,6 +21,7 @@ RUN apt-get update && \
         tk-dev \
         uuid-dev \
         liblzma-dev \
+        xclip \
         git && \
     apt-get update && \
     rm -rf /var/lib/apt/lists/*

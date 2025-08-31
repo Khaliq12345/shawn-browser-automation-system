@@ -24,6 +24,7 @@ services:
       dockerfile: Dockerfile.frontend
     ports:
       - "3000:3000"
+    command: node .output/server/index.mjs
     depends_on:
       - api
 
