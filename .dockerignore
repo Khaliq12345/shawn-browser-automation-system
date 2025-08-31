@@ -1,1 +1,21 @@
+# Python / backend
+__pycache__/
+*.pyc
+.venv/
+*.log
+uv.lock
+.env
+
+# Node / frontend
+interface/node_modules/
+interface/dist/
+interface/.next/
+interface/.env
+
+# Git
 .git/
+.gitignore
+
+# Docker itself
+Dockerfile
+docker-compose.yml
