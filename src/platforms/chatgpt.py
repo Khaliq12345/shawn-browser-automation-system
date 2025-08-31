@@ -16,9 +16,12 @@ class ChatGPTScraper(BrowserBase):
         prompt: str,
         name: str,
         process_id: str,
+        timeout: int,
         headless: bool = False,
     ) -> None:
-        super().__init__(browser, logger, url, prompt, name, process_id, headless)
+        super().__init__(
+            browser, logger, url, prompt, name, process_id, timeout, headless
+        )
 
     def find_and_fill_input(self) -> bool:
         try:
@@ -48,7 +51,9 @@ class ChatGPTScraper(BrowserBase):
             'div.justify-start button[data-testid="copy-turn-action-button"]'
         )
         try:
-            self.page.locator(copy_selector).last.click(timeout=120000, force=True)
+            self.page.locator(copy_selector).last.click(
+                timeout=self.timeout, force=True
+            )
         except Exception as e:
             print(f"Unable to find copy button {e}")
             return None

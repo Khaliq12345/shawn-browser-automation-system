@@ -52,7 +52,7 @@ def shutdown_worker(**kwargs):
 
 
 @app.task
-def run_browser(name: str, prompt: str, process_id: str, headless: bool):
+def run_browser(name: str, prompt: str, process_id: str, timeout: int, headless: bool):
     redis_handler = None
     global camoufox, browser
     # Redis log wrapper
@@ -89,6 +89,7 @@ def run_browser(name: str, prompt: str, process_id: str, headless: bool):
         prompt=prompt,
         name=name,
         process_id=process_id,
+        timeout=timeout,
         headless=headless,
     )
     matching_scraper.send_prompt()

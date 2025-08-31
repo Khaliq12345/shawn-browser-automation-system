@@ -39,7 +39,7 @@ app.include_router(prefix="/api", router=logs_router, tags=["Logs"])
 
 
 @app.post("/api/globals/start-browser")
-def start_browser(name: str, prompt: str, headless: bool = True):
+def start_browser(name: str, prompt: str, timeout: int = 240000, headless: bool = True):
     # If the name is not supported
     if name not in celery_app.SCRAPER_CONFIG:
         raise HTTPException(status_code=400, detail="Invalid Parameter 'name'")
@@ -47,7 +47,9 @@ def start_browser(name: str, prompt: str, headless: bool = True):
     process_id = f"{name}_{timestamp}"
     # Start Process
     try:
-        celery_app.run_browser.apply_async(args=(name, prompt, process_id, headless))
+        celery_app.run_browser.apply_async(
+            args=(name, prompt, process_id, timeout, headless)
+        )
     except Exception as e:
         print(f"errororr {e}")
         raise HTTPException(

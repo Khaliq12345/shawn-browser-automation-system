@@ -17,9 +17,12 @@ class PerplexityScraper(BrowserBase):
         prompt: str,
         name: str,
         process_id: str,
+        timeout: int,
         headless: bool = False,
     ) -> None:
-        super().__init__(browser, logger, url, prompt, name, process_id, headless)
+        super().__init__(
+            browser, logger, url, prompt, name, process_id, timeout, headless
+        )
 
     def find_and_fill_input(self) -> bool:
         try:
@@ -46,7 +49,7 @@ class PerplexityScraper(BrowserBase):
         content = None
         copy_selector = 'button[aria-label="Copy"]'
         try:
-            self.page.wait_for_selector(copy_selector, timeout=120000)
+            self.page.wait_for_selector(copy_selector, timeout=self.timeout)
             self.page.click(copy_selector)
             print("Copied")
         except Exception as e:

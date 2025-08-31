@@ -16,10 +16,12 @@ class GoogleScraper(BrowserBase):
         prompt: str,
         name: str,
         process_id: str,
+        timeout: int,
         headless: bool = False,
     ) -> None:
-        super().__init__(browser, logger, url, prompt, name, process_id, headless)
-        self.timeout = 120000
+        super().__init__(
+            browser, logger, url, prompt, name, process_id, timeout, headless
+        )
 
     def find_and_fill_input(self) -> bool:
         try:
@@ -44,7 +46,6 @@ class GoogleScraper(BrowserBase):
 
         try:
             self.page.click(show_more_button, timeout=self.timeout)
-            self.page.wait_for_timeout(timeout=3000)
         except Exception as e:
             print(f"Unable to find the Show more button {e}")
             return None
