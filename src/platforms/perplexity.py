@@ -1,11 +1,10 @@
 import sys
 
-import pyperclip
-
 sys.path.append("..")
 
 from typing import Optional
 from src.platforms.browser import BrowserBase
+from html_to_markdown import convert_to_markdown
 
 
 class PerplexityScraper(BrowserBase):
@@ -25,6 +24,9 @@ class PerplexityScraper(BrowserBase):
         )
 
     def find_and_fill_input(self) -> bool:
+        self.page.wait_for_timeout(5000)
+        self.page.mouse.click(0, 0)
+        self.page.wait_for_timeout(5000)
         try:
             prompt_input_selector = 'div[id="ask-input"]'
             # trying to fill the prompt
@@ -50,10 +52,11 @@ class PerplexityScraper(BrowserBase):
         copy_selector = 'button[aria-label="Copy"]'
         try:
             self.page.wait_for_selector(copy_selector, timeout=self.timeout)
-            self.page.click(copy_selector)
-            print("Copied")
         except Exception as e:
             print(f"Unable to find copy button - {e}")
             return None
-        content = pyperclip.paste()
-        return content
+        content_selector = ".pb-md.mx-auto.pt-5.md\\:pb-12.max-w-threadContentWidth"
+        content_element = self.page.query_selector(content_selector)
+        content = content_element.inner_html() if content_element else ""
+        content_markdown = convert_to_markdown(content)
+        return content_markdown

@@ -35,7 +35,7 @@ def init_worker(**kwargs):
     global camoufox, browser
     print("🔵 Starting browser for worker...")
     # logger.info("🔵 Starting Camoufox browser for worker...")
-    camoufox = Camoufox(headless=HEADLESS == "true")
+    camoufox = Camoufox(headless=HEADLESS.lower() == "true")
     browser = camoufox.start()
 
 
@@ -47,12 +47,12 @@ def shutdown_worker(**kwargs):
     # logger.info("🔴 Closing Camoufox browser for worker...")
     if browser:
         browser.close()
-    if camoufox:
-        camoufox.stop()
 
 
 @app.task
-def run_browser(name: str, prompt: str, process_id: str, timeout: int, headless: bool):
+def run_browser(
+    name: str, prompt: str, process_id: str, timeout: int, headless: bool
+):
     redis_handler = None
     global camoufox, browser
     # Redis log wrapper
@@ -65,7 +65,9 @@ def run_browser(name: str, prompt: str, process_id: str, timeout: int, headless:
     # Ajoute le handler Redis si pas déjà présent
     if not any(isinstance(h, RedisLogHandler) for h in task_logger.handlers):
         redis_handler = RedisLogHandler(redis_logger)
-        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        formatter = logging.Formatter(
+            "%(asctime)s - %(levelname)s - %(message)s"
+        )
         redis_handler.setFormatter(formatter)
         task_logger.addHandler(redis_handler)
 

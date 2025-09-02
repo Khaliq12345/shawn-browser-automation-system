@@ -1,10 +1,10 @@
 import sys
-import pyperclip
 
 sys.path.append("..")
 
 from typing import Optional
 from src.platforms.browser import BrowserBase
+from html_to_markdown import convert_to_markdown
 
 
 class ChatGPTScraper(BrowserBase):
@@ -29,10 +29,14 @@ class ChatGPTScraper(BrowserBase):
             self.page.mouse.click(0, 0)
             self.page.wait_for_timeout(5000)
             # trying to fill the prompt
-            prompt_input_selector = 'div[id="prompt-textarea"]'  # "#prompt-textarea"
+            prompt_input_selector = (
+                'div[id="prompt-textarea"]'  # "#prompt-textarea"
+            )
             try:
                 print("Filling input")
-                self.page.fill(prompt_input_selector, self.prompt, timeout=self.timeout)
+                self.page.fill(
+                    prompt_input_selector, self.prompt, timeout=self.timeout
+                )
                 print("Done FIlling")
             except Exception as e:
                 print(f"Can not fill the prompt input {e}")
@@ -51,11 +55,13 @@ class ChatGPTScraper(BrowserBase):
             'div.justify-start button[data-testid="copy-turn-action-button"]'
         )
         try:
-            self.page.locator(copy_selector).last.click(
-                timeout=self.timeout, force=True
-            )
+            self.page.wait_for_selector(copy_selector, timeout=self.timeout)
         except Exception as e:
             print(f"Unable to find copy button {e}")
             return None
-        content = pyperclip.paste()
-        return content
+
+        content_selector = 'article[data-turn="assistant"]'
+        content_element = self.page.query_selector(content_selector)
+        content = content_element.inner_html() if content_element else ""
+        content_markdown = convert_to_markdown(content)
+        return content_markdown
