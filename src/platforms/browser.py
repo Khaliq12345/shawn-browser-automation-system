@@ -78,7 +78,9 @@ class BrowserBase(ContextDecorator, ABC):
         # Save ScreenShot
         try:
             screenshot_name = "screenshot.png"
-            screeshot_path = f"responses/{self.name}/{self.uid}/{screenshot_name}"
+            screeshot_path = (
+                f"responses/{self.name}/{self.uid}/{screenshot_name}"
+            )
             self.page.screenshot(path=screeshot_path, full_page=True)
             self.aws_upload_file(f"{basekey}/{screenshot_name}", screeshot_path)
         except Exception as e:
@@ -116,7 +118,6 @@ class BrowserBase(ContextDecorator, ABC):
         """Start the workflow"""
         print("Creating context")
         self.logger.info("Creating Context")
-        print(self.logger)
         self.context = self.browser.new_context(
             record_video_dir=f"responses/{self.name}/{self.uid}/",
             record_video_size={"width": 1280, "height": 720},

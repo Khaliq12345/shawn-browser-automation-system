@@ -5,6 +5,7 @@ sys.path.append("..")
 from typing import Optional
 from src.platforms.browser import BrowserBase
 from html_to_markdown import convert_to_markdown
+from playwright.sync_api import expect
 
 
 class GoogleScraper(BrowserBase):
@@ -28,7 +29,9 @@ class GoogleScraper(BrowserBase):
             prompt_input_selector = 'textarea[name="q"]'
             # trying to fill the prompt
             try:
-                self.page.fill(prompt_input_selector, self.prompt, timeout=self.timeout)
+                self.page.fill(
+                    prompt_input_selector, self.prompt, timeout=self.timeout
+                )
             except Exception as e:
                 print(f"Can not fill the prompt input {e}")
                 return False
@@ -45,13 +48,14 @@ class GoogleScraper(BrowserBase):
         show_more_button = 'div[class="kHtcsd"]'
 
         try:
-            self.page.click(show_more_button, timeout=self.timeout)
+            expect(self.page.locator(show_more_button).first).to_be_visible()
+            self.page.click(show_more_button)
         except Exception as e:
             print(f"Unable to find the Show more button {e}")
             return None
 
         try:
-            self.page.wait_for_selector(content_selector, timeout=self.timeout)
+            expect(self.page.locator(content_selector).first).to_be_visible()
         except Exception as e:
             print(f"Unable to find the content {e}")
             return None

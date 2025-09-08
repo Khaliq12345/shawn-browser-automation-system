@@ -20,3 +20,6 @@ REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
 ENV = os.getenv("ENV", "dev")
 APP_PORT = os.getenv("APP_PORT", 8000)
 HEADLESS = os.getenv("HEADLESS", "true")
+# PROXY
+PROXY_USERNAME = os.getenv("PROXY_USERNAME", "")
+PROXY_PASSWORD = os.getenv("PROXY_PASSWORD", "")
