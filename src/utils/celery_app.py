@@ -2,10 +2,11 @@ from src.platforms.google import GoogleScraper
 from src.platforms.perplexity import PerplexityScraper
 from src.platforms.chatgpt import ChatGPTScraper
 from celery import Celery, signals
-from camoufox.sync_api import Camoufox
+
+from patchright.sync_api import sync_playwright
 import logging
 from src.utils.redis_utils import RedisBase, RedisLogHandler
-from src.config.config import REDIS_URL, HEADLESS, PROXY_USERNAME, PROXY_PASSWORD
+from src.config.config import REDIS_URL, HEADLESS
 
 
 app = Celery(
@@ -25,46 +26,34 @@ SCRAPER_CONFIG = {
     },
 }
 
-# PROXY configs
-PROXIES = {"us": "10000"}
-
-camoufox = None
+playwright = None
 browser = None
 
 
 @signals.worker_process_init.connect
 def init_worker(**kwargs):
     """Called once per worker process"""
-    global camoufox, browser
-    country = "us"
+    global playwright, browser
     print("🔵 Starting browser for worker...")
-    # logger.info("🔵 Starting Camoufox browser for worker...")
-    camoufox = Camoufox(
+    playwright = sync_playwright().start()
+    browser = playwright.chromium.launch(
         headless=HEADLESS.lower() == "true",
-        # geoip=True,
-        proxy={
-            "server": f"http://{country}.decodo.com:{PROXIES[country]}",
-            "username": PROXY_USERNAME,
-            "password": PROXY_PASSWORD,
-        },
     )
-    browser = camoufox.start()
 
 
 @signals.worker_process_shutdown.connect
 def shutdown_worker(**kwargs):
     """Called when worker process shuts down"""
-    global camoufox, browser
+    global playwright, browser
     print("🔴 Closing browser for worker...")
-    # logger.info("🔴 Closing Camoufox browser for worker...")
     if browser:
         browser.close()
 
 
 @app.task
-def run_browser(name: str, prompt: str, process_id: str, timeout: int, headless: bool):
+def run_browser(name: str, prompt: str, process_id: str, timeout: int, country: str):
     redis_handler = None
-    global camoufox, browser
+    global browser
     # Redis log wrapper
     redis_logger = RedisBase(process_id)
 
@@ -90,7 +79,6 @@ def run_browser(name: str, prompt: str, process_id: str, timeout: int, headless:
     if not browser:
         task_logger.error("Browser not created")
         print("Browser not created")
-        # raise HTTPException(status_code=500, detail="Browser not created")
 
     matching_scraper = ScraperClass(
         browser=browser,
@@ -100,7 +88,7 @@ def run_browser(name: str, prompt: str, process_id: str, timeout: int, headless:
         name=name,
         process_id=process_id,
         timeout=timeout,
-        headless=headless,
+        country=country,
     )
     matching_scraper.send_prompt()
     if redis_handler:

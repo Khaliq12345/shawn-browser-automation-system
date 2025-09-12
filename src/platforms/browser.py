@@ -12,6 +12,10 @@ sys.path.append("..")
 import os
 from typing import Optional
 from src.utils.globals import save_file
+from src.config.config import PROXY_USERNAME, PROXY_PASSWORD
+
+# PROXY configs
+PROXIES = {"us": "10000"}
 
 
 class BrowserBase(ContextDecorator, ABC):
@@ -24,6 +28,7 @@ class BrowserBase(ContextDecorator, ABC):
         name: str,
         process_id: str,
         timeout: int,
+        country: str,
         headless: bool = False,
     ) -> None:
         self.url = url
@@ -31,7 +36,6 @@ class BrowserBase(ContextDecorator, ABC):
         self.name = name
         self.process_id = process_id
         self.headless = headless
-        self.camoufox = None
         self.browser = browser
         self.logger = logger
         self.context = None
@@ -39,6 +43,7 @@ class BrowserBase(ContextDecorator, ABC):
         self.bucket = "browser-outputs"
         self.storage = AWSStorage(self.bucket)
         self.uid = self.process_id.split("_")[1]
+        self.country = country
 
     def navigate(self) -> bool:
         """Start the browser and navigate to the specified URL"""
@@ -78,9 +83,7 @@ class BrowserBase(ContextDecorator, ABC):
         # Save ScreenShot
         try:
             screenshot_name = "screenshot.png"
-            screeshot_path = (
-                f"responses/{self.name}/{self.uid}/{screenshot_name}"
-            )
+            screeshot_path = f"responses/{self.name}/{self.uid}/{screenshot_name}"
             self.page.screenshot(path=screeshot_path, full_page=True)
             self.aws_upload_file(f"{basekey}/{screenshot_name}", screeshot_path)
         except Exception as e:
@@ -121,6 +124,11 @@ class BrowserBase(ContextDecorator, ABC):
         self.context = self.browser.new_context(
             record_video_dir=f"responses/{self.name}/{self.uid}/",
             record_video_size={"width": 1280, "height": 720},
+            proxy={
+                "server": f"http://{self.country}.decodo.com:{PROXIES[self.country]}",
+                "username": PROXY_USERNAME,
+                "password": PROXY_PASSWORD,
+            },
         )
         try:
             self.page = self.context.new_page()

@@ -17,10 +17,10 @@ class PerplexityScraper(BrowserBase):
         name: str,
         process_id: str,
         timeout: int,
-        headless: bool = False,
+        country: str,
     ) -> None:
         super().__init__(
-            browser, logger, url, prompt, name, process_id, timeout, headless
+            browser, logger, url, prompt, name, process_id, timeout, country
         )
 
     def find_and_fill_input(self) -> bool:

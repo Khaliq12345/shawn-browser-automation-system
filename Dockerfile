@@ -40,7 +40,7 @@ WORKDIR /app
 COPY . .
 
 # Install Python dependencies
-RUN uv sync
+RUN uv sync --locked
 
 RUN uv run camoufox fetch
 RUN uv run playwright install-deps

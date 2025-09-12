@@ -18,10 +18,10 @@ class GoogleScraper(BrowserBase):
         name: str,
         process_id: str,
         timeout: int,
-        headless: bool = False,
+        country: str,
     ) -> None:
         super().__init__(
-            browser, logger, url, prompt, name, process_id, timeout, headless
+            browser, logger, url, prompt, name, process_id, timeout, country
         )
 
     def find_and_fill_input(self) -> bool:
@@ -29,14 +29,13 @@ class GoogleScraper(BrowserBase):
             prompt_input_selector = 'textarea[name="q"]'
             # trying to fill the prompt
             try:
-                self.page.fill(
-                    prompt_input_selector, self.prompt, timeout=self.timeout
-                )
+                self.page.fill(prompt_input_selector, self.prompt, timeout=self.timeout)
             except Exception as e:
                 print(f"Can not fill the prompt input {e}")
                 return False
             # Validate
             self.page.keyboard.press("Enter")
+            self.page.wait_for_load_state("load", timeout=self.timeout)
             return True
         except Exception as e:
             print(f"Error in find_and_fill_input {e}")

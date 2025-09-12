@@ -9,6 +9,7 @@ services:
       - "${APP_PORT}:8000"
     depends_on:
       - redis
+    restart: always
 
   worker:
     build: .
@@ -17,6 +18,7 @@ services:
     command: uv run celery --app src.utils.celery_app worker --loglevel=INFO -c 2
     depends_on:
       - redis
+    restart: always
 
   frontend:
     build:
@@ -27,7 +29,8 @@ services:
     command: node .output/server/index.mjs
     depends_on:
       - api
+    restart: always
 
   redis:
     image: redis:7-alpine
-
+    restart: always
