@@ -42,7 +42,8 @@ COPY . .
 # Install Python dependencies
 RUN uv sync --locked
 
-RUN uv run camoufox fetch
+# RUN uv run camoufox fetch
 RUN uv run playwright install-deps
 RUN uv run playwright install
+RUN uv run patchright install chromium 
 
