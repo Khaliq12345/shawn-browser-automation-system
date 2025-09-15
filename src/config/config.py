@@ -23,3 +23,5 @@ HEADLESS = os.getenv("HEADLESS", "true")
 # PROXY
 PROXY_USERNAME = os.getenv("PROXY_USERNAME", "")
 PROXY_PASSWORD = os.getenv("PROXY_PASSWORD", "")
+# API KEY
+API_KEY = os.getenv("API_KEY")

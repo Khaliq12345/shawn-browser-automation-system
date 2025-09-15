@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Start Browser</title>
+</head>
+<body>
+    <h1>Test Start Browser API</h1>
+    <form id="startBrowserForm">
+        <label>
+            Name (navigateur) : 
+            <input type="text" name="name" value="google">
+        </label><br><br>
+        <label>
+            Prompt : 
+            <input type="text" name="prompt" value="hello world">
+        </label><br><br>
+        <label>
+            Country : 
+            <input type="text" name="country" value="FR">
+        </label><br><br>
+        <label>
+            Timeout : 
+            <input type="number" name="timeout" value="240000">
+        </label><br><br>
+        <label>
+            API Key : 
+            <input type="text" name="api_key" value="ma_super_cle_ultra_secrete">
+        </label><br><br>
+        <button type="submit">Start Browser</button>
+    </form>
+
+    <h2>Response:</h2>
+    <pre id="response"></pre>
+
+    <script>
+        const form = document.getElementById('startBrowserForm');
+        const responseEl = document.getElementById('response');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            // Construire l'URL avec tous les paramètres dans la query string
+            const url = `http://127.0.0.1:8000/api/globals/start-browser?` +
+                `api_key=${encodeURIComponent(data.api_key)}` +
+                `&name=${encodeURIComponent(data.name)}` +
+                `&prompt=${encodeURIComponent(data.prompt)}` +
+                `&country=${encodeURIComponent(data.country)}` +
+                `&timeout=${encodeURIComponent(data.timeout)}`;
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST'
+                });
+
+                const responseData = await res.json();
+                responseEl.textContent = JSON.stringify(responseData, null, 2);
+            } catch (err) {
+                responseEl.textContent = err;
+            }
+        });
+    </script>
+</body>
+</html>
