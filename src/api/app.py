@@ -1,5 +1,6 @@
 import time
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException,Security,Depends
+from fastapi.security.api_key import APIKeyQuery
 from fastapi.middleware.cors import CORSMiddleware
 from src.models.model import create_db_and_tables
 from src.api.routes.metrics import router as metrics_router
@@ -7,6 +8,16 @@ from src.api.routes.logs import router as logs_router
 from src.utils.database import get_process_status, get_all_platform_processes
 from src.utils import celery_app
 from contextlib import asynccontextmanager
+from src.config.config import API_KEY
+
+API_KEY_NAME = "api_key"
+api_key_query = APIKeyQuery(name=API_KEY_NAME, auto_error=False)
+
+async def get_api_key(api_key_query: str = Security(api_key_query)):
+    if api_key_query == API_KEY:
+        print("Autorisation réussi")
+        return api_key_query
+    raise HTTPException(status_code=403, detail="Invalid or missing API Key")
 
 
 @asynccontextmanager
@@ -39,7 +50,7 @@ app.include_router(prefix="/api", router=logs_router, tags=["Logs"])
 
 
 @app.post("/api/globals/start-browser")
-def start_browser(name: str, prompt: str, country: str, timeout: int = 240000):
+def start_browser(name: str, prompt: str, country: str, timeout: int = 240000,api_key:str=Depends(get_api_key)):
     # If the name is not supported
     if name not in celery_app.SCRAPER_CONFIG:
         raise HTTPException(status_code=400, detail="Invalid Parameter 'name'")
