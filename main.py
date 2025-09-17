@@ -7,7 +7,7 @@ def main():
     # Start Fast API
     uvicorn.run(
         "src.api.app:app",
-        host="0.0.0.0",
+        host="localhost",
         port=int(APP_PORT),
         reload=ENV == "dev",
     )
