@@ -10,7 +10,6 @@ from html_to_markdown import convert_to_markdown
 class PerplexityScraper(BrowserBase):
     def __init__(
         self,
-        browser,
         logger,
         url: str,
         prompt: str,
@@ -19,9 +18,7 @@ class PerplexityScraper(BrowserBase):
         timeout: int,
         country: str,
     ) -> None:
-        super().__init__(
-            browser, logger, url, prompt, name, process_id, timeout, country
-        )
+        super().__init__(logger, url, prompt, name, process_id, timeout, country)
 
     def find_and_fill_input(self) -> bool:
         self.page.wait_for_timeout(5000)

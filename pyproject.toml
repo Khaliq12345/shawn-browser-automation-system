@@ -12,6 +12,7 @@ dependencies = [
     "dateparser>=1.2.2",
     "fastapi[standard]>=0.116.1",
     "html-to-markdown[lxml]>=1.9.0",
+    "hyperbrowser>=0.57.0",
     "patchright>=1.55.1",
     "playwright-stealth>=2.0.0",
     "psycopg[binary]>=3.2.9",
@@ -20,5 +21,6 @@ dependencies = [
     "redis>=6.4.0",
     "sqlalchemy[asyncio]>=2.0.42",
     "sqlmodel>=0.0.24",
+    "sseclient>=0.0.27",
     "uvicorn>=0.35.0",
 ]

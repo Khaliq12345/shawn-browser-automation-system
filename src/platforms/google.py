@@ -11,7 +11,6 @@ from playwright.sync_api import expect
 class GoogleScraper(BrowserBase):
     def __init__(
         self,
-        browser,
         logger,
         url: str,
         prompt: str,
@@ -20,9 +19,7 @@ class GoogleScraper(BrowserBase):
         timeout: int,
         country: str,
     ) -> None:
-        super().__init__(
-            browser, logger, url, prompt, name, process_id, timeout, country
-        )
+        super().__init__(logger, url, prompt, name, process_id, timeout, country)
 
     def find_and_fill_input(self) -> bool:
         try:
@@ -44,17 +41,21 @@ class GoogleScraper(BrowserBase):
     def extract_response(self) -> Optional[str]:
         print("Extracting response")
         content_selector = 'div[id="m-x-content"]'
-        show_more_button = 'div[class="kHtcsd"]'
+        show_more_button = 'div[aria-controls="m-x-content"]'
 
         try:
-            expect(self.page.locator(show_more_button).first).to_be_visible()
+            self.page.wait_for_selector(
+                show_more_button, state="visible", timeout=self.timeout
+            )
             self.page.click(show_more_button)
         except Exception as e:
             print(f"Unable to find the Show more button {e}")
             return None
 
         try:
-            expect(self.page.locator(content_selector).first).to_be_visible()
+            self.page.wait_for_selector(
+                content_selector, state="visible", timeout=self.timeout
+            )
         except Exception as e:
             print(f"Unable to find the content {e}")
             return None

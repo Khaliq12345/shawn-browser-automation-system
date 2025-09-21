@@ -26,34 +26,34 @@ SCRAPER_CONFIG = {
     },
 }
 
-playwright = None
-browser = None
-
-
-@signals.worker_process_init.connect
-def init_worker(**kwargs):
-    """Called once per worker process"""
-    global playwright, browser
-    print("🔵 Starting browser for worker...")
-    playwright = sync_playwright().start()
-    browser = playwright.chromium.launch(
-        headless=HEADLESS.lower() == "true",
-    )
-
-
-@signals.worker_process_shutdown.connect
-def shutdown_worker(**kwargs):
-    """Called when worker process shuts down"""
-    global playwright, browser
-    print("🔴 Closing browser for worker...")
-    if browser:
-        browser.close()
+# playwright = None
+# browser = None
+#
+#
+# @signals.worker_process_init.connect
+# def init_worker(**kwargs):
+#     """Called once per worker process"""
+#     global playwright, browser
+#     print("🔵 Starting browser for worker...")
+#     playwright = sync_playwright().start()
+#     browser = playwright.chromium.launch(
+#         headless=HEADLESS.lower() == "true",
+#     )
+#
+#
+# @signals.worker_process_shutdown.connect
+# def shutdown_worker(**kwargs):
+#     """Called when worker process shuts down"""
+#     global playwright, browser
+#     print("🔴 Closing browser for worker...")
+#     if browser:
+#         browser.close()
 
 
 @app.task
 def run_browser(name: str, prompt: str, process_id: str, timeout: int, country: str):
     redis_handler = None
-    global browser
+    # global browser
     # Redis log wrapper
     redis_logger = RedisBase(process_id)
 
@@ -75,13 +75,13 @@ def run_browser(name: str, prompt: str, process_id: str, timeout: int, country: 
     ScraperClass = config["class"]
     url = config["url"]
 
-    # Launch the matching browser class
-    if not browser:
-        task_logger.error("Browser not created")
-        print("Browser not created")
+    # # Launch the matching browser class
+    # if not browser:
+    #     task_logger.error("Browser not created")
+    #     print("Browser not created")
 
     matching_scraper = ScraperClass(
-        browser=browser,
+        # browser=browser,
         logger=task_logger,
         url=url,
         prompt=prompt,
