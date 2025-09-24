@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
 import sys
+
+import user_agent
 from src.utils.database import (
     update_process_status,
     start_process,
@@ -18,6 +20,9 @@ from src.config.config import (
     PROXY_PASSWORD,
 )
 from patchright.sync_api import sync_playwright
+from camoufox import Camoufox
+from browserforge.fingerprints import Screen
+from user_agent import generate_user_agent
 
 # PROXY configs
 PROXIES = {"us": "10000"}
@@ -67,6 +72,10 @@ class BrowserBase(ContextDecorator, ABC):
         save_folder = f"responses/{basekey}/"
         text_name = "output.txt"
         txt_out = os.path.join(save_folder, text_name)
+        screenshot_name = "screenshot.png"
+        video_name = "video.mp4"
+        screeshot_path = f"responses/{basekey}/{screenshot_name}"
+        video_path = os.path.join(f"responses/{basekey}/", video_name)
 
         # break the flow if no response in found
         if not content:
@@ -77,17 +86,14 @@ class BrowserBase(ContextDecorator, ABC):
         # Save Text Result
         try:
             save_file(txt_out, content)
-            self.aws_upload_file(f"{basekey}/{text_name}", txt_out)
+            s3_out = self.aws_upload_file(f"{basekey}/{text_name}", txt_out)
+            # send to parser api
         except Exception as e:
             self.logger.error(f"Unable to save output - {e}")
             return False
 
         # Save ScreenShot
         try:
-            screenshot_name = "screenshot.png"
-            screeshot_path = (
-                f"responses/{self.name}/{self.uid}/{screenshot_name}"
-            )
             self.page.screenshot(path=screeshot_path, full_page=True)
             self.aws_upload_file(f"{basekey}/{screenshot_name}", screeshot_path)
         except Exception as e:
@@ -99,12 +105,11 @@ class BrowserBase(ContextDecorator, ABC):
             if video:
                 self.logger.info("Successfully recorded video")
                 self.page.close()
-                video_name = "video.mp4"
-                video_path = os.path.join(f"responses/{basekey}/", video_name)
                 video.save_as(video_path)
                 self.aws_upload_file(f"{basekey}/{video_name}", video_path)
             else:
                 self.logger.error("No video was recorded")
+
         except Exception as e:
             self.logger.error(f"Unable to record video - {e}")
 
@@ -121,75 +126,73 @@ class BrowserBase(ContextDecorator, ABC):
         """Platform-specific method to extract the response."""
         pass
 
+    def process_prompt(self) -> None:
+        self.logger.info("- Workflow Started")
+        start_process(self.process_id, self.name, self.prompt)
+
+        # Set 1: Navigate to the platform
+        is_navigate = self.navigate()
+        if not is_navigate:
+            self.logger.error("- Error starting or navigating the page")
+            update_process_status(self.process_id, "failed")
+            return None
+        self.logger.info("- Successfully navigated to the page")
+
+        # Step 2: Fill and Submit the input
+        is_filled = self.find_and_fill_input()
+        if not is_filled:
+            self.logger.error("- Error filling the prompt")
+            update_process_status(self.process_id, "failed")
+            return None
+        self.logger.info("- Prompt successfully filled")
+        self.page.wait_for_timeout(5000)
+        self.page.screenshot(path="test.png")
+
+        # Step 3: Extract the generated response
+        content = self.extract_response()
+        if not content:
+            self.logger.error("- Error while extracting the response")
+            update_process_status(self.process_id, "failed")
+            return None
+        self.logger.info("- Response successfully extracted")
+
+        # Step 4: Save the response
+        self.save_response(content)
+        self.logger.info("- Saving extracted data")
+
+        # Step 5: Mark as Sucess on supabase
+        update_process_status(self.process_id, "success")
+        self.logger.info("- Process Successfully ended !")
+
     def send_prompt(self) -> None:
         """Start the workflow"""
         print("Creating context")
+        context = None
         self.logger.info("Creating Context")
 
-        with (
-            sync_playwright(
-                # geoip=True,
-                # record_video_dir=f"responses/{self.name}/{self.uid}/",
-                # record_video_size={"width": 1280, "height": 720},
-                # proxy={
-                #     "server": f"http://{self.country}.decodo.com:{PROXIES[self.country]}",
-                #     "username": PROXY_USERNAME,
-                #     "password": PROXY_PASSWORD,
-                # },
-            ) as p
-        ):
+        with Camoufox(
+            geoip=True,
+            headless=HEADLESS != "false",
+            proxy={
+                "server": f"http://{self.country}.decodo.com:{PROXIES[self.country]}",
+                "username": PROXY_USERNAME,
+                "password": PROXY_PASSWORD,
+            },
+        ) as browser:
             try:
-                browser = p.chromium.launch_persistent_context(
-                    user_data_dir="...",
-                    channel="chrome",
-                    headless=HEADLESS != "false",
-                    viewport={"width": 1280, "height": 1024},
+                ua = generate_user_agent()
+                context = browser.new_context(
                     record_video_dir=f"responses/{self.name}/{self.uid}/",
                     record_video_size={"width": 1280, "height": 720},
-                    proxy={
-                        "server": f"http://{self.country}.decodo.com:{PROXIES[self.country]}",
-                        "username": PROXY_USERNAME,
-                        "password": PROXY_PASSWORD,
-                    },
+                    user_agent=ua,
+                    viewport={"width": 1280, "height": 720},
                 )
-                self.page = browser.new_page()
-                self.logger.info("- Workflow Started")
-                start_process(self.process_id, self.name, self.prompt)
-
-                # Set 1: Navigate to the platform
-                is_navigate = self.navigate()
-                if not is_navigate:
-                    self.logger.error("- Error starting or navigating the page")
-                    update_process_status(self.process_id, "failed")
-                    return None
-                self.logger.info("- Successfully navigated to the page")
-
-                # Step 2: Fill and Submit the input
-                is_filled = self.find_and_fill_input()
-                if not is_filled:
-                    self.logger.error("- Error filling the prompt")
-                    update_process_status(self.process_id, "failed")
-                    return None
-                self.logger.info("- Prompt successfully filled")
-                self.page.wait_for_timeout(5000)
-
-                # Step 3: Extract the generated response
-                content = self.extract_response()
-                if not content:
-                    self.logger.error("- Error while extracting the response")
-                    update_process_status(self.process_id, "failed")
-                    return None
-                self.logger.info("- Response successfully extracted")
-
-                # Step 4: Save the response
-                self.save_response(content)
-                self.logger.info("- Saving extracted data")
-
-                # Step 5: Mark as Sucess on supabase
-                update_process_status(self.process_id, "success")
-                self.logger.info("- Process Successfully ended !")
-
+                self.page = context.new_page()
+                self.process_prompt()
+            except Exception as e:
+                self.logger.error(f"- Error while processing prompt - {e}")
+                update_process_status(self.process_id, "failed")
             finally:
                 self.page.close()
-                browser.close()
+                context.close() if context else None
                 print("Context and Page instance closed")

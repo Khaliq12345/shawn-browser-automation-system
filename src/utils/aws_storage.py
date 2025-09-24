@@ -22,8 +22,9 @@ class AWSStorage:
                 raise FileNotFoundError(f"Le fichier {path} n'existe pas.")
 
             self.s3.upload_file(path, self.bucket_name, key)
-            print(f"Fichier uploadé avec succès : s3://{self.bucket_name}/{key}")
-            return True
+            s3_out = f"s3://{self.bucket_name}/{key}"
+            print(f"Fichier uploadé avec succès : {s3_out}")
+            return s3_out
 
         except FileNotFoundError as e:
             print("Erreur fichier :", e)

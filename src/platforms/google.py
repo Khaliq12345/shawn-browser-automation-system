@@ -5,7 +5,6 @@ sys.path.append("..")
 from typing import Optional
 from src.platforms.browser import BrowserBase
 from html_to_markdown import convert_to_markdown
-from playwright.sync_api import expect
 
 
 class GoogleScraper(BrowserBase):
@@ -19,14 +18,17 @@ class GoogleScraper(BrowserBase):
         timeout: int,
         country: str,
     ) -> None:
-        super().__init__(logger, url, prompt, name, process_id, timeout, country)
+        super().__init__(
+            logger, url, prompt, name, process_id, timeout, country
+        )
 
     def find_and_fill_input(self) -> bool:
         try:
-            prompt_input_selector = 'textarea[name="q"]'
             # trying to fill the prompt
             try:
-                self.page.fill(prompt_input_selector, self.prompt, timeout=self.timeout)
+                self.page.get_by_role("textbox").fill(
+                    self.prompt, timeout=self.timeout
+                )
             except Exception as e:
                 print(f"Can not fill the prompt input {e}")
                 return False
@@ -40,16 +42,15 @@ class GoogleScraper(BrowserBase):
 
     def extract_response(self) -> Optional[str]:
         print("Extracting response")
-        content_selector = 'div[id="m-x-content"]'
-        show_more_button = 'div[aria-controls="m-x-content"]'
+        content_selector = "response-container div"
+        action_button = ".buttons-container-v2"
 
         try:
             self.page.wait_for_selector(
-                show_more_button, state="visible", timeout=self.timeout
+                action_button, state="visible", timeout=self.timeout
             )
-            self.page.click(show_more_button)
         except Exception as e:
-            print(f"Unable to find the Show more button {e}")
+            print(f"Unable to find the action buttons {e}")
             return None
 
         try:
