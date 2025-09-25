@@ -9,6 +9,13 @@ export default defineEventHandler(async (event) => {
     method: "POST",
     baseURL: baseUrl,
     params: params,
+    headers: {
+      accept: "application/json",
+      "X-API-KEY": useRuntimeConfig().public.SCRAPER_API,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
   });
   return response;
 });
+
+// "b602ec9374cc1430f10d6db7ad9678b24b72156f28a2b28f9f00103323a25407"
