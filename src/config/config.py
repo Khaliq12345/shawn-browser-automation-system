@@ -25,3 +25,6 @@ PROXY_USERNAME = os.getenv("PROXY_USERNAME", "")
 PROXY_PASSWORD = os.getenv("PROXY_PASSWORD", "")
 # API KEY
 API_KEY = os.getenv("API_KEY")
+# PARSER
+PARSER_URL = os.getenv("PARSER_URL")
+PARSER_KEY = os.getenv("PARSER_KEY")

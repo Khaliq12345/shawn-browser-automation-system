@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
 import sys
 
-import user_agent
+sys.path.append("..")
+
 from src.utils.database import (
     update_process_status,
     start_process,
@@ -10,7 +11,6 @@ from src.utils.database import (
 )
 from src.utils.aws_storage import AWSStorage
 
-sys.path.append("..")
 import os
 from typing import Optional
 from src.utils.globals import save_file
@@ -18,11 +18,14 @@ from src.config.config import (
     HEADLESS,
     PROXY_USERNAME,
     PROXY_PASSWORD,
+    PARSER_URL,
+    PARSER_KEY,
 )
 from patchright.sync_api import sync_playwright
 from camoufox import Camoufox
 from browserforge.fingerprints import Screen
 from user_agent import generate_user_agent
+import httpx
 
 # PROXY configs
 PROXIES = {"us": "10000"}
@@ -65,6 +68,23 @@ class BrowserBase(ContextDecorator, ABC):
         self.storage.save_file(key, path)
         save_awsupload(f"{self.bucket}/{key}", self.name, self.prompt)
 
+    def extract_brand_info(self, s3_key: str):
+        headers = {
+            "accept": "application/json",
+            "X-API-KEY": PARSER_KEY,
+        }
+        params = {
+            "prompt_id": self.process_id,
+            "s3_key": s3_key,
+        }
+        response = httpx.get(
+            f"{PARSER_URL}/api/llm/extract-brand-info",
+            params=params,
+            headers=headers,
+        )
+        response.raise_for_status()
+        self.logger.info("- LLM Parser Started")
+
     def save_response(self, content: Optional[str]) -> bool:
         """Save the generated output from the prompt in html and text file"""
 
@@ -86,8 +106,10 @@ class BrowserBase(ContextDecorator, ABC):
         # Save Text Result
         try:
             save_file(txt_out, content)
-            s3_out = self.aws_upload_file(f"{basekey}/{text_name}", txt_out)
+            self.aws_upload_file(f"{basekey}/{text_name}", txt_out)
             # send to parser api
+            self.logger.info("- Parsing output with LLM")
+            self.extract_brand_info(f"{basekey}/{text_name}")
         except Exception as e:
             self.logger.error(f"Unable to save output - {e}")
             return False
@@ -146,7 +168,6 @@ class BrowserBase(ContextDecorator, ABC):
             return None
         self.logger.info("- Prompt successfully filled")
         self.page.wait_for_timeout(5000)
-        self.page.screenshot(path="test.png")
 
         # Step 3: Extract the generated response
         content = self.extract_response()
