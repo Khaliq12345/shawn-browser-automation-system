@@ -44,6 +44,25 @@ class Database:
             session.add(schedule)
             session.commit()
 
+    def delete_schedule(self, prompt_id: str, brand_report_id: str):
+        """Delete a schedule based on prompt_id and brand_report_id"""
+        print(f"Deleting schedule for prompt_id={prompt_id} and brand_report_id={brand_report_id}")
+        with Session(self.engine) as session:
+            stmt = select(Schedules).where(
+                Schedules.prompt_id == prompt_id,
+                Schedules.brand_report_id == brand_report_id
+            )
+            schedule = session.exec(stmt).first()
+            if schedule:
+                session.delete(schedule)
+                session.commit()
+                print("Schedule deleted successfully")
+                return True
+            else:
+                print("No matching schedule found")
+                return False
+
+
     #  -------- Reports ----------
 
     def add_report(
