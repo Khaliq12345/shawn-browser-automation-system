@@ -1,14 +1,18 @@
 from datetime import datetime
-from src.utils import celery_app
-from src.api.dependencies import databaseDepends
-from fastapi import HTTPException, APIRouter
-import time
+from scr.utils import celery_app
+from fastapi import HTTPException, APIRouter, Depends
+from typing import Annotated
+
+from src.utils.database import Database
 
 router = APIRouter(prefix="/schedule")
 
-
 @router.delete("/delete")
-def delete_schedule(prompt_id: str, brand_report_id: str, db=databaseDepends):
+def delete_schedule(
+    prompt_id: str,
+    brand_report_id: str,
+    db: Annotated[Database, Depends(Database)]
+):
     """
     Delete a schedule entry based on prompt_id and brand_report_id.
     """
