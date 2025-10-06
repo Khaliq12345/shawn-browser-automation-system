@@ -46,6 +46,7 @@ class BrowserBase(ContextDecorator, ABC):
         process_id: str,
         timeout: int,
         country: str,
+        date: str,
         headless: bool = False,
     ) -> None:
         self.brand_report_id = brand_report_id
@@ -59,6 +60,7 @@ class BrowserBase(ContextDecorator, ABC):
         self.bucket = "browser-outputs"
         self.storage = AWSStorage(self.bucket)
         self.country = country
+        self.date = date
 
         # initialise database
         self.database = Database()

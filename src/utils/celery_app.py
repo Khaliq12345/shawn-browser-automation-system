@@ -34,6 +34,7 @@ def run_browser(
     country: str,
     brand_report_id: str,
     languague: str,
+    date: str,
 ):
     redis_handler = None
     # Redis log wrapper
@@ -66,6 +67,7 @@ def run_browser(
         timeout=timeout,
         country=country,
         brand_report_id=brand_report_id,
+        date=date,
     )
     matching_scraper.send_prompt()
     if redis_handler:

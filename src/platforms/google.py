@@ -18,6 +18,7 @@ class GoogleScraper(BrowserBase):
         timeout: int,
         country: str,
         brand_report_id: str,
+        date: str,
     ) -> None:
         super().__init__(
             brand_report_id,
@@ -28,6 +29,7 @@ class GoogleScraper(BrowserBase):
             process_id,
             timeout,
             country,
+            date,
         )
 
     def find_and_fill_input(self) -> bool:
