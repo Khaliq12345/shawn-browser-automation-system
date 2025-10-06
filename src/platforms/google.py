@@ -17,18 +17,24 @@ class GoogleScraper(BrowserBase):
         process_id: str,
         timeout: int,
         country: str,
+        brand_report_id: str,
     ) -> None:
         super().__init__(
-            logger, url, prompt, name, process_id, timeout, country
+            brand_report_id,
+            logger,
+            url,
+            prompt,
+            name,
+            process_id,
+            timeout,
+            country,
         )
 
     def find_and_fill_input(self) -> bool:
         try:
             # trying to fill the prompt
             try:
-                self.page.get_by_role("textbox").fill(
-                    self.prompt, timeout=self.timeout
-                )
+                self.page.get_by_role("textbox").fill(self.prompt, timeout=self.timeout)
             except Exception as e:
                 print(f"Can not fill the prompt input {e}")
                 return False

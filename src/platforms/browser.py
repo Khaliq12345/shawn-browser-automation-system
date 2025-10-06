@@ -1,14 +1,11 @@
-from abc import ABC, abstractmethod
-from contextlib import ContextDecorator
 import sys
 
 sys.path.append("..")
 
-from src.utils.database import (
-    update_process_status,
-    start_process,
-    save_awsupload,
-)
+
+from abc import ABC, abstractmethod
+from contextlib import ContextDecorator
+from src.utils.database import Database
 from src.utils.aws_storage import AWSStorage
 
 import os
@@ -28,12 +25,20 @@ from user_agent import generate_user_agent
 import httpx
 
 # PROXY configs
-PROXIES = {"us": "10000"}
+PROXIES = {
+    "us": "10000",
+    "sg": "10000",
+    "ca": "20000",
+    "gb": "30000",
+    "au": "30000",
+    "nz": "39000",
+}
 
 
 class BrowserBase(ContextDecorator, ABC):
     def __init__(
         self,
+        brand_report_id: str,
         logger,
         url: str,
         prompt: str,
@@ -43,6 +48,7 @@ class BrowserBase(ContextDecorator, ABC):
         country: str,
         headless: bool = False,
     ) -> None:
+        self.brand_report_id = brand_report_id
         self.url = url
         self.prompt = prompt
         self.name = name
@@ -52,8 +58,10 @@ class BrowserBase(ContextDecorator, ABC):
         self.timeout = timeout
         self.bucket = "browser-outputs"
         self.storage = AWSStorage(self.bucket)
-        self.uid = self.process_id.split("_")[1]
         self.country = country
+
+        # initialise database
+        self.database = Database()
 
     def navigate(self) -> bool:
         """Start the browser and navigate to the specified URL"""
@@ -66,7 +74,6 @@ class BrowserBase(ContextDecorator, ABC):
 
     def aws_upload_file(self, key: str, path: str) -> None:
         self.storage.save_file(key, path)
-        save_awsupload(f"{self.bucket}/{key}", self.name, self.prompt)
 
     def extract_brand_info(self, s3_key: str):
         headers = {
@@ -88,14 +95,14 @@ class BrowserBase(ContextDecorator, ABC):
     def save_response(self, content: Optional[str]) -> bool:
         """Save the generated output from the prompt in html and text file"""
 
-        basekey = f"{self.name}/{self.uid}"
+        basekey = f"{self.name}/{self.process_id}"
         save_folder = f"responses/{basekey}/"
         text_name = "output.txt"
-        txt_out = os.path.join(save_folder, text_name)
         screenshot_name = "screenshot.png"
         video_name = "video.mp4"
-        screeshot_path = f"responses/{basekey}/{screenshot_name}"
-        video_path = os.path.join(f"responses/{basekey}/", video_name)
+        txt_out = os.path.join(save_folder, text_name)
+        screeshot_path = os.path.join(save_folder, screenshot_name)
+        video_path = os.path.join(save_folder, video_name)
 
         # break the flow if no response in found
         if not content:
@@ -149,14 +156,11 @@ class BrowserBase(ContextDecorator, ABC):
         pass
 
     def process_prompt(self) -> None:
-        self.logger.info("- Workflow Started")
-        start_process(self.process_id, self.name, self.prompt)
-
         # Set 1: Navigate to the platform
         is_navigate = self.navigate()
         if not is_navigate:
             self.logger.error("- Error starting or navigating the page")
-            update_process_status(self.process_id, "failed")
+            self.database.update_process_status(self.process_id, "failed")
             return None
         self.logger.info("- Successfully navigated to the page")
 
@@ -164,7 +168,7 @@ class BrowserBase(ContextDecorator, ABC):
         is_filled = self.find_and_fill_input()
         if not is_filled:
             self.logger.error("- Error filling the prompt")
-            update_process_status(self.process_id, "failed")
+            self.database.update_process_status(self.process_id, "failed")
             return None
         self.logger.info("- Prompt successfully filled")
         self.page.wait_for_timeout(5000)
@@ -173,7 +177,7 @@ class BrowserBase(ContextDecorator, ABC):
         content = self.extract_response()
         if not content:
             self.logger.error("- Error while extracting the response")
-            update_process_status(self.process_id, "failed")
+            self.database.update_process_status(self.process_id, "failed")
             return None
         self.logger.info("- Response successfully extracted")
 
@@ -182,38 +186,41 @@ class BrowserBase(ContextDecorator, ABC):
         self.logger.info("- Saving extracted data")
 
         # Step 5: Mark as Sucess on supabase
-        update_process_status(self.process_id, "success")
+        self.database.update_process_status(self.process_id, "success")
         self.logger.info("- Process Successfully ended !")
 
     def send_prompt(self) -> None:
         """Start the workflow"""
-        print("Creating context")
-        context = None
-        self.logger.info("Creating Context")
+        self.logger.info("- Workflow Started")
+        self.database.start_process(
+            self.process_id, self.name, self.prompt, self.brand_report_id
+        )
+        self.database.update_process_status(self.process_id, "failed")
 
-        with Camoufox(
-            geoip=True,
-            headless=HEADLESS != "false",
-            proxy={
-                "server": f"http://{self.country}.decodo.com:{PROXIES[self.country]}",
-                "username": PROXY_USERNAME,
-                "password": PROXY_PASSWORD,
-            },
-        ) as browser:
-            try:
-                ua = generate_user_agent()
-                context = browser.new_context(
-                    record_video_dir=f"responses/{self.name}/{self.uid}/",
-                    record_video_size={"width": 1280, "height": 720},
-                    user_agent=ua,
-                    viewport={"width": 1280, "height": 720},
-                )
-                self.page = context.new_page()
-                self.process_prompt()
-            except Exception as e:
-                self.logger.error(f"- Error while processing prompt - {e}")
-                update_process_status(self.process_id, "failed")
-            finally:
-                self.page.close()
-                context.close() if context else None
-                print("Context and Page instance closed")
+        # context = None
+        # with Camoufox(
+        #     geoip=True,
+        #     headless=HEADLESS != "false",
+        #     proxy={
+        #         "server": f"http://{self.country}.decodo.com:{PROXIES[self.country]}",
+        #         "username": PROXY_USERNAME,
+        #         "password": PROXY_PASSWORD,
+        #     },
+        # ) as browser:
+        #     try:
+        #         ua = generate_user_agent()
+        #         context = browser.new_context(
+        #             record_video_dir=f"responses/{self.name}/{self.uid}/",
+        #             record_video_size={"width": 1280, "height": 720},
+        #             user_agent=ua,
+        #             viewport={"width": 1280, "height": 720},
+        #         )
+        #         self.page = context.new_page()
+        #         self.process_prompt()
+        #     except Exception as e:
+        #         self.logger.error(f"- Error while processing prompt - {e}")
+        #         self.database.update_process_status(self.process_id, "failed")
+        #     finally:
+        #         self.page.close()
+        #         context.close() if context else None
+        #         print("Context and Page instance closed")

@@ -1,3 +1,0 @@
-# router = APIRouter(prefix="/globals")
-
-

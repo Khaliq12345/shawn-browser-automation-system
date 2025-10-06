@@ -25,7 +25,6 @@ class AWSStorage:
             s3_out = f"s3://{self.bucket_name}/{key}"
             print(f"Fichier uploadé avec succès : {s3_out}")
             return True
-
         except FileNotFoundError as e:
             print("Erreur fichier :", e)
             return False

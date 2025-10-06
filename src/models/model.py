@@ -1,48 +1,32 @@
 from typing import Optional
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlmodel import Field, SQLModel
 from datetime import datetime
-from src.config import config
-from sqlalchemy import create_engine, DateTime, Float, String, Text
 
 
-def get_engine():
-    engine = create_engine(
-        f"postgresql+psycopg://{config.DB_USER}:{config.DB_PASSWORD}@{config.DB_HOST}:5432/{config.DB_NAME}"
-    )
-    return engine
+class Browsers(SQLModel, table=True):
+    process_id: str = Field(primary_key=True)
+    status: str
+    platform: str
+    start_time: datetime
+    end_time: Optional[datetime] = Field(default=None)
+    prompt: str
+    duration: float = Field(default=0.0)
+    brand_report_id: str = Field(foreign_key="reports.brand_report_id")
 
 
-class Base(DeclarativeBase):
-    pass
+class Reports(SQLModel, table=True):
+    brand_report_id: str = Field(primary_key=True)
+    languague: str
+    country: str
+    brand: str
+    domain: str
+    date: datetime
 
 
-# Process Model
-class Processes(Base):
-    __tablename__ = "processes"
-
-    process_id: Mapped[str] = mapped_column(primary_key=True)
-    status: Mapped[str] = mapped_column(String(15))
-    platform: Mapped[str] = mapped_column(String(15))
-    start_time: Mapped[datetime] = mapped_column(DateTime())
-    end_time: Mapped[Optional[datetime]] = mapped_column(DateTime(), nullable=True)
-    prompt: Mapped[str] = mapped_column(Text())
-    duration: Mapped[float] = mapped_column(Float(), default=0.0)
-
-
-# AWS Upload Tracking Model
-class AWSUploads(Base):
-    __tablename__ = "awsuploads"
-
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement="auto")
-    aws_key: Mapped[str] = mapped_column(Text())
-    browser: Mapped[str] = mapped_column(String(15))
-    prompt: Mapped[str] = mapped_column(Text())
-    date: Mapped[datetime] = mapped_column(DateTime())
-
-
-# Create all tables of the database
-def create_db_and_tables():
-    engine = get_engine()
-    with engine.begin() as conn:
-        Base.metadata.create_all(conn)
-    engine.dispose()
+class Schedules(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    prompt_id: str
+    prompt: str
+    last_run: Optional[datetime]
+    next_run: Optional[datetime]
+    brand_report_id: str = Field(foreign_key="reports.brand_report_id")

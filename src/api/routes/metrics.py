@@ -1,16 +1,7 @@
 import dateparser
 from fastapi import APIRouter, HTTPException
 from enum import Enum
-from src.utils.database import (
-    get_job_success_rate,
-    get_average_job_duration,
-    get_average_total_time_per_prompt,
-    get_scraper_error_rate,
-    get_prompt_coverage_rate,
-    get_last_run_timestamp,
-    get_total_running_jobs,
-)
-
+from src.api.dependencies import databaseDepends
 
 router = APIRouter(prefix="/metrics")
 
@@ -24,7 +15,7 @@ class DateOptions(str, Enum):
 
 # Job Success Rate
 @router.get("/job-success-rate")
-def job_success_rate(date: DateOptions, platform: str):
+def job_success_rate(database: databaseDepends, date: DateOptions, platform: str):
     # Validation
     parsed_date = dateparser.parse(
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
@@ -32,7 +23,7 @@ def job_success_rate(date: DateOptions, platform: str):
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
     try:
-        outputs = get_job_success_rate(parsed_date)
+        outputs = database.get_job_success_rate(parsed_date)
         for output in outputs:
             if output["platform"] == platform:
                 return {"details": output}
@@ -45,7 +36,7 @@ def job_success_rate(date: DateOptions, platform: str):
 
 # Avg Job Duration
 @router.get("/average-job-duration")
-def average_job_duration(date: DateOptions, platform: str):
+def average_job_duration(database: databaseDepends, date: DateOptions, platform: str):
     # Validation
     parsed_date = dateparser.parse(
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
@@ -53,7 +44,7 @@ def average_job_duration(date: DateOptions, platform: str):
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
     try:
-        outputs = get_average_job_duration(parsed_date)
+        outputs = database.get_average_job_duration(parsed_date)
         for output in outputs:
             if output["platform"] == platform:
                 return {"details": output}
@@ -66,14 +57,14 @@ def average_job_duration(date: DateOptions, platform: str):
 
 # Avg Total Time per Prompt
 @router.get("/average-total-time-per-prompt")
-def average_total_time_per_prompt(date: DateOptions):
+def average_total_time_per_prompt(database: databaseDepends, date: DateOptions):
     parsed_date = dateparser.parse(
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
     )
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
     try:
-        outputs = get_average_total_time_per_prompt(parsed_date)
+        outputs = database.get_average_total_time_per_prompt(parsed_date)
         return {"details": outputs}
     except Exception as e:
         raise HTTPException(
@@ -83,14 +74,14 @@ def average_total_time_per_prompt(date: DateOptions):
 
 # Scraper Error Rate
 @router.get("/scraper-error-rate")
-def scraper_error_rate(date: DateOptions, platform: str):
+def scraper_error_rate(database: databaseDepends, date: DateOptions, platform: str):
     parsed_date = dateparser.parse(
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
     )
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
     try:
-        outputs = get_scraper_error_rate(parsed_date)
+        outputs = database.get_scraper_error_rate(parsed_date)
         if not outputs:
             return {"details": outputs}
         for output in outputs:
@@ -105,14 +96,14 @@ def scraper_error_rate(date: DateOptions, platform: str):
 
 # Prompt Coverage Rate
 @router.get("/prompt-coverage-rate")
-def prompt_coverage_rate(date: DateOptions):
+def prompt_coverage_rate(database: databaseDepends, date: DateOptions):
     parsed_date = dateparser.parse(
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
     )
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
     try:
-        output = get_prompt_coverage_rate(parsed_date)
+        output = database.get_prompt_coverage_rate(parsed_date)
         return {"details": output}
     except Exception as e:
         raise HTTPException(
@@ -122,9 +113,9 @@ def prompt_coverage_rate(date: DateOptions):
 
 # Last Run Timestamp per Platform
 @router.get("/last-run-timestamp")
-def last_run_timestamp(platform: str):
+def last_run_timestamp(database: databaseDepends, platform: str):
     try:
-        output = get_last_run_timestamp(platform)
+        output = database.get_last_run_timestamp(platform)
         return {"details": output}
     except Exception as e:
         raise HTTPException(
@@ -134,14 +125,14 @@ def last_run_timestamp(platform: str):
 
 # Total Running Jobs
 @router.get("/total-running-jobs")
-def total_running_jobs(date: DateOptions, platform: str):
+def total_running_jobs(database: databaseDepends, date: DateOptions, platform: str):
     parsed_date = dateparser.parse(
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
     )
     if not parsed_date:
         raise HTTPException(status_code=400, detail="Impossible de parser la date")
     try:
-        outputs = get_total_running_jobs(parsed_date)
+        outputs = database.get_total_running_jobs(parsed_date)
         if not outputs:
             return {"details": outputs}
         for output in outputs:

@@ -17,8 +17,18 @@ class ChatGPTScraper(BrowserBase):
         process_id: str,
         timeout: int,
         country: str,
+        brand_report_id: str,
     ) -> None:
-        super().__init__(logger, url, prompt, name, process_id, timeout, country)
+        super().__init__(
+            brand_report_id,
+            logger,
+            url,
+            prompt,
+            name,
+            process_id,
+            timeout,
+            country,
+        )
 
     def find_and_fill_input(self) -> bool:
         try:
