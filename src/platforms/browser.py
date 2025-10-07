@@ -26,6 +26,7 @@ from browserforge.fingerprints import Screen
 from user_agent import generate_user_agent
 import httpx
 from botasaurus_driver import Driver
+import time
 
 # PROXY configs
 PROXIES = {
@@ -76,7 +77,12 @@ class BrowserBase(ContextDecorator, ABC):
         if not self.page:
             return False
         try:
-            self.page.goto(self.url, timeout=self.timeout)
+            #self.page.goto(self.url, timeout=self.timeout)
+            self.page.google_get(
+                self.url,
+                bypass_cloudflare=True,
+                timeout=self.timeout
+            )
             return True
         except Exception as e:
             print(f"Error starting or navigating the page - {e}")
@@ -132,7 +138,7 @@ class BrowserBase(ContextDecorator, ABC):
 
         # Save ScreenShot
         try:
-            self.page.screenshot(path=screeshot_path, full_page=True)
+            self.page.save_screenshot(screeshot_path) # dans botasauris_driver on utilise save_screenshot au lieu de screenshot sans pramaètre additionnel
             self.storage.save_file(f"{basekey}/{screenshot_name}", screeshot_path)
         except Exception as e:
             self.logger.error(f"Unable to save screenshot - {e}")
@@ -183,7 +189,7 @@ class BrowserBase(ContextDecorator, ABC):
             self.database.update_process_status(self.process_id, "failed")
             return None
         self.logger.info("- Prompt successfully filled")
-        self.page.wait_for_timeout(5000)
+        time.sleep(5)
 
         # Step 3: Extract the generated response
         content = self.extract_response()
@@ -213,10 +219,7 @@ class BrowserBase(ContextDecorator, ABC):
         if not self.page:
             return None
         try:
-            self.page.google_get(
-                self.url,
-                bypass_cloudflare=True,
-            )
+
             self.process_prompt()
         finally:
             self.page.close()

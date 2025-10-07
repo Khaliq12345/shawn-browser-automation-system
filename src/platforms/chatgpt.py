@@ -5,6 +5,8 @@ sys.path.append("..")
 from typing import Optional
 from src.platforms.browser import BrowserBase
 from html_to_markdown import convert_to_markdown
+import time #utilisé pour pallier à wait_for_timeout
+from botasaurus_driver import Wait
 
 
 class ChatGPTScraper(BrowserBase):
@@ -32,22 +34,51 @@ class ChatGPTScraper(BrowserBase):
             date,
         )
 
+    #méthodes à changer : wait_for_timeout,mouse,type,keyboard,wait_for_selector,query_selector
     def find_and_fill_input(self) -> bool:
+        if not self.page:
+            return False
         try:
-            self.page.wait_for_timeout(5000)
-            self.page.mouse.click(0, 0)
-            self.page.wait_for_timeout(5000)
-            # trying to fill the prompt
-            prompt_input_selector = 'div[id="prompt-textarea"]'  # "#prompt-textarea"
+            time.sleep(5)
+            self.page.run_js("document.body.click();") #on clique sur body pour s'assurer que le focus est sur la page
+            time.sleep(5)
+
+            prompt_input_selector = 'textarea[data-id="root"]'
+            alt_selector = '[data-virtualkeyboard="true"]'
+
             try:
                 print("Filling input")
-                self.page.fill(prompt_input_selector, self.prompt, timeout=self.timeout)
-                print("Done FIlling")
+                try:
+                    self.page.type(prompt_input_selector, self.prompt)
+                except:
+                    self.page.type(alt_selector, self.prompt)
+                print("Done Filling")
             except Exception as e:
                 print(f"Can not fill the prompt input {e}")
                 return False
+
             # Validate
-            self.page.keyboard.press("Enter")
+            self.page.run_js("""
+                const textarea = document.querySelector('textarea[data-id="root"]') ||
+                               document.querySelector('[data-virtualkeyboard="true"]');
+                if (textarea) {
+                    const event = new KeyboardEvent('keydown', {
+                        key: 'Enter',
+                        code: 'Enter',
+                        keyCode: 13,
+                        bubbles: true,
+                        ctrlKey: false
+                    });
+                    textarea.dispatchEvent(event);
+
+                    const sendButton = document.querySelector('button[data-testid="send-button"]') ||
+                                     document.querySelector('[data-testid="send-button"]') ||
+                                     document.querySelector('button[type="submit"]');
+                    if (sendButton) {
+                        sendButton.click();
+                    }
+                }
+            """)
             return True
         except Exception as e:
             print(f"Error in find_and_fill_input {e}")
@@ -55,18 +86,102 @@ class ChatGPTScraper(BrowserBase):
 
     def extract_response(self) -> Optional[str]:
         print("extracting response")
-        content = None
-        copy_selector = (
-            'div.justify-start button[data-testid="copy-turn-action-button"]'
-        )
-        try:
-            self.page.wait_for_selector(copy_selector, timeout=self.timeout)
-        except Exception as e:
-            print(f"Unable to find copy button {e}")
+
+        if not self.page:
             return None
 
-        content_selector = 'article[data-turn="assistant"]'
-        content_element = self.page.query_selector(content_selector)
-        content = content_element.inner_html() if content_element else ""
-        content_markdown = convert_to_markdown(content)
-        return content_markdown
+        time.sleep(15)
+
+        content_selectors = [
+            'div[data-message-author-role="assistant"] div[class*="markdown"]',
+            'div[data-message-author-role="assistant"]',
+            '[data-message-author-role="assistant"]',
+            'div[data-testid*="conversation-turn"]:last-child',
+            '.prose',
+            '[class*="prose"]'
+        ]
+
+        content = None
+        for content_selector in content_selectors:
+            try:
+                content_element = self.page.select(content_selector, wait=Wait.SHORT)
+                if content_element:
+                    content = content_element.get_attribute("innerHTML")
+                    if content and content.strip():
+                        break
+                    else:
+                        text_content = content_element.get_attribute("textContent")
+                        if text_content and text_content.strip():
+                            content = text_content
+                            break
+            except Exception:
+                continue
+
+        if not content or content.strip() == "":
+            content = self.page.run_js("""
+                const assistantMessages = document.querySelectorAll('[data-message-author-role="assistant"]');
+                if (assistantMessages.length > 0) {
+                    const lastMessage = assistantMessages[assistantMessages.length - 1];
+                    const markdownDiv = lastMessage.querySelector('[class*="markdown"], .prose, [class*="prose"]');
+                    if (markdownDiv) {
+                        return markdownDiv.innerHTML || markdownDiv.textContent;
+                    }
+                    return lastMessage.innerHTML || lastMessage.textContent;
+                }
+
+                const conversations = document.querySelectorAll('[data-testid*="conversation-turn"]');
+                if (conversations.length >= 2) {
+                    const lastConv = conversations[conversations.length - 1];
+                    return lastConv.innerHTML || lastConv.textContent;
+                }
+                return null;
+            """)
+
+        if not content or content.strip() == "":
+            return None
+
+        try:
+            if '<' in content and '>' in content:
+                content_markdown = convert_to_markdown(content)
+                return content_markdown
+            else:
+                return content.strip()
+        except Exception as e:
+            print(f"ERROR: Markdown conversion failed: {e}")
+            return content.strip() if content else None
+
+
+if __name__ == "__main__":
+    import logging
+    import uuid
+    from datetime import datetime
+
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger("chatgpt_test")
+
+    test_url = "https://chat.openai.com/"
+    test_prompt = "Bonjour, rends ceci en une courte description : ChatGPT scraper test."
+    test_name = "chatgpt_test"
+    test_process_id = str(uuid.uuid4())
+    test_timeout = 60000
+    test_country = "us"
+    test_brand_report_id = "test_report"
+    test_date = datetime.now().isoformat()
+
+    scraper = ChatGPTScraper(
+        logger=logger,
+        url=test_url,
+        prompt=test_prompt,
+        name=test_name,
+        process_id=test_process_id,
+        timeout=test_timeout,
+        country=test_country,
+        brand_report_id=test_brand_report_id,
+        date=test_date,
+    )
+
+    try:
+        scraper.send_prompt()
+        logger.info("Test run finished")
+    except Exception as e:
+        logger.exception("Test run failed: %s", e)

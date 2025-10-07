@@ -5,6 +5,8 @@ sys.path.append("..")
 from typing import Optional
 from src.platforms.browser import BrowserBase
 from html_to_markdown import convert_to_markdown
+import time #utilisé pour pallier à wait_for_timeout
+from botasaurus_driver import Wait
 
 
 class PerplexityScraper(BrowserBase):
@@ -33,21 +35,26 @@ class PerplexityScraper(BrowserBase):
         )
 
     def find_and_fill_input(self) -> bool:
-        self.page.wait_for_timeout(5000)
-        self.page.mouse.click(0, 0)
-        self.page.wait_for_timeout(5000)
+        if not self.page:
+            return False
         try:
+            time.sleep(5)
+            self.page.run_js("document.body.click();")
+            time.sleep(5)
+
             prompt_input_selector = 'div[id="ask-input"]'
-            # trying to fill the prompt
             try:
-                self.page.fill(prompt_input_selector, self.prompt, timeout=self.timeout)
+                print("Filling input")
+                self.page.type(prompt_input_selector, self.prompt)
+                print("Done Filling")
             except Exception as e:
                 print(f"Can not fill the prompt input {e}")
                 return False
+
             # Validate
             try:
                 submit_button = 'button[aria-label="Submit"]'
-                self.page.click(submit_button, timeout=self.timeout)
+                self.page.click(submit_button)
             except Exception as e:
                 print(f"Submit button is not available - {e}")
                 return False
@@ -56,16 +63,114 @@ class PerplexityScraper(BrowserBase):
             print(f"Error in find_and_fill_input {e}")
             return False
 
+
     def extract_response(self) -> Optional[str]:
-        content = None
-        copy_selector = 'button[aria-label="Copy"]'
-        try:
-            self.page.wait_for_selector(copy_selector, timeout=self.timeout)
-        except Exception as e:
-            print(f"Unable to find copy button - {e}")
+        print("extracting response")
+
+        if not self.page:
             return None
-        content_selector = ".pb-md.mx-auto.pt-5.md\\:pb-12.max-w-threadContentWidth"
-        content_element = self.page.query_selector(content_selector)
-        content = content_element.inner_html() if content_element else ""
-        content_markdown = convert_to_markdown(content)
-        return content_markdown
+
+        # Attendre que la page charge la réponse
+        time.sleep(10)
+
+        # Essayer avec un script JS
+        content = self.page.run_js("""
+            const selectors = [
+                'div[class*="prose"]',
+                '.prose',
+                'div[class*="answer"]',
+                'div[class*="response"]',
+                'main article',
+                '[data-testid*="answer"]',
+                'div[class*="markdown"]'
+            ];
+
+            for (const selector of selectors) {
+                const elements = document.querySelectorAll(selector);
+                for (const element of elements) {
+                    const text = element.textContent || '';
+                    const html = element.innerHTML || '';
+                    if (text.length > 50) {
+                        console.log('Found content with selector:', selector);
+                        return html || text;
+                    }
+                }
+            }
+
+            return null;
+        """)
+
+        if content and content.strip():
+            try:
+                if '<' in content and '>' in content: #si c'est du html
+                    content_markdown = convert_to_markdown(content)
+                    return content_markdown
+                else:
+                    return content.strip()
+            except Exception as e:
+                print(f"Markdown conversion failed: {e}")
+                return content.strip()
+
+        # Fallback CSS si JavaScript échoue
+        print("Echech du script js ,essai des sélecteurs CSS...")
+        content_selectors = [
+            "div[class*='prose']",
+            ".prose",
+            "div[class*='answer']",
+            "div[class*='response']",
+            "main article"
+        ]
+
+        for content_selector in content_selectors:
+            try:
+                content_element = self.page.select(content_selector, wait=Wait.SHORT)
+                if content_element:
+                    content = content_element.get_attribute("innerHTML")
+                    if content and content.strip() and len(content.strip()) > 50:
+                        try:
+                            content_markdown = convert_to_markdown(content)
+                            return content_markdown
+                        except Exception as e:
+                            return content.strip()
+            except Exception:
+                continue
+
+        print("Aucun contenu trouvé")
+        return None
+
+
+if __name__ == "__main__":
+    import logging
+    import uuid
+    from datetime import datetime
+
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger("perplexity_test")
+
+    # Paramètres de test pour Perplexity
+    test_url = "https://www.perplexity.ai/"
+    test_prompt = "What is artificial intelligence in simple terms?"
+    test_name = "perplexity_test"
+    test_process_id = str(uuid.uuid4())
+    test_timeout = 60000
+    test_country = "us"
+    test_brand_report_id = "test_report"
+    test_date = datetime.now().isoformat()
+
+    scraper = PerplexityScraper(
+        logger=logger,
+        url=test_url,
+        prompt=test_prompt,
+        name=test_name,
+        process_id=test_process_id,
+        timeout=test_timeout,
+        country=test_country,
+        brand_report_id=test_brand_report_id,
+        date=test_date,
+    )
+
+    try:
+        scraper.send_prompt()
+        logger.info("Test run finished")
+    except Exception as e:
+        logger.exception("Test run failed: %s", e)
