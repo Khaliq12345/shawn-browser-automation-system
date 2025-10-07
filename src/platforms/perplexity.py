@@ -138,39 +138,3 @@ class PerplexityScraper(BrowserBase):
         print("Aucun contenu trouvé")
         return None
 
-
-if __name__ == "__main__":
-    import logging
-    import uuid
-    from datetime import datetime
-
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger("perplexity_test")
-
-    # Paramètres de test pour Perplexity
-    test_url = "https://www.perplexity.ai/"
-    test_prompt = "What is artificial intelligence in simple terms?"
-    test_name = "perplexity_test"
-    test_process_id = str(uuid.uuid4())
-    test_timeout = 60000
-    test_country = "us"
-    test_brand_report_id = "test_report"
-    test_date = datetime.now().isoformat()
-
-    scraper = PerplexityScraper(
-        logger=logger,
-        url=test_url,
-        prompt=test_prompt,
-        name=test_name,
-        process_id=test_process_id,
-        timeout=test_timeout,
-        country=test_country,
-        brand_report_id=test_brand_report_id,
-        date=test_date,
-    )
-
-    try:
-        scraper.send_prompt()
-        logger.info("Test run finished")
-    except Exception as e:
-        logger.exception("Test run failed: %s", e)

@@ -150,38 +150,3 @@ class ChatGPTScraper(BrowserBase):
             print(f"ERROR: Markdown conversion failed: {e}")
             return content.strip() if content else None
 
-
-if __name__ == "__main__":
-    import logging
-    import uuid
-    from datetime import datetime
-
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger("chatgpt_test")
-
-    test_url = "https://chat.openai.com/"
-    test_prompt = "Bonjour, rends ceci en une courte description : ChatGPT scraper test."
-    test_name = "chatgpt_test"
-    test_process_id = str(uuid.uuid4())
-    test_timeout = 60000
-    test_country = "us"
-    test_brand_report_id = "test_report"
-    test_date = datetime.now().isoformat()
-
-    scraper = ChatGPTScraper(
-        logger=logger,
-        url=test_url,
-        prompt=test_prompt,
-        name=test_name,
-        process_id=test_process_id,
-        timeout=test_timeout,
-        country=test_country,
-        brand_report_id=test_brand_report_id,
-        date=test_date,
-    )
-
-    try:
-        scraper.send_prompt()
-        logger.info("Test run finished")
-    except Exception as e:
-        logger.exception("Test run failed: %s", e)
