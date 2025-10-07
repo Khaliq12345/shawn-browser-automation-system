@@ -62,6 +62,20 @@ class Database:
                 print("No matching schedule found")
                 return False
 
+    def get_next_runs(self, prompt_ids: list[str]):
+        """Retrieve next_run timestamps for a list of prompt_ids"""
+        if not prompt_ids:
+            return []
+
+        with Session(self.engine) as session:
+            stmt = select(Schedules.prompt_id, Schedules.next_run).where(
+                Schedules.prompt_id.in_(prompt_ids)
+            )
+            results = session.exec(stmt).all()
+
+            # Retourner sous forme de liste de dicts
+            return [{"prompt_id": r.prompt_id, "next_run": r.next_run} for r in results]
+
 
     #  -------- Reports ----------
 
