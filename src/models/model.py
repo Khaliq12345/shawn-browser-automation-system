@@ -24,8 +24,7 @@ class Reports(SQLModel, table=True):
 
 
 class Schedules(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    prompt_id: str
+    prompt_id: str = Field(primary_key=True)
     prompt: str
     last_run: Optional[datetime]
     next_run: Optional[datetime]

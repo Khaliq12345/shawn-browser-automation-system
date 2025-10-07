@@ -2,9 +2,10 @@ from datetime import datetime
 from fastapi import HTTPException, APIRouter, Query
 from typing import Annotated, List
 from src.api.dependencies import databaseDepends
-from scr.utils import celery_app
+from src.utils import celery_app
 
 router = APIRouter(prefix="/schedule")
+
 
 @router.delete("/delete")
 def delete_schedule(
@@ -16,7 +17,9 @@ def delete_schedule(
     Delete a schedule entry based on prompt_id and brand_report_id.
     """
     try:
-        result = database.delete_schedule(prompt_id=prompt_id, brand_report_id=brand_report_id)
+        result = database.delete_schedule(
+            prompt_id=prompt_id, brand_report_id=brand_report_id
+        )
         if result:
             return {"status": "success", "message": "Schedule deleted successfully"}
         else:
@@ -28,7 +31,7 @@ def delete_schedule(
 @router.get("/next-runs")
 def get_next_runs(
     prompt_ids: Annotated[List[str], Query()],
-    database = databaseDepends,
+    database: databaseDepends,
 ):
     """
     Get the next_run timestamps for a list of prompt_ids.
@@ -38,3 +41,4 @@ def get_next_runs(
         return next_runs
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+

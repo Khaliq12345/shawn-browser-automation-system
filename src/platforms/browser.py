@@ -18,11 +18,14 @@ from src.config.config import (
     PARSER_URL,
     PARSER_KEY,
 )
-from patchright.sync_api import sync_playwright
+from playwright.sync_api import Page, sync_playwright
+
+# from patchright.sync_api import Page, sync_playwright
 from camoufox import Camoufox
 from browserforge.fingerprints import Screen
 from user_agent import generate_user_agent
 import httpx
+from botasaurus_driver import Driver
 
 # PROXY configs
 PROXIES = {
@@ -65,17 +68,19 @@ class BrowserBase(ContextDecorator, ABC):
         # initialise database
         self.database = Database()
 
+        # initialise page
+        self.page: Optional[Driver] = None
+
     def navigate(self) -> bool:
         """Start the browser and navigate to the specified URL"""
+        if not self.page:
+            return False
         try:
             self.page.goto(self.url, timeout=self.timeout)
             return True
         except Exception as e:
             print(f"Error starting or navigating the page - {e}")
             return False
-
-    def aws_upload_file(self, key: str, path: str) -> None:
-        self.storage.save_file(key, path)
 
     def extract_brand_info(self, s3_key: str):
         headers = {
@@ -96,6 +101,8 @@ class BrowserBase(ContextDecorator, ABC):
 
     def save_response(self, content: Optional[str]) -> bool:
         """Save the generated output from the prompt in html and text file"""
+        if not self.page:
+            return False
 
         basekey = f"{self.name}/{self.process_id}"
         save_folder = f"responses/{basekey}/"
@@ -115,10 +122,10 @@ class BrowserBase(ContextDecorator, ABC):
         # Save Text Result
         try:
             save_file(txt_out, content)
-            self.aws_upload_file(f"{basekey}/{text_name}", txt_out)
+            self.storage.save_file(f"{basekey}/{text_name}", txt_out)
             # send to parser api
             self.logger.info("- Parsing output with LLM")
-            self.extract_brand_info(f"{basekey}/{text_name}")
+            # self.extract_brand_info(f"{basekey}/{text_name}")
         except Exception as e:
             self.logger.error(f"Unable to save output - {e}")
             return False
@@ -126,23 +133,23 @@ class BrowserBase(ContextDecorator, ABC):
         # Save ScreenShot
         try:
             self.page.screenshot(path=screeshot_path, full_page=True)
-            self.aws_upload_file(f"{basekey}/{screenshot_name}", screeshot_path)
+            self.storage.save_file(f"{basekey}/{screenshot_name}", screeshot_path)
         except Exception as e:
             self.logger.error(f"Unable to save screenshot - {e}")
 
-        # Save Video
-        try:
-            video = self.page.video
-            if video:
-                self.logger.info("Successfully recorded video")
-                self.page.close()
-                video.save_as(video_path)
-                self.aws_upload_file(f"{basekey}/{video_name}", video_path)
-            else:
-                self.logger.error("No video was recorded")
-
-        except Exception as e:
-            self.logger.error(f"Unable to record video - {e}")
+        # # Save Video
+        # try:
+        #     video = self.page.video
+        #     if video:
+        #         self.logger.info("Successfully recorded video")
+        #         self.page.close()
+        #         video.save_as(video_path)
+        #         self.storage.save_file(f"{basekey}/{video_name}", video_path)
+        #     else:
+        #         self.logger.error("No video was recorded")
+        #
+        # except Exception as e:
+        #     self.logger.error(f"Unable to record video - {e}")
 
         self.logger.info(f" Successfully saved -- Output -> {save_folder}")
         return True
@@ -158,6 +165,9 @@ class BrowserBase(ContextDecorator, ABC):
         pass
 
     def process_prompt(self) -> None:
+        if not self.page:
+            return None
+
         # Set 1: Navigate to the platform
         is_navigate = self.navigate()
         if not is_navigate:
@@ -197,8 +207,26 @@ class BrowserBase(ContextDecorator, ABC):
         self.database.start_process(
             self.process_id, self.name, self.prompt, self.brand_report_id
         )
-        self.database.update_process_status(self.process_id, "failed")
 
+        headless = HEADLESS != "false"
+        self.page = Driver(headless=headless)
+        if not self.page:
+            return None
+        try:
+            self.page.google_get(
+                self.url,
+                bypass_cloudflare=True,
+            )
+            self.process_prompt()
+        finally:
+            self.page.close()
+        #
+        # proxy = {
+        #     "server": f"http://{self.country}.decodo.com:{PROXIES[self.country]}",
+        #     "username": PROXY_USERNAME,
+        #     "password": PROXY_PASSWORD,
+        # }
+        # constrains = Screen(max_width=1920, max_height=1080)
         # context = None
         # with Camoufox(
         #     geoip=True,
@@ -208,14 +236,20 @@ class BrowserBase(ContextDecorator, ABC):
         #         "username": PROXY_USERNAME,
         #         "password": PROXY_PASSWORD,
         #     },
+        #     screen=constrains,
         # ) as browser:
+        # with sync_playwright() as p:
         #     try:
         #         ua = generate_user_agent()
+        #         browser = p.chromium.launch(
+        #             headless=headless,
+        #         )
         #         context = browser.new_context(
-        #             record_video_dir=f"responses/{self.name}/{self.uid}/",
-        #             record_video_size={"width": 1280, "height": 720},
+        #             record_video_dir=f"responses/{self.name}/{self.process_id}/",
+        #             record_video_size={"width": 1920, "height": 1080},
         #             user_agent=ua,
-        #             viewport={"width": 1280, "height": 720},
+        #             viewport={"width": 1920, "height": 1080},
+        #             proxy=proxy,
         #         )
         #         self.page = context.new_page()
         #         self.process_prompt()
@@ -223,6 +257,6 @@ class BrowserBase(ContextDecorator, ABC):
         #         self.logger.error(f"- Error while processing prompt - {e}")
         #         self.database.update_process_status(self.process_id, "failed")
         #     finally:
-        #         self.page.close()
+        #         self.page.close() if self.page else None
         #         context.close() if context else None
         #         print("Context and Page instance closed")

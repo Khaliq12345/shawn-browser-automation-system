@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "aioboto3>=15.1.0",
+    "botasaurus-driver>=4.0.92",
     "boto3>=1.39.11",
     "camoufox[geoip]>=0.4.11",
     "celery[redis]>=5.3.1",
@@ -21,8 +22,13 @@ dependencies = [
     "pyautogui>=0.9.54",
     "pyperclip>=1.9.0",
     "redis>=6.4.0",
+    "sbase>=4.41.12",
+    "selenium-base>=4.41.12",
+    "setuptools>=80.9.0",
     "sqlalchemy[asyncio]>=2.0.42",
     "sqlmodel>=0.0.24",
+    "undetected-chromedriver>=3.5.5",
+    "undetected-geckodriver>=1.0.7",
     "user-agent>=0.1.14",
     "uvicorn>=0.35.0",
 ]

@@ -35,7 +35,7 @@ def start_browser(
         clean_prompt = prompt.replace(brand, f"{brand}[{domain}]")
         database.update_schedule(brand_report_id, prompt_id, clean_prompt)
         prompt_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        for name in ["chatgpt", "google", "perplexity"]:
+        for name in ["chatgpt", "google"]:
             process_id = f"{name}-{brand_report_id}-{prompt_id}-{timestamp}"
             celery_app.run_browser.apply_async(
                 args=(
@@ -69,7 +69,7 @@ def start_browser(
     return {"details": output}
 
 
-@router.get("browser/check-status/{process_id}")
+@router.get("/status/{process_id}")
 def check_status(database: databaseDepends, process_id: str):
     try:
         # Get the process status
@@ -81,7 +81,7 @@ def check_status(database: databaseDepends, process_id: str):
         raise HTTPException(status_code=404, detail=f"Process not found : {e}")
 
 
-@router.get("/get-processes/{platform}")
+@router.get("/processes/{platform}")
 def get_processes(database: databaseDepends, platform: str):
     try:
         outputs = database.get_all_platform_processes(platform)
