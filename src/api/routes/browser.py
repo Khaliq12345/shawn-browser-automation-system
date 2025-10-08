@@ -35,7 +35,7 @@ def start_browser(
         clean_prompt = prompt.replace(brand, f"{brand}[{domain}]")
         database.update_schedule(brand_report_id, prompt_id, clean_prompt)
         prompt_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        for name in ["chatgpt", "google"]:
+        for name in ["chatgpt", "google", "perplexity"]:
             process_id = f"{name}-{brand_report_id}-{prompt_id}-{timestamp}"
             celery_app.run_browser.apply_async(
                 args=(

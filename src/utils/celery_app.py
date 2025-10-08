@@ -17,7 +17,7 @@ app = Celery(
 # Scrapper configs
 SCRAPER_CONFIG = {
     "chatgpt": {"class": ChatGPTScraper, "url": "https://chatgpt.com/"},
-    "google": {"class": GoogleScraper, "url": "https://gemini.google.com/app"},
+    "google": {"class": GoogleScraper, "url": "https://www.google.com/"},
     "perplexity": {
         "class": PerplexityScraper,
         "url": "https://www.perplexity.ai/",

@@ -1,12 +1,11 @@
 import sys
 
-sys.path.append("..")
+sys.path.append(".")
 
 from typing import Optional
 from src.platforms.browser import BrowserBase
 from html_to_markdown import convert_to_markdown
-import time #utilisé pour pallier à wait_for_timeout
-from botasaurus_driver import Wait
+import logging
 
 
 class PerplexityScraper(BrowserBase):
@@ -35,8 +34,14 @@ class PerplexityScraper(BrowserBase):
         )
 
     def find_and_fill_input(self) -> bool:
+        print("Filling the prompt")
+
         if not self.page:
             return False
+
+        self.page.sleep(5)
+        self.page.mouse_press(0, 0)
+        self.page.sleep(5)
         try:
             time.sleep(5)
             self.page.run_js("document.body.click();")
@@ -44,17 +49,15 @@ class PerplexityScraper(BrowserBase):
 
             prompt_input_selector = 'div[id="ask-input"]'
             try:
-                print("Filling input")
-                self.page.type(prompt_input_selector, self.prompt)
-                print("Done Filling")
+                self.page.type(prompt_input_selector, self.prompt, wait=self.timeout)
             except Exception as e:
                 print(f"Can not fill the prompt input {e}")
                 return False
 
             # Validate
             try:
-                submit_button = 'button[aria-label="Submit"]'
-                self.page.click(submit_button)
+                submit_button = 'button[data-testid="submit-button"]'
+                self.page.click(submit_button, wait=self.timeout)
             except Exception as e:
                 print(f"Submit button is not available - {e}")
                 return False
@@ -65,76 +68,38 @@ class PerplexityScraper(BrowserBase):
 
 
     def extract_response(self) -> Optional[str]:
-        print("extracting response")
-
+        print("Extracting response")
         if not self.page:
             return None
+        content = None
+        share_selector = 'button[data-testid="share-button"]'
+        try:
+            self.page.wait_for_element(share_selector, wait=self.timeout)
+        except Exception as e:
+            print(f"Unable to find copy button - {e}")
+            return None
+        content_selector = 'div[id="markdown-content-0"]'
+        content_element = self.page.wait_for_element(
+            content_selector, wait=self.timeout
+        )
+        content = content_element.html if content_element else ""
+        content_markdown = convert_to_markdown(content)
+        return content_markdown
 
-        # Attendre que la page charge la réponse
-        time.sleep(10)
 
-        # Essayer avec un script JS
-        content = self.page.run_js("""
-            const selectors = [
-                'div[class*="prose"]',
-                '.prose',
-                'div[class*="answer"]',
-                'div[class*="response"]',
-                'main article',
-                '[data-testid*="answer"]',
-                'div[class*="markdown"]'
-            ];
+if __name__ == "__main__":
+    import time
 
-            for (const selector of selectors) {
-                const elements = document.querySelectorAll(selector);
-                for (const element of elements) {
-                    const text = element.textContent || '';
-                    const html = element.innerHTML || '';
-                    if (text.length > 50) {
-                        console.log('Found content with selector:', selector);
-                        return html || text;
-                    }
-                }
-            }
-
-            return null;
-        """)
-
-        if content and content.strip():
-            try:
-                if '<' in content and '>' in content: #si c'est du html
-                    content_markdown = convert_to_markdown(content)
-                    return content_markdown
-                else:
-                    return content.strip()
-            except Exception as e:
-                print(f"Markdown conversion failed: {e}")
-                return content.strip()
-
-        # Fallback CSS si JavaScript échoue
-        print("Echech du script js ,essai des sélecteurs CSS...")
-        content_selectors = [
-            "div[class*='prose']",
-            ".prose",
-            "div[class*='answer']",
-            "div[class*='response']",
-            "main article"
-        ]
-
-        for content_selector in content_selectors:
-            try:
-                content_element = self.page.select(content_selector, wait=Wait.SHORT)
-                if content_element:
-                    content = content_element.get_attribute("innerHTML")
-                    if content and content.strip() and len(content.strip()) > 50:
-                        try:
-                            content_markdown = convert_to_markdown(content)
-                            return content_markdown
-                        except Exception as e:
-                            return content.strip()
-            except Exception:
-                continue
-
-        print("Aucun contenu trouvé")
-        return None
-
+    logger = logging.getLogger(f"{__name__}")
+    perplexity = PerplexityScraper(
+        logger,
+        url="https://www.perplexity.ai/",
+        prompt="Top men'shoe brand",
+        name="perplexity",
+        process_id=f"perplexity_{time.time()}",
+        timeout=60,
+        country="us",
+        brand_report_id="brand-12345",
+        date="2025-10-07 04:07:41.285308",
+    )
+    perplexity.send_prompt()
