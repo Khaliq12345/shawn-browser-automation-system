@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
 from src.utils.database import Database
 from src.utils.aws_storage import AWSStorage
-
 import os
 from typing import Optional
 from src.utils.globals import save_file
@@ -208,11 +207,11 @@ class BrowserBase(ContextDecorator, ABC):
         proxy = f"http://{PROXY_USERNAME}:{PROXY_PASSWORD}@{self.country}.decodo.com:{PROXIES.get(self.country)}"
 
         # initialise page
-        headless = True  # HEADLESS != "false"
+        headless = HEADLESS != "false"
         self.page = Driver(
             headless=headless,
             proxy=proxy,
-            user_agent="Mozilla/5.0 (Linux; Android 5.0.2; LG-D722) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.101 Mobile Safari/537.36",
+            enable_xvfb_virtual_display=True,
         )
         if not self.page:
             return None

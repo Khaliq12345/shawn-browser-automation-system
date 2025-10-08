@@ -12,5 +12,7 @@ def get_logs(process_id: str):
         # Get Logs
         logs = redis_base.get_log()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unable to retrieve Logs : {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Unable to retrieve Logs : {e}"
+        )
     return {"details": logs}
