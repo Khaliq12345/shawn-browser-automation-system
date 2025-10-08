@@ -1,10 +1,11 @@
 import sys
 
-sys.path.append("..")
+sys.path.append(".")
 
 from typing import Optional
 from src.platforms.browser import BrowserBase
 from html_to_markdown import convert_to_markdown
+import logging
 
 
 class PerplexityScraper(BrowserBase):
@@ -33,21 +34,27 @@ class PerplexityScraper(BrowserBase):
         )
 
     def find_and_fill_input(self) -> bool:
-        self.page.wait_for_timeout(5000)
-        self.page.mouse.click(0, 0)
-        self.page.wait_for_timeout(5000)
+        print("Filling the prompt")
+
+        if not self.page:
+            return False
+
+        self.page.sleep(5)
+        self.page.mouse_press(0, 0)
+        self.page.sleep(5)
         try:
             prompt_input_selector = 'div[id="ask-input"]'
             # trying to fill the prompt
             try:
-                self.page.fill(prompt_input_selector, self.prompt, timeout=self.timeout)
+                self.page.type(prompt_input_selector, self.prompt, wait=self.timeout)
             except Exception as e:
                 print(f"Can not fill the prompt input {e}")
                 return False
+
             # Validate
             try:
-                submit_button = 'button[aria-label="Submit"]'
-                self.page.click(submit_button, timeout=self.timeout)
+                submit_button = 'button[data-testid="submit-button"]'
+                self.page.click(submit_button, wait=self.timeout)
             except Exception as e:
                 print(f"Submit button is not available - {e}")
                 return False
@@ -57,15 +64,38 @@ class PerplexityScraper(BrowserBase):
             return False
 
     def extract_response(self) -> Optional[str]:
+        print("Extracting response")
+        if not self.page:
+            return None
         content = None
-        copy_selector = 'button[aria-label="Copy"]'
+        share_selector = 'button[data-testid="share-button"]'
         try:
-            self.page.wait_for_selector(copy_selector, timeout=self.timeout)
+            self.page.wait_for_element(share_selector, wait=self.timeout)
         except Exception as e:
             print(f"Unable to find copy button - {e}")
             return None
-        content_selector = ".pb-md.mx-auto.pt-5.md\\:pb-12.max-w-threadContentWidth"
-        content_element = self.page.query_selector(content_selector)
-        content = content_element.inner_html() if content_element else ""
+        content_selector = 'div[id="markdown-content-0"]'
+        content_element = self.page.wait_for_element(
+            content_selector, wait=self.timeout
+        )
+        content = content_element.html if content_element else ""
         content_markdown = convert_to_markdown(content)
         return content_markdown
+
+
+if __name__ == "__main__":
+    import time
+
+    logger = logging.getLogger(f"{__name__}")
+    perplexity = PerplexityScraper(
+        logger,
+        url="https://www.perplexity.ai/",
+        prompt="Top men'shoe brand",
+        name="perplexity",
+        process_id=f"perplexity_{time.time()}",
+        timeout=60,
+        country="us",
+        brand_report_id="brand-12345",
+        date="2025-10-07 04:07:41.285308",
+    )
+    perplexity.send_prompt()

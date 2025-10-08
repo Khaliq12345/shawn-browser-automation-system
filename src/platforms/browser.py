@@ -18,12 +18,6 @@ from src.config.config import (
     PARSER_URL,
     PARSER_KEY,
 )
-from playwright.sync_api import Page, sync_playwright
-
-# from patchright.sync_api import Page, sync_playwright
-from camoufox import Camoufox
-from browserforge.fingerprints import Screen
-from user_agent import generate_user_agent
 import httpx
 from botasaurus_driver import Driver
 
@@ -73,10 +67,11 @@ class BrowserBase(ContextDecorator, ABC):
 
     def navigate(self) -> bool:
         """Start the browser and navigate to the specified URL"""
+        print("Loading the page")
         if not self.page:
             return False
         try:
-            self.page.goto(self.url, timeout=self.timeout)
+            self.page.google_get(self.url, timeout=self.timeout, bypass_cloudflare=True)
             return True
         except Exception as e:
             print(f"Error starting or navigating the page - {e}")
@@ -132,7 +127,7 @@ class BrowserBase(ContextDecorator, ABC):
 
         # Save ScreenShot
         try:
-            self.page.screenshot(path=screeshot_path, full_page=True)
+            self.page.save_screenshot(filename=screeshot_path)
             self.storage.save_file(f"{basekey}/{screenshot_name}", screeshot_path)
         except Exception as e:
             self.logger.error(f"Unable to save screenshot - {e}")
@@ -183,7 +178,7 @@ class BrowserBase(ContextDecorator, ABC):
             self.database.update_process_status(self.process_id, "failed")
             return None
         self.logger.info("- Prompt successfully filled")
-        self.page.wait_for_timeout(5000)
+        self.page.sleep(5)
 
         # Step 3: Extract the generated response
         content = self.extract_response()
@@ -208,16 +203,25 @@ class BrowserBase(ContextDecorator, ABC):
             self.process_id, self.name, self.prompt, self.brand_report_id
         )
 
-        headless = HEADLESS != "false"
-        self.page = Driver(headless=headless)
+        # setup the proxy
+        proxy = f"http://{PROXY_USERNAME}:{PROXY_PASSWORD}@{self.country}.decodo.com:{PROXIES.get(self.country)}"
+
+        # initialise page
+        headless = True  # HEADLESS != "false"
+        self.page = Driver(
+            headless=headless,
+            proxy=proxy,
+            user_agent="Mozilla/5.0 (Linux; Android 5.0.2; LG-D722) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.101 Mobile Safari/537.36",
+        )
         if not self.page:
             return None
+
+        # start processing the prompt
         try:
-            self.page.google_get(
-                self.url,
-                bypass_cloudflare=True,
-            )
             self.process_prompt()
+        except Exception as e:
+            self.logger.error(f"- Error while processing prompt - {e}")
+            self.database.update_process_status(self.process_id, "failed")
         finally:
             self.page.close()
         #

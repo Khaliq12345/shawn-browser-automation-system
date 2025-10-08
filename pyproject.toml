@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "aioboto3>=15.1.0",
     "botasaurus-driver>=4.0.92",
+    "botasaurus-humancursor>=4.0.83",
     "boto3>=1.39.11",
     "camoufox[geoip]>=0.4.11",
     "celery[redis]>=5.3.1",
