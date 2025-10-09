@@ -26,6 +26,13 @@ RUN apt-get update && \
     apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
+# Install dependencies and Node.js (using NodeSource)
+RUN apt update && apt install -y curl \
+ && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+ && apt install -y nodejs \
+ && apt clean
+
+
 # Download the latest installer
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
 
