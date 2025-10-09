@@ -16,6 +16,7 @@ from src.config.config import (
     PROXY_PASSWORD,
     PARSER_URL,
     PARSER_KEY,
+    S3_BUCKET_NAME,
 )
 import httpx
 from botasaurus_driver import Driver
@@ -43,24 +44,24 @@ class BrowserBase(ContextDecorator, ABC):
         timeout: int,
         country: str,
         date: str,
-        headless: bool = False,
+        languague: str,
+        brand: str,
     ) -> None:
         self.brand_report_id = brand_report_id
         self.url = url
         self.prompt = prompt
         self.name = name
         self.process_id = process_id
-        self.headless = headless
         self.logger = logger
         self.timeout = timeout
-        self.bucket = "browser-outputs"
+        self.bucket = S3_BUCKET_NAME
         self.storage = AWSStorage(self.bucket)
         self.country = country
         self.date = date
-
+        self.languague = languague
+        self.brand = brand
         # initialise database
         self.database = Database()
-
         # initialise page
         self.page: Optional[Driver] = None
 
@@ -80,13 +81,18 @@ class BrowserBase(ContextDecorator, ABC):
         headers = {
             "accept": "application/json",
             "X-API-KEY": PARSER_KEY,
+            "Content-Type": "application/x-www-form-urlencoded",
         }
         params = {
-            "prompt_id": self.process_id,
+            "brand_report_id": self.brand_report_id,
+            "model": self.name,
+            "brand": self.brand,
             "s3_key": s3_key,
+            "languague": self.languague,
+            "date": self.date,
         }
-        response = httpx.get(
-            f"{PARSER_URL}/api/llm/extract-brand-info",
+        response = httpx.post(
+            f"{PARSER_URL}/api/report/prompts/parse",
             params=params,
             headers=headers,
         )
@@ -119,10 +125,14 @@ class BrowserBase(ContextDecorator, ABC):
             self.storage.save_file(f"{basekey}/{text_name}", txt_out)
             # send to parser api
             self.logger.info("- Parsing output with LLM")
-            # self.extract_brand_info(f"{basekey}/{text_name}")
         except Exception as e:
             self.logger.error(f"Unable to save output - {e}")
             return False
+
+        try:
+            self.extract_brand_info(basekey)
+        except Exception as e:
+            self.logger.error(f"Unable to start the parser - {e}")
 
         # Save ScreenShot
         try:

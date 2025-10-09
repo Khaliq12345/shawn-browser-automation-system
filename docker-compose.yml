@@ -19,6 +19,17 @@ services:
     depends_on:
       - redis
     restart: always
+  
+  monitor:
+    build: .
+    env_file:
+      - .env
+    command: uv run celery --app src.utils.celery_app flower --loglevel=INFO --port=5000
+    ports:
+      - "${FLOWER_PORT}:5000"
+    depends_on:
+      - redis
+    restart: always
 
   frontend:
     build:
@@ -34,3 +45,4 @@ services:
   redis:
     image: redis:7-alpine
     restart: always
+    command: ["redis-server", "--port", "6379"]

@@ -19,54 +19,44 @@ def start_browser(
     brand: str,
     timeout: int = 240000,
 ):
-    # # If the name is not supported
-    # if name not in celery_app.SCRAPER_CONFIG:
-    #     raise HTTPException(status_code=400, detail="Invalid Parameter 'name'")
-    timestamp = int(time.time())
-    # save the report
-    database.add_report(
-        brand_report_id, languague, country, brand, domain, datetime.now()
-    )
+    try:
+        timestamp = int(time.time())
+        # save the report
+        database.add_report(
+            brand_report_id, languague, country, brand, domain, datetime.now()
+        )
 
-    processes = []
+        processes = []
 
-    # modify the prompt to always have domain with the name
-    for prompt in prompts:
-        clean_prompt = prompt.replace(brand, f"{brand}[{domain}]")
-        database.update_schedule(brand_report_id, prompt_id, clean_prompt)
-        prompt_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        for name in ["chatgpt", "google", "perplexity"]:
-            process_id = f"{name}-{brand_report_id}-{prompt_id}-{timestamp}"
-            celery_app.run_browser.apply_async(
-                args=(
-                    name,
-                    clean_prompt,
-                    process_id,
-                    timeout,
-                    country,
-                    brand_report_id,
-                    languague,
-                    prompt_date,
+        # modify the prompt to always have domain with the name
+        for prompt in prompts:
+            clean_prompt = prompt.replace(brand, f"{brand}[{domain}]")
+            database.update_schedule(brand_report_id, prompt_id, clean_prompt)
+            prompt_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            for name in ["chatgpt", "google", "perplexity"]:
+                process_id = f"{name}-{brand_report_id}-{prompt_id}-{timestamp}"
+                celery_app.run_browser.apply_async(
+                    args=(
+                        name,
+                        clean_prompt,
+                        process_id,
+                        timeout,
+                        country,
+                        brand_report_id,
+                        languague,
+                        brand,
+                        prompt_date,
+                    )
                 )
-            )
-            processes.append(process_id)
+                processes.append(process_id)
 
-    # # Start Process
-    # try:
-    #     celery_app.run_browser.apply_async(
-    #         args=(name, prompt, process_id, timeout, country)
-    #     )
-    # except Exception as e:
-    #     print(f"errororr {e}")
-    #     raise HTTPException(
-    #         status_code=500, detail=f"Unable to create the process : {e}"
-    #     )
-
-    output = {
-        "message": "Browser started",
-        "processes": processes,
-    }
-    return {"details": output}
+        output = {
+            "message": "Browser started",
+            "processes": processes,
+        }
+        return {"details": output}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Server Error: {e}")
 
 
 @router.get("/status/{process_id}")
@@ -77,8 +67,12 @@ def check_status(database: databaseDepends, process_id: str):
         if status:
             output = {"process_id": process_id, "status": status}
             return {"details": output}
+        else:
+            raise HTTPException(
+                status_code=404, detail=f"Process ({process_id}) not found"
+            )
     except Exception as e:
-        raise HTTPException(status_code=404, detail=f"Process not found : {e}")
+        raise HTTPException(status_code=500, detail=f"Server Error: {e}")
 
 
 @router.get("/processes/{platform}")
@@ -89,5 +83,5 @@ def get_processes(database: databaseDepends, platform: str):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Unable to retrieve processes for the platform : {e}",
+            detail=f"Server Error - Unable to retrieve processes for the platform: {e}",
         )

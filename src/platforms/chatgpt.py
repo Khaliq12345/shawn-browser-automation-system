@@ -22,6 +22,8 @@ class ChatGPTScraper(BrowserBase):
         country: str,
         brand_report_id: str,
         date: str,
+        languague: str,
+        brand: str,
     ) -> None:
         super().__init__(
             brand_report_id,
@@ -33,6 +35,8 @@ class ChatGPTScraper(BrowserBase):
             timeout,
             country,
             date,
+            languague,
+            brand,
         )
 
     def find_and_fill_input(self) -> bool:
@@ -44,21 +48,15 @@ class ChatGPTScraper(BrowserBase):
             self.page.mouse_press(0, 0)
             self.page.sleep(5)
             # trying to fill the prompt
-            prompt_input_selector = (
-                'div[id="prompt-textarea"]'  # "#prompt-textarea"
-            )
+            prompt_input_selector = 'div[id="prompt-textarea"]'  # "#prompt-textarea"
             try:
-                self.page.type(
-                    prompt_input_selector, self.prompt, wait=self.timeout
-                )
+                self.page.type(prompt_input_selector, self.prompt, wait=self.timeout)
                 print("Done Filling")
             except Exception as e:
                 print(f"Can not fill the prompt input {e}")
                 return False
             # Validate
-            self.page.click(
-                'button[data-testid="send-button"]', wait=self.timeout
-            )
+            self.page.click('button[data-testid="send-button"]', wait=self.timeout)
             return True
         except Exception as e:
             print(f"Error in find_and_fill_input {e}")

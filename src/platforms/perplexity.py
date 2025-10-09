@@ -20,6 +20,8 @@ class PerplexityScraper(BrowserBase):
         country: str,
         brand_report_id: str,
         date: str,
+        languague: str,
+        brand: str,
     ) -> None:
         super().__init__(
             brand_report_id,
@@ -31,6 +33,8 @@ class PerplexityScraper(BrowserBase):
             timeout,
             country,
             date,
+            languague,
+            brand,
         )
 
     def find_and_fill_input(self) -> bool:

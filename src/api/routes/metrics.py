@@ -21,7 +21,7 @@ def job_success_rate(database: databaseDepends, date: DateOptions, platform: str
         date.value, settings={"RETURN_AS_TIMEZONE_AWARE": True}
     )
     if not parsed_date:
-        raise HTTPException(status_code=400, detail="Impossible de parser la date")
+        raise HTTPException(status_code=400, detail="Impossible to parse the date")
     try:
         outputs = database.get_job_success_rate(parsed_date)
         for output in outputs:
@@ -30,7 +30,7 @@ def job_success_rate(database: databaseDepends, date: DateOptions, platform: str
         return {"details": {}}
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Unable to execute the request: {e}"
+            status_code=500, detail=f"Server Error - Unable to execute the request: {e}"
         )
 
 
