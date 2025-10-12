@@ -1,8 +1,6 @@
-from datetime import datetime
 from fastapi import HTTPException, APIRouter, Query
 from typing import Annotated, List
 from src.api.dependencies import databaseDepends
-from src.utils import celery_app
 
 router = APIRouter(prefix="/schedule")
 
@@ -21,9 +19,14 @@ def delete_schedule(
             prompt_id=prompt_id, brand_report_id=brand_report_id
         )
         if result:
-            return {"status": "success", "message": "Schedule deleted successfully"}
+            return {
+                "status": "success",
+                "message": "Schedule deleted successfully",
+            }
         else:
             raise HTTPException(status_code=404, detail="Schedule not found")
+    except HTTPException as _:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -41,4 +44,3 @@ def get_next_runs(
         return next_runs
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

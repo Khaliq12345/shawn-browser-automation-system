@@ -71,6 +71,8 @@ def check_status(database: databaseDepends, process_id: str):
             raise HTTPException(
                 status_code=404, detail=f"Process ({process_id}) not found"
             )
+    except HTTPException as _:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Server Error: {e}")
 
