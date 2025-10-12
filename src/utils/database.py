@@ -1,12 +1,14 @@
 import sys
+from typing import Optional
 
 sys.path.append(".")
 
-from sqlmodel import Session, select, text, create_engine
+from sqlmodel import Column, Session, select, text, create_engine
 from src.models.model import Browsers, Reports, SQLModel, Schedules
 from datetime import datetime
 from src.config import config
 from dateparser import parse
+import json
 
 
 class Database:
@@ -19,7 +21,22 @@ class Database:
         SQLModel.metadata.create_all(self.engine)
 
     #  -------- Schedules ----------
-    def update_schedule(self, brand_report_id: str, prompt_id: str, prompt: str):
+    def get_next_schedules(self) -> list[dict]:
+        """Get schedules to run next"""
+        with Session(self.engine) as session:
+            stmt = select(Schedules).where(Schedules.next_run < datetime.now())
+            schedules_raw = session.exec(stmt).all()
+            if not schedules_raw:
+                return []
+            schedules = [
+                json.loads(schedule_raw.model_dump_json())
+                for schedule_raw in schedules_raw
+            ]
+            return schedules
+
+    def update_schedule(
+        self, brand_report_id: str, prompt_id: str, prompt: str
+    ):
         """Update or create the schedule"""
         with Session(self.engine) as session:
             stmt = select(Schedules).where(
@@ -67,14 +84,28 @@ class Database:
 
         with Session(self.engine) as session:
             stmt = select(Schedules.prompt_id, Schedules.next_run).where(
-                Schedules.prompt_id.in_(prompt_ids)
+                Column(Schedules.prompt_id).in_(prompt_ids)
             )
             results = session.exec(stmt).all()
 
             # Retourner sous forme de liste de dicts
-            return [{"prompt_id": r.prompt_id, "next_run": r.next_run} for r in results]
+            return [
+                {"prompt_id": r.prompt_id, "next_run": r.next_run}
+                for r in results
+            ]
 
     #  -------- Reports ----------
+
+    def get_report(self, brand_report_id: str) -> Optional[dict]:
+        """Get a report"""
+        with Session(self.engine) as session:
+            stmt = select(Reports).where(
+                Reports.brand_report_id == brand_report_id
+            )
+            item = session.exec(stmt).first()
+            if not item:
+                return None
+            return json.loads(item.model_dump_json())
 
     def add_report(
         self,
@@ -87,7 +118,9 @@ class Database:
     ):
         """Add new report"""
         with Session(self.engine) as session:
-            stmt = select(Reports).where(Reports.brand_report_id == brand_report_id)
+            stmt = select(Reports).where(
+                Reports.brand_report_id == brand_report_id
+            )
             item = session.exec(stmt).first()
             if item:
                 print("Report existed already")
@@ -274,10 +307,14 @@ class Database:
     def get_all_platform_processes(self, platform: str) -> list[str]:
         outputs = None
         with Session(self.engine) as session:
-            query = select(Browsers.process_id).where(Browsers.platform == platform)
+            query = select(Browsers.process_id).where(
+                Browsers.platform == platform
+            )
             results = session.execute(query)
             results = results.fetchall()
-            outputs = [process.process_id for process in results if process is not None]
+            outputs = [
+                process.process_id for process in results if process is not None
+            ]
         return outputs
 
     # Total Running Jobs

@@ -7,3 +7,4 @@ test.py
 database.db
 test.txt
 ./output/
+./celerybeat-schedule
