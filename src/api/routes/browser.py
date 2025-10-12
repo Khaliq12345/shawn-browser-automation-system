@@ -17,7 +17,7 @@ def start_browser(
     prompts: list[str],
     domain: str,
     brand: str,
-    timeout: int = 240000,
+    timeout: int = 60,
 ):
     try:
         timestamp = int(time.time())
