@@ -21,6 +21,7 @@ class ChatGPTScraper(BrowserBase):
         timeout: int,
         country: str,
         brand_report_id: str,
+        prompt_id: str,
         date: str,
         languague: str,
         brand: str,

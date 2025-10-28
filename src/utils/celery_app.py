@@ -35,6 +35,7 @@ def run_browser(
     timeout: int,
     country: str,
     brand_report_id: str,
+    prompt_id: str,
     languague: str,
     brand: str,
     date: str,
@@ -50,9 +51,7 @@ def run_browser(
     # Ajoute le handler Redis si pas déjà présent
     if not any(isinstance(h, RedisLogHandler) for h in task_logger.handlers):
         redis_handler = RedisLogHandler(redis_logger)
-        formatter = logging.Formatter(
-            "%(asctime)s - %(levelname)s - %(message)s"
-        )
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
         redis_handler.setFormatter(formatter)
         task_logger.addHandler(redis_handler)
 
@@ -72,6 +71,7 @@ def run_browser(
         timeout=timeout,
         country=country,
         brand_report_id=brand_report_id,
+        prompt_id=prompt_id,
         date=date,
         brand=brand,
         languague=languague,

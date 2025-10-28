@@ -36,6 +36,7 @@ class BrowserBase(ContextDecorator, ABC):
     def __init__(
         self,
         brand_report_id: str,
+        prompt_id: str,
         logger,
         url: str,
         prompt: str,
@@ -48,6 +49,7 @@ class BrowserBase(ContextDecorator, ABC):
         brand: str,
     ) -> None:
         self.brand_report_id = brand_report_id
+        self.prompt_id = prompt_id
         self.url = url
         self.prompt = prompt
         self.name = name
@@ -85,6 +87,7 @@ class BrowserBase(ContextDecorator, ABC):
         }
         params = {
             "brand_report_id": self.brand_report_id,
+            "prompt_id": self.prompt_id,
             "model": self.name,
             "brand": self.brand,
             "s3_key": s3_key,

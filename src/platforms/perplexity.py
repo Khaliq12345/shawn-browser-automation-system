@@ -19,12 +19,14 @@ class PerplexityScraper(BrowserBase):
         timeout: int,
         country: str,
         brand_report_id: str,
+        prompt_id: str,
         date: str,
         languague: str,
         brand: str,
     ) -> None:
         super().__init__(
             brand_report_id,
+            prompt_id,
             logger,
             url,
             prompt,

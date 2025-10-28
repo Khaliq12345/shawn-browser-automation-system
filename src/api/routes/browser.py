@@ -43,6 +43,7 @@ def start_browser(
                         timeout,
                         country,
                         brand_report_id,
+                        prompt_id,
                         languague,
                         brand,
                         prompt_date,
