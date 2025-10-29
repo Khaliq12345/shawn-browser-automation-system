@@ -28,6 +28,7 @@ class ChatGPTScraper(BrowserBase):
     ) -> None:
         super().__init__(
             brand_report_id,
+            prompt_id,
             logger,
             url,
             prompt,
