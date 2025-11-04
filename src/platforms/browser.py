@@ -11,12 +11,12 @@ import os
 from typing import Optional
 from src.utils.globals import save_file
 from src.config.config import (
-    HEADLESS,
     PROXY_USERNAME,
     PROXY_PASSWORD,
     PARSER_URL,
     PARSER_KEY,
     S3_BUCKET_NAME,
+    HEADLESS,
 )
 import httpx
 from botasaurus_driver import Driver
@@ -111,10 +111,10 @@ class BrowserBase(ContextDecorator, ABC):
         save_folder = f"responses/{basekey}/"
         text_name = "output.txt"
         screenshot_name = "screenshot.png"
-        video_name = "video.mp4"
+        # video_name = "video.mp4"
         txt_out = os.path.join(save_folder, text_name)
         screeshot_path = os.path.join(save_folder, screenshot_name)
-        video_path = os.path.join(save_folder, video_name)
+        # video_path = os.path.join(save_folder, video_name)
 
         # break the flow if no response in found
         if not content:
@@ -216,10 +216,14 @@ class BrowserBase(ContextDecorator, ABC):
         )
 
         # setup the proxy
-        proxy = f"http://{PROXY_USERNAME}:{PROXY_PASSWORD}@{self.country}.decodo.com:{PROXIES.get(self.country)}"
+        proxy_username = f"user-{PROXY_USERNAME}-country-{self.country}"
+        proxy = f"http://{proxy_username}:{PROXY_PASSWORD}@dc.decodo.com:{PROXIES.get(self.country)}"
 
         # initialise page
-        headless = HEADLESS != "false"
+        if HEADLESS == "yes":
+            headless = True
+        else:
+            headless = False
         self.page = Driver(
             headless=headless,
             proxy=proxy,
