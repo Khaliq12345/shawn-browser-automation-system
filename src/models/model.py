@@ -1,6 +1,13 @@
-from typing import Optional
-from sqlmodel import Field, SQLModel
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel
+from sqlmodel import Field, SQLModel
+
+
+class Prompt(BaseModel):
+    prompt: str
+    prompt_id: str
 
 
 class Browsers(SQLModel, table=True):

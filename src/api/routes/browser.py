@@ -1,8 +1,11 @@
-from datetime import datetime
-from src.utils import celery_app
-from src.api.dependencies import databaseDepends
-from fastapi import HTTPException, APIRouter
 import time
+from datetime import datetime
+
+from fastapi import APIRouter, HTTPException
+
+from src.api.dependencies import databaseDepends
+from src.models.model import Prompt
+from src.utils import celery_app
 
 router = APIRouter(prefix="/browser")
 
@@ -10,11 +13,10 @@ router = APIRouter(prefix="/browser")
 @router.post("/start")
 def start_browser(
     database: databaseDepends,
-    prompt_id: str,
     brand_report_id: str,
     languague: str,
     country: str,
-    prompts: list[str],
+    prompts: list[Prompt],
     domain: str,
     brand: str,
     timeout: int = 60,
@@ -29,7 +31,9 @@ def start_browser(
         processes = []
 
         # modify the prompt to always have domain with the name
-        for prompt in prompts:
+        for prompt_data in prompts:
+            prompt = prompt_data["prompt"]
+            prompt_id = prompt_data["prompt_id"]
             clean_prompt = prompt.replace(brand, f"{brand}[{domain}]")
             database.update_schedule(brand_report_id, prompt_id, clean_prompt)
             prompt_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
