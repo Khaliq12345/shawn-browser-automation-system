@@ -32,8 +32,8 @@ def start_browser(
 
         # modify the prompt to always have domain with the name
         for prompt_data in prompts:
-            prompt = prompt_data["prompt"]
-            prompt_id = prompt_data["prompt_id"]
+            prompt = prompt_data.prompt
+            prompt_id = prompt_data.prompt_id
             clean_prompt = prompt.replace(brand, f"{brand}[{domain}]")
             database.update_schedule(brand_report_id, prompt_id, clean_prompt)
             prompt_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
