@@ -1,13 +1,14 @@
-from src.platforms.google import GoogleScraper
-from src.platforms.perplexity import PerplexityScraper
-from src.platforms.chatgpt import ChatGPTScraper
-from celery import Celery
 import logging
-from src.utils.redis_utils import RedisBase, RedisLogHandler
-from src.config.config import REDIS_URL
-from src.utils.database import Database
 from datetime import datetime
 
+from celery import Celery
+
+from src.config.config import REDIS_URL
+from src.platforms.chatgpt import ChatGPTScraper
+from src.platforms.google import GoogleScraper
+from src.platforms.perplexity import PerplexityScraper
+from src.utils.database import Database
+from src.utils.redis_utils import RedisBase, RedisLogHandler
 
 app = Celery(
     "tasks",
@@ -118,6 +119,7 @@ def start_cronjob():
                     timeout,
                     country,
                     brand_report_id,
+                    prompt_id,
                     languague,
                     brand,
                     prompt_date,
