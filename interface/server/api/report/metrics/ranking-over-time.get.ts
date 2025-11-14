@@ -1,6 +1,34 @@
-export default defineEventHandler(async (event) => {
+import { defineEventHandler, getQuery, createError, H3Event } from "h3";
+
+interface RankingOverTimeQuery {
+  brand: string;
+  brand_report_id: string;
+  start_date?: string;
+  end_date?: string;
+  model?: string;
+}
+
+export default defineEventHandler(async (event: H3Event): Promise<any> => {
   try {
-    const query = getQuery(event);
+    const config = useRuntimeConfig();
+
+    const baseUrl = config.public.PARSER_API_URL;
+    const apiKey = config.public.PARSER_API;
+
+    if (!baseUrl) {
+      throw createError({
+        statusCode: 500,
+        message: "PARSER_API_URL is not defined",
+      });
+    }
+    if (!apiKey) {
+      throw createError({
+        statusCode: 500,
+        message: "PARSER_API key is not defined",
+      });
+    }
+
+    const query = getQuery(event) as RankingOverTimeQuery;
     const {
       brand,
       brand_report_id,
@@ -16,12 +44,23 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const baseUrl = process.env.PARSER_API_URL;
-    const url = `${baseUrl}/api/report/metrics/ranking-over-time`;
+    const params: Record<string, string> = {
+      brand,
+      brand_report_id,
+      model,
+    };
 
-    const response = await $fetch(url, {
-      method: "GET",
-      query: { brand, brand_report_id, start_date, end_date, model },
+    if (start_date) params.start_date = start_date;
+    if (end_date) params.end_date = end_date;
+
+    const response = await $fetch("/api/report/metrics/ranking-over-time", {
+      baseURL: baseUrl,
+      params,
+      headers: {
+        accept: "application/json",
+        "X-API-KEY": apiKey,
+        "Content-Type": "application/json",
+      },
     });
 
     return response;
@@ -42,6 +81,7 @@ export default defineEventHandler(async (event) => {
         message: `Server Error (${status}): ${message}`,
       });
     }
+
     throw createError({ statusCode: 500, message: "Unexpected error" });
   }
 });
