@@ -8,8 +8,10 @@ export default defineNuxtConfig({
   css: ["~/assets/css/main.css"],
   runtimeConfig: {
     public: {
-      API_URL: process.env.API_URL,
+      API_URL: process.env.SCRAPER_API_URL,
+      PARSER_API_URL: process.env.PARSER_API_URL,
       SCRAPER_API: process.env.SCRAPER_API,
+      PARSER_API: process.env.PARSER_API,
     },
   },
 });
