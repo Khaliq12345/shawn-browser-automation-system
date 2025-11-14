@@ -3,12 +3,14 @@ from typing import Optional
 
 sys.path.append(".")
 
-from sqlmodel import Column, Session, select, text, create_engine
-from src.models.model import Browsers, Reports, SQLModel, Schedules
-from datetime import datetime
-from src.config import config
-from dateparser import parse
 import json
+from datetime import datetime
+
+from dateparser import parse
+from sqlmodel import Column, Session, create_engine, select, text
+
+from src.config import config
+from src.models.model import Browsers, Reports, Schedules, SQLModel
 
 
 class Database:
@@ -21,6 +23,20 @@ class Database:
         SQLModel.metadata.create_all(self.engine)
 
     #  -------- Schedules ----------
+    def get_schedules(self, limit: int, offset: int) -> list[dict]:
+        """Get all schedules"""
+        with Session(self.engine) as session:
+            stmt = select(Schedules).limit(limit).offset(offset)
+            schedules_raw = session.exec(stmt).all()
+            if not schedules_raw:
+                return []
+
+            schedules = [
+                json.loads(schedule_raw.model_dump_json())
+                for schedule_raw in schedules_raw
+            ]
+            return schedules
+
     def get_next_schedules(self) -> list[dict]:
         """Get schedules to run next"""
         with Session(self.engine) as session:
@@ -34,9 +50,7 @@ class Database:
             ]
             return schedules
 
-    def update_schedule(
-        self, brand_report_id: str, prompt_id: str, prompt: str
-    ):
+    def update_schedule(self, brand_report_id: str, prompt_id: str, prompt: str):
         """Update or create the schedule"""
         with Session(self.engine) as session:
             stmt = select(Schedules).where(
@@ -89,19 +103,14 @@ class Database:
             results = session.exec(stmt).all()
 
             # Retourner sous forme de liste de dicts
-            return [
-                {"prompt_id": r.prompt_id, "next_run": r.next_run}
-                for r in results
-            ]
+            return [{"prompt_id": r.prompt_id, "next_run": r.next_run} for r in results]
 
     #  -------- Reports ----------
 
     def get_report(self, brand_report_id: str) -> Optional[dict]:
         """Get a report"""
         with Session(self.engine) as session:
-            stmt = select(Reports).where(
-                Reports.brand_report_id == brand_report_id
-            )
+            stmt = select(Reports).where(Reports.brand_report_id == brand_report_id)
             item = session.exec(stmt).first()
             if not item:
                 return None
@@ -118,9 +127,7 @@ class Database:
     ):
         """Add new report"""
         with Session(self.engine) as session:
-            stmt = select(Reports).where(
-                Reports.brand_report_id == brand_report_id
-            )
+            stmt = select(Reports).where(Reports.brand_report_id == brand_report_id)
             item = session.exec(stmt).first()
             if item:
                 print("Report existed already")
@@ -189,14 +196,14 @@ class Database:
         combined_data = None
         with Session(self.engine) as session:
             stmt = f"""
-            SELECT 
+            SELECT
                 COUNT(*) AS total_jobs,
                 COALESCE(platform, 'all') AS platform,
                 COUNT(CASE WHEN status = 'success' THEN 1 END) AS success_jobs,
                 COALESCE(
                     (COUNT(CASE WHEN status = 'success' THEN 1 END)::float / NULLIF(COUNT(*), 0)) * 100, 0
                 ) AS success_rate
-            FROM browser
+            FROM browsers
             WHERE start_time > '{start_date}'
             GROUP BY ROLLUP(platform)
             """
@@ -211,11 +218,11 @@ class Database:
         output = None
         with Session(self.engine) as session:
             stmt = f"""
-            SELECT 
+            SELECT
                 COALESCE(platform, 'all') AS platform,
                 COUNT(duration) AS total_jobs,
                 COALESCE(AVG(duration), 0) AS average_duration_seconds
-            FROM browser
+            FROM browsers
             WHERE start_time >= '{start_date}'
             GROUP BY ROLLUP(platform)
             """
@@ -230,11 +237,11 @@ class Database:
         combined_data = None
         with Session(self.engine) as session:
             stmt = f"""
-            SELECT 
+            SELECT
                 COUNT(duration) AS total_jobs,
                 COALESCE(AVG(duration), 0) AS average_total_time_seconds,
                 prompt as prompt
-            FROM browser
+            FROM browsers
             WHERE start_time >= '{start_date}'
             GROUP BY prompt
             """
@@ -249,14 +256,14 @@ class Database:
         outputs = None
         with Session(self.engine) as session:
             stmt = f"""
-            SELECT 
+            SELECT
                 COALESCE(platform, 'all') as platform,
                 COUNT(*) AS total_jobs,
                 COUNT(CASE WHEN status = 'failed' THEN 1 END) AS failed_jobs,
                 COALESCE(
                     (COUNT(CASE WHEN status = 'failed' THEN 1 END)::float / NULLIF(COUNT(*), 0)) * 100, 0
                 ) AS failed_rate
-            FROM browser
+            FROM browsers
             WHERE start_time >= '{start_date}'
             GROUP BY ROLLUP(platform)
             """
@@ -272,9 +279,9 @@ class Database:
         outputs = None
         with Session(self.engine) as session:
             stmt = f"""
-            SELECT 
+            SELECT
                 DISTINCT prompt as total
-            FROM browser
+            FROM browsers
             WHERE start_time >= '{start_date}'
             """
             result = session.execute(text(stmt))
@@ -290,7 +297,7 @@ class Database:
         with Session(self.engine) as session:
             # Use parameterized query to prevent SQL injection
             stmt = f"""
-            SELECT * FROM public.browser
+            SELECT * FROM public.browsers
             WHERE platform = '{platform}'
             ORDER BY end_time DESC
             LIMIT 1
@@ -307,14 +314,10 @@ class Database:
     def get_all_platform_processes(self, platform: str) -> list[str]:
         outputs = None
         with Session(self.engine) as session:
-            query = select(Browsers.process_id).where(
-                Browsers.platform == platform
-            )
+            query = select(Browsers.process_id).where(Browsers.platform == platform)
             results = session.execute(query)
             results = results.fetchall()
-            outputs = [
-                process.process_id for process in results if process is not None
-            ]
+            outputs = [process.process_id for process in results if process is not None]
         return outputs
 
     # Total Running Jobs
@@ -322,14 +325,14 @@ class Database:
         outputs = None
         with Session(self.engine) as session:
             stmt = f"""
-            SELECT 
+            SELECT
                 COALESCE(platform, 'all') as platform,
                 COUNT(*) AS total_jobs,
                 COUNT(CASE WHEN status = 'running' THEN 1 END) AS running_jobs,
                 COALESCE(
                     (COUNT(CASE WHEN status = 'running' THEN 1 END)::float / NULLIF(COUNT(*), 0)) * 100, 0
                 ) AS running_rate
-            FROM browser
+            FROM browsers
             WHERE start_time >= '{start_date}'
             GROUP BY ROLLUP(platform)
             """

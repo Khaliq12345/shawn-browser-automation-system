@@ -1,8 +1,21 @@
-from fastapi import HTTPException, APIRouter, Query
 from typing import Annotated, List
+
+from fastapi import APIRouter, HTTPException, Query
+
 from src.api.dependencies import databaseDepends
 
 router = APIRouter(prefix="/schedule")
+
+
+@router.get("/")
+def get_schedules(database: databaseDepends, page: int, limit: int = 10):
+    """Get Schedules"""
+    try:
+        offset = limit * (page - 1)
+        response = database.get_schedules(limit=limit, offset=offset)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.delete("/delete")

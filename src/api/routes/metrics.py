@@ -1,6 +1,8 @@
+from enum import Enum
+
 import dateparser
 from fastapi import APIRouter, HTTPException
-from enum import Enum
+
 from src.api.dependencies import databaseDepends
 
 router = APIRouter(prefix="/metrics")
