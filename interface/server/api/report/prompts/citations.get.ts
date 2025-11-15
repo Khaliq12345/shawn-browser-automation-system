@@ -1,10 +1,6 @@
-export default defineEventHandler(async (event) => {
-  try {
-    const query = getQuery(event);
-    const { brand_report_id, date = null, model = "all" } = query;
 import { defineEventHandler, getQuery, createError, H3Event } from "h3";
 
-export default defineEventHandler(async (event: H3Event): Promise<string> => {
+export default defineEventHandler(async (event: H3Event) => {
   try {
     const config = useRuntimeConfig();
 
@@ -38,7 +34,6 @@ export default defineEventHandler(async (event: H3Event): Promise<string> => {
       });
     }
 
-    const baseUrl = process.env.PARSER_API_URL;
     const url = `${baseUrl}/api/report/prompts/citations`;
 
     const response = await $fetch(url, {
@@ -49,30 +44,6 @@ export default defineEventHandler(async (event: H3Event): Promise<string> => {
         model,
       },
     });
-
-    return response;
-  } catch (error: any) {
-    const status = error?.statusCode ?? 500;
-    const message = error?.message ?? "Failed to fetch citations";
-    const params: Record<string, string> = {
-      brand_report_id,
-      model,
-    };
-
-    if (date) params.date = date;
-
-    const response = await $fetch<string>(
-      `${baseUrl}/api/report/prompts/citations`,
-      {
-        method: "GET",
-        query: params,
-        headers: {
-          accept: "application/json",
-          "X-API-KEY": apiKey,
-        },
-      },
-    );
-
     return response;
   } catch (err: any) {
     const status = err?.statusCode || err?.status || 500;
@@ -91,9 +62,5 @@ export default defineEventHandler(async (event: H3Event): Promise<string> => {
       });
     }
     throw createError({ statusCode: 500, message: "Unexpected error" });
-    throw createError({
-      statusCode: 500,
-      message: "Unexpected error",
-    });
   }
 });
