@@ -1,6 +1,36 @@
-export default defineEventHandler(async (event) => {
+import { defineEventHandler, getQuery, createError, H3Event } from "h3";
+
+interface MentionsQuery {
+  brand: string;
+  brand_report_id: string;
+  start_date?: string;
+  end_date?: string;
+  model?: string;
+}
+
+export default defineEventHandler(async (event: H3Event): Promise<any> => {
   try {
-    const query = getQuery(event);
+    const config = useRuntimeConfig();
+
+    const baseUrl = config.public.PARSER_API_URL;
+    const token = config.public.PARSER_API;
+
+    if (!baseUrl) {
+      throw createError({
+        statusCode: 500,
+        message: "PARSER_API_URL is not defined",
+      });
+    }
+
+    if (!token) {
+      throw createError({
+        statusCode: 500,
+        message: "PARSER_API token is not defined",
+      });
+    }
+
+    // Typage strict du query
+    const query = getQuery(event) as MentionsQuery;
 
     const {
       brand,
@@ -17,17 +47,24 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const baseUrl = process.env.PARSER_API_URL;
-    const url = `${baseUrl}/api/report/metrics/mentions`;
+    // Construction dynamique des paramètres
+    const params: Record<string, string> = {
+      brand,
+      brand_report_id,
+      model,
+    };
 
-    const response = await $fetch(url, {
-      method: "GET",
-      query: {
-        brand,
-        brand_report_id,
-        start_date,
-        end_date,
-        model,
+    if (start_date) params.start_date = start_date;
+    if (end_date) params.end_date = end_date;
+
+    // Requête vers l’API externe
+    const response = await $fetch(event.path, {
+      baseURL: baseUrl,
+      params,
+      headers: {
+        accept: "application/json",
+        "X-API-KEY": token,
+        "Content-Type": "application/json",
       },
     });
 
@@ -42,12 +79,17 @@ export default defineEventHandler(async (event) => {
         message: `Client Error (${status}): ${message}`,
       });
     }
+
     if (status >= 500 && status < 600) {
       throw createError({
         statusCode: status,
         message: `Server Error (${status}): ${message}`,
       });
     }
-    throw createError({ statusCode: 500, message: "Unexpected error" });
+
+    throw createError({
+      statusCode: 500,
+      message: "Unexpected error",
+    });
   }
 });
