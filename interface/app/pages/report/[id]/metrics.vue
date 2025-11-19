@@ -153,10 +153,31 @@
                 </template>
             </UCard>
         </div>
+
+        <UCard v-if="form.brand" class="md:col-span-2">
+            <template #header>
+                <div
+                    class="flex items-center gap-2 font-semibold text-gray-800 dark:text-gray-100"
+                >
+                    <UIcon name="i-heroicons-chart-bar" class="w-5 h-5" />
+                    <span>Ranking Over Time</span>
+                </div>
+            </template>
+            <ClientOnly>
+                <RankOverTime
+                    :brand="form.brand"
+                    :brand-report-id="brandReportId"
+                    :model="form.model"
+                    :start-date="form.start_date"
+                    :end-date="form.end_date"
+                />
+            </ClientOnly>
+        </UCard>
     </UContainer>
 </template>
 
 <script setup lang="ts">
+import RankOverTime from "~/components/metrics/RankOverTime.vue";
 import type { MetricConfig, MetricKey, RankingEntry } from "~/types/metrics";
 
 const route = useRoute();
