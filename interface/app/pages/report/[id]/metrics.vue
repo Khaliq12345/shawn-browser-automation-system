@@ -156,7 +156,7 @@
             </UCard>
         </div>
 
-        <UCard v-if="form.brand" class="md:col-span-2">
+        <UCard class="flex flex-col h-full md:col-span-2">
             <template #header>
                 <div
                     class="flex items-center gap-2 font-semibold text-gray-800 dark:text-gray-100"
@@ -165,8 +165,10 @@
                     <span>Ranking Over Time</span>
                 </div>
             </template>
+
             <ClientOnly>
-                <RankOverTime
+                <MetricsRankOverTime
+                    :key="refreshKey"
                     :brand="form.brand"
                     :brand-report-id="brandReportId"
                     :model="form.model"
@@ -185,11 +187,14 @@ import type {
     MetricRequestParams,
     RankingEntry,
 } from "~/types/metrics";
+import MetricsRankOverTime from "~/components/metrics/RankOverTime.vue";
 
 const route = useRoute();
 const toast = useToast();
 const brandReportId = String(route.params.id);
 const loading = ref(false);
+const refreshed = ref(false);
+const refreshKey = ref(0);
 const initialBrand =
     typeof route.query.brand === "string" ? route.query.brand : "";
 
@@ -274,6 +279,8 @@ const refreshAllMetrics = async () => {
     }
 
     loading.value = true;
+    refreshed.value = false;
+    refreshKey.value += 1;
     metricsConfig.forEach((metric) => {
         results[metric.key] = null;
     });
@@ -330,6 +337,7 @@ const refreshAllMetrics = async () => {
                 color: "success",
             });
         }
+        refreshed.value = true;
     } catch (error) {
         console.error("Global error:", error);
         toast.add({
@@ -345,8 +353,7 @@ const refreshAllMetrics = async () => {
 const formatLabel = (label: string) => label.replace(/_/g, " ");
 
 const normalizeData = (data: any): { label: string; value: string }[] => {
-    if (!data) return [];
-    const payload = data?.data ?? data;
+    const payload = data?.data;
     if (!payload || typeof payload !== "object" || Array.isArray(payload))
         return [];
 
@@ -360,12 +367,13 @@ const normalizeData = (data: any): { label: string; value: string }[] => {
 };
 
 const getRankingEntries = (data: any): RankingEntry[] => {
-    if (!data) return [];
-    const payload = data?.data ?? data;
-    const list = Array.isArray(payload) ? payload : payload?.ranking;
-    if (!Array.isArray(list)) return [];
+    const payload = data?.data;
+    if (!payload) return [];
+    const list: any[] = Array.isArray(payload?.ranking)
+        ? (payload.ranking as any[])
+        : [];
 
-    return list.map((row) => ({
+    return list.map((row: any) => ({
         rank: typeof row?.rank === "number" ? row.rank : undefined,
         brand_name:
             typeof row?.brand_name === "string" ? row.brand_name : undefined,
@@ -377,7 +385,7 @@ const getRankingEntries = (data: any): RankingEntry[] => {
 };
 
 onMounted(() => {
-    // Si la marque est déjà renseignée on déclenche le rafraîchissement
+    // Si le brand est rempli on déclenche le rafraîchissement
     if (form.brand) {
         refreshAllMetrics();
     }
