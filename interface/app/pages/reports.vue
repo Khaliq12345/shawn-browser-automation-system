@@ -4,10 +4,18 @@
 
         <!-- Loading -->
         <div v-if="loading" class="text-center py-10">
-            <p>Loading...</p>
+            <div class="mt-2 max-w-md mx-auto">
+                <UProgress
+                    :value="globalProgress"
+                    :max="100"
+                    color="neutral"
+                    status
+                />
+                <p class="text-gray-500 mt-1">Loading reports...</p>
+            </div>
         </div>
 
-        <!-- Cards -->
+        <!-- Cards (only when loaded) -->
         <div v-else class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <UCard
                 v-for="report in reports"
@@ -25,9 +33,7 @@
                             <strong>Date:</strong>
                             {{ new Date(report.date).toLocaleString() }}
                         </p>
-                        <p>
-                            <strong>languague:</strong> {{ report.languague }}
-                        </p>
+                        <p><strong>Language:</strong> {{ report.languague }}</p>
                         <p><strong>Country:</strong> {{ report.country }}</p>
                         <p><strong>Domain:</strong> {{ report.domain }}</p>
                     </div>
@@ -36,16 +42,18 @@
                 <template #footer>
                     <div class="flex justify-between pt-2">
                         <UButton
-                            color="blue"
+                            color="neutral"
                             size="sm"
+                            variant="outline"
                             @click="goTo(report.brand_report_id, 'outputs')"
                         >
                             Show Outputs
                         </UButton>
 
                         <UButton
-                            color="green"
+                            color="neutral"
                             size="sm"
+                            variant="outline"
                             @click="goTo(report.brand_report_id, 'metrics')"
                         >
                             Show Metrics
@@ -63,7 +71,7 @@
         <!-- Pagination -->
         <div class="flex justify-center gap-4">
             <UButton
-                color="gray"
+                color="neutral"
                 variant="solid"
                 :disabled="page === 1"
                 @click="previousPage"
@@ -72,7 +80,7 @@
             </UButton>
 
             <UButton
-                color="gray"
+                color="neutral"
                 variant="solid"
                 :disabled="isEmpty"
                 @click="nextPage"
@@ -84,12 +92,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
-
 const reports = ref<any[]>([]);
 const loading = ref(false);
 const isEmpty = ref(false);
+
+const globalProgress = ref(0);
 
 const page = ref(1);
 const limit = 20;
@@ -99,6 +106,14 @@ const router = useRouter();
 async function loadReports() {
     loading.value = true;
     isEmpty.value = false;
+    globalProgress.value = 0;
+
+    // Progress animation while loading
+    const progressInterval = setInterval(() => {
+        if (globalProgress.value < 90) {
+            globalProgress.value += 5;
+        }
+    }, 100);
 
     try {
         const { data, error } = await useFetch("/api/reports", {
@@ -121,7 +136,12 @@ async function loadReports() {
     } catch (err) {
         console.error("Error fetching reports:", err);
     } finally {
-        loading.value = false;
+        clearInterval(progressInterval);
+        globalProgress.value = 100;
+
+        setTimeout(() => {
+            loading.value = false;
+        }, 300);
     }
 }
 
@@ -141,5 +161,7 @@ function goTo(id: string, type: string) {
     router.push(`/${id}/${type}`);
 }
 
-onMounted(loadReports);
+onMounted(async () => {
+    await loadReports();
+});
 </script>
