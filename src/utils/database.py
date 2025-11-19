@@ -116,6 +116,13 @@ class Database:
                 return None
             return json.loads(item.model_dump_json())
 
+    def get_reports(self, limit: int, offset: int) -> list[dict]:
+        """Get reports"""
+        with Session(self.engine) as session:
+            stmt = select(Reports).limit(limit).offset(offset)
+            items = session.exec(stmt).all()
+        return [json.loads(item.model_dump_json()) for item in items]
+
     def add_report(
         self,
         brand_report_id: str,

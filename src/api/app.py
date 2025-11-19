@@ -1,12 +1,16 @@
-from fastapi import FastAPI, HTTPException, Security, Depends
-from fastapi.security.api_key import APIKeyHeader
+from mmap import PROT_EXEC
+
+from fastapi import Depends, FastAPI, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware
-from src.api.routes.metrics import router as metrics_router
-from src.api.routes.logs import router as logs_router
+from fastapi.security.api_key import APIKeyHeader
+
 from src.api.routes.browser import router as browser_router
+from src.api.routes.logs import router as logs_router
+from src.api.routes.metrics import router as metrics_router
+from src.api.routes.report import router as report_router
 from src.api.routes.schedule import router as schedule_router
-from src.utils.database import Database
 from src.config.config import API_KEY
+from src.utils.database import Database
 
 API_KEY_NAME = "X-API-KEY"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
@@ -42,3 +46,4 @@ app.include_router(prefix="/api", router=browser_router, tags=["Browser"])
 app.include_router(prefix="/api", router=schedule_router, tags=["Schedule"])
 app.include_router(prefix="/api", router=metrics_router, tags=["Metrics"])
 app.include_router(prefix="/api", router=logs_router, tags=["Logs"])
+app.include_router(prefix="/api", router=report_router, tags=["REPORT"])
