@@ -1,15 +1,5 @@
 import { defineEventHandler, getQuery, createError, H3Event } from "h3";
-
-// structure type (basé sur le json de la réponse)
-interface ReportItem {
-  id: string;
-  date: string;
-  snapshot: string;
-  brand_report_id: string;
-  prompt_id: string;
-  model: string;
-  markdown: string;
-}
+import type { ReportItem } from "../../../../app/types/report";
 
 
 type ReportsResponse = ReportItem[];
