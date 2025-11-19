@@ -1,5 +1,5 @@
 <template>
-    <UProgress v-if="status === 'pending'" animation="swing" size="sm" />
+    <UProgress v-if="loading" animation="swing" size="sm" />
 
     <UContainer class="py-8">
         <div class="flex items-center justify-between mb-6 mx-2">
@@ -101,7 +101,7 @@
                 color="secondary"
                 variant="ghost"
                 icon="i-heroicons-chevron-left"
-                :disabled="page <= 1 || status === 'pending'"
+                :disabled="page <= 1 || loading"
                 @click="onButtonClick('prev')"
             />
 
@@ -113,9 +113,7 @@
                 color="secondary"
                 variant="ghost"
                 icon="i-heroicons-chevron-right"
-                :disabled="
-                    (outputs?.length || 0) < limit || status === 'pending'
-                "
+                :disabled="(outputs?.length || 0) < limit || loading"
                 @click="onButtonClick('next')"
             />
         </div>
@@ -131,21 +129,37 @@ const brandReportId = String(route.params.id);
 // State
 const page = ref(1);
 const limit = 10;
+const outputs = ref<ReportItem[]>([]);
+const loading = ref(false);
 
-// Appel API
-const { data: outputs, status } = await useFetch<ReportItem[]>(
-    "/api/report/prompts/reports",
-    {
-        query: {
-            brand_report_id: brandReportId,
-            page: page,
-            limit: limit,
-        },
-        watch: [page], // Relance automatiquement quand page change
-    },
-);
+const buildQuery = () => ({
+    brand_report_id: brandReportId,
+    page: page.value,
+    limit,
+});
 
-const loading = computed(() => status.value === "pending");
+const fetchOutputs = async () => {
+    loading.value = true;
+    try {
+        const data = await $fetch<ReportItem[]>("/api/report/prompts/reports", {
+            query: buildQuery(),
+        });
+        outputs.value = Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error("Failed to fetch report outputs:", error);
+        outputs.value = [];
+    } finally {
+        loading.value = false;
+    }
+};
+
+watch(page, () => {
+    fetchOutputs();
+});
+
+onMounted(() => {
+    fetchOutputs();
+});
 
 // Gestion des clics de pagination
 const onButtonClick = (action: "prev" | "next") => {

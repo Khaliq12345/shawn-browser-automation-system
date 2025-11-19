@@ -53,14 +53,16 @@
             </div>
         </UCard>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div v-if="loading" class="flex flex-col items-center gap-2">
+            <UProgress animation="swing" color="secondary" class="w-full" />
+            <span class="text-sm text-gray-500">Loading metrics...</span>
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <UCard
                 v-for="metric in metricsConfig"
                 :key="metric.key"
-                :class="[
-                    'flex flex-col h-full',
-                    metric.fullWidth ? 'md:col-span-2' : '',
-                ]"
+                :class="['flex flex-col h-full', 'md:col-span-2']"
             >
                 <template #header>
                     <div
@@ -177,13 +179,19 @@
 </template>
 
 <script setup lang="ts">
-import RankOverTime from "~/components/metrics/RankOverTime.vue";
-import type { MetricConfig, MetricKey, RankingEntry } from "~/types/metrics";
+import type {
+    MetricConfig,
+    MetricKey,
+    MetricRequestParams,
+    RankingEntry,
+} from "~/types/metrics";
 
 const route = useRoute();
 const toast = useToast();
 const brandReportId = String(route.params.id);
 const loading = ref(false);
+const initialBrand =
+    typeof route.query.brand === "string" ? route.query.brand : "";
 
 const modelOptions = [
     { label: "All Models", value: "all" },
@@ -194,7 +202,7 @@ const modelOptions = [
 ];
 
 const form = reactive({
-    brand: "",
+    brand: initialBrand,
     model: "all",
     start_date: undefined as string | undefined,
     end_date: undefined as string | undefined,
@@ -213,36 +221,41 @@ const metricsConfig: MetricConfig[] = [
         key: "mentions",
         title: "Brand Mentions",
         icon: "i-heroicons-chat-bubble-left-right",
-        endpoint: "/api/report/metrics/mentions",
     },
     {
         key: "shareOfVoice",
         title: "Share of Voice",
         icon: "i-heroicons-megaphone",
-        endpoint: "/api/report/metrics/share-of-voice",
     },
     {
         key: "coverage",
         title: "Coverage",
         icon: "i-heroicons-globe-alt",
-        endpoint: "/api/report/metrics/coverage",
     },
     {
         key: "position",
         title: "Position",
         icon: "i-heroicons-map-pin",
-        endpoint: "/api/report/metrics/position",
     },
     {
         key: "ranking",
         title: "Ranking",
         icon: "i-heroicons-trophy",
-        fullWidth: true,
-        endpoint: "/api/report/metrics/ranking",
     },
 ];
 
-const getQueryParams = () => ({
+const metricFetchers: Record<
+    MetricKey,
+    (params: MetricRequestParams) => Promise<any>
+> = {
+    mentions: getMentionsMetrics,
+    shareOfVoice: getShareOfVoiceMetrics,
+    coverage: getCoverageMetrics,
+    position: getPositionMetrics,
+    ranking: getRankingMetrics,
+};
+
+const buildMetricParams = (): MetricRequestParams => ({
     brand: form.brand,
     brand_report_id: brandReportId,
     model: form.model,
@@ -266,9 +279,21 @@ const refreshAllMetrics = async () => {
     });
 
     try {
+        const params = buildMetricParams();
         const outcomes = await Promise.all(
-            metricsConfig.map((metric) =>
-                $fetch(metric.endpoint, { query: getQueryParams() })
+            metricsConfig.map((metric) => {
+                const fetcher = metricFetchers[metric.key];
+                if (!fetcher) {
+                    return Promise.resolve({
+                        status: "rejected" as const,
+                        key: metric.key,
+                        error: new Error(
+                            `No fetcher configured for ${metric.key}`,
+                        ),
+                    });
+                }
+
+                return fetcher(params)
                     .then((data) => ({
                         status: "fulfilled" as const,
                         key: metric.key,
@@ -278,8 +303,8 @@ const refreshAllMetrics = async () => {
                         status: "rejected" as const,
                         key: metric.key,
                         error,
-                    })),
-            ),
+                    }));
+            }),
         );
 
         let errorCount = 0;
@@ -350,4 +375,11 @@ const getRankingEntries = (data: any): RankingEntry[] => {
                 : undefined,
     }));
 };
+
+onMounted(() => {
+    // Si la marque est déjà renseignée on déclenche le rafraîchissement
+    if (form.brand) {
+        refreshAllMetrics();
+    }
+});
 </script>
