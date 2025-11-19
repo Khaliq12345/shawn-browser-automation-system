@@ -11,6 +11,7 @@ export default defineEventHandler(async (event: H3Event): Promise<any> => {
       limit: String(query.limit ?? "20"),
       page: String(query.page ?? "1"),
     };
+    console.log(params);
 
     const response = await $fetch("/api/reports/", {
       baseURL: baseUrl,
