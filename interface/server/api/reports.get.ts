@@ -25,7 +25,7 @@ export default defineEventHandler(async (event: H3Event): Promise<any> => {
 
     return response;
   } catch (err: any) {
-    console.error("🔥 Error in reports.get.ts:", err);
+    console.error("Error in reports.get.ts:", err);
     throw createError({
       statusCode: err?.statusCode || 500,
       message: err?.message || "Failed to fetch /api/reports",
