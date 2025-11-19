@@ -36,16 +36,18 @@
                 <template #footer>
                     <div class="flex justify-between pt-2">
                         <UButton
-                            color="blue"
+                            color="neutral"
                             size="sm"
+                            variant="outline"
                             @click="goTo(report.brand_report_id, 'outputs')"
                         >
                             Show Outputs
                         </UButton>
 
                         <UButton
-                            color="green"
+                            color="neutral"
                             size="sm"
+                            variant="outline"
                             @click="goTo(report.brand_report_id, 'metrics')"
                         >
                             Show Metrics
@@ -63,7 +65,7 @@
         <!-- Pagination -->
         <div class="flex justify-center gap-4">
             <UButton
-                color="gray"
+                color="neutral"
                 variant="solid"
                 :disabled="page === 1"
                 @click="previousPage"
@@ -72,7 +74,7 @@
             </UButton>
 
             <UButton
-                color="gray"
+                color="neutral"
                 variant="solid"
                 :disabled="isEmpty"
                 @click="nextPage"
@@ -84,9 +86,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
-
 const reports = ref<any[]>([]);
 const loading = ref(false);
 const isEmpty = ref(false);
@@ -141,5 +140,7 @@ function goTo(id: string, type: string) {
     router.push(`/${id}/${type}`);
 }
 
-onMounted(loadReports);
+onMounted(async () => {
+    await loadReports();
+});
 </script>
