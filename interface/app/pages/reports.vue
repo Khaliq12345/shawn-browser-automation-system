@@ -1,126 +1,145 @@
 <template>
-    <UProgress v-if="loading" animation="swing" />
-    <div class="grid grid-cols-2 m-2">
-        <UCard v-for="data in reports" variant="soft" class="m-10">
-            <div class="space-4 text-sm">
-                <div>
-                    <span class="font-medium text-gray-600 dark:text-gray-400"
-                        >Prompt ID:</span
-                    >
-                    <span class="ml-2 text-gray-900 dark:text-white">{{
-                        data.prompt_id
-                    }}</span>
-                </div>
+    <div class="max-w-6xl mx-auto py-10 space-y-10">
+        <h1 class="text-3xl font-bold">Reports</h1>
 
-                <div>
-                    <span class="font-medium text-gray-600 dark:text-gray-400"
-                        >Brand Report ID:</span
-                    >
-                    <span class="ml-2 text-gray-900 dark:text-white">{{
-                        data.brand_report_id
-                    }}</span>
-                </div>
+        <!-- Loading -->
+        <div v-if="loading" class="text-center py-10">
+            <p>Loading...</p>
+        </div>
 
-                <div>
-                    <span class="font-medium text-gray-600 dark:text-gray-400"
-                        >Prompt:</span
-                    >
-                    <p class="mt-1 text-gray-900 dark:text-white italic">
-                        {{ data.prompt }}
-                    </p>
-                </div>
-            </div>
+        <!-- Cards -->
+        <div v-else class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <UCard
+                v-for="report in reports"
+                :key="report.brand_report_id"
+                class="shadow-md"
+            >
+                <template #header>
+                    <h2 class="text-xl font-semibold">{{ report.brand }}</h2>
+                </template>
 
-            <template #footer>
-                <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <div class="flex justify-between">
-                        <span
-                            class="font-medium text-gray-600 dark:text-gray-400"
-                            >Last Run:</span
-                        >
-                        <span class="text-gray-900 dark:text-white">{{
-                            formatDate(data.last_run)
-                        }}</span>
+                <template #default>
+                    <div class="text-left space-y-1">
+                        <p><strong>ID:</strong> {{ report.brand_report_id }}</p>
+                        <p>
+                            <strong>Date:</strong>
+                            {{ new Date(report.date).toLocaleString() }}
+                        </p>
+                        <p>
+                            <strong>languague:</strong> {{ report.languague }}
+                        </p>
+                        <p><strong>Country:</strong> {{ report.country }}</p>
+                        <p><strong>Domain:</strong> {{ report.domain }}</p>
                     </div>
-                    <div class="flex justify-between mt-2">
-                        <span
-                            class="font-medium text-gray-600 dark:text-gray-400"
-                            >Next Run:</span
-                        >
-                        <span class="text-gray-900 dark:text-white">{{
-                            formatDate(data.next_run)
-                        }}</span>
-                    </div>
-                    <UButton
-                        trailing-icon="i-lucide-arrow-right"
-                        size="md"
-                        color="secondary"
-                        class="m-5"
-                        :to="`/report-details/${data.brand_report_id}`"
-                        >Go to Report</UButton
-                    >
-                </div>
-            </template>
-        </UCard>
-    </div>
+                </template>
 
-    <div class="flex justify-center mt-10">
-        <UFieldGroup class="space-x-7">
+                <template #footer>
+                    <div class="flex justify-between pt-2">
+                        <UButton
+                            color="blue"
+                            size="sm"
+                            @click="goTo(report.brand_report_id, 'outputs')"
+                        >
+                            Show Outputs
+                        </UButton>
+
+                        <UButton
+                            color="green"
+                            size="sm"
+                            @click="goTo(report.brand_report_id, 'metrics')"
+                        >
+                            Show Metrics
+                        </UButton>
+                    </div>
+                </template>
+            </UCard>
+        </div>
+
+        <!-- Empty list -->
+        <div v-if="!loading && isEmpty" class="text-center py-10 text-gray-500">
+            No reports found.
+        </div>
+
+        <!-- Pagination -->
+        <div class="flex justify-center gap-4">
             <UButton
-                color="neutral"
-                variant="subtle"
-                icon="i-lucide-chevron-left"
-                @click="onButtonClick('prev')"
-            />
+                color="gray"
+                variant="solid"
+                :disabled="page === 1"
+                @click="previousPage"
+            >
+                Previous
+            </UButton>
+
             <UButton
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-chevron-right"
-                @click="onButtonClick('next')"
-            />
-        </UFieldGroup>
+                color="gray"
+                variant="solid"
+                :disabled="isEmpty"
+                @click="nextPage"
+            >
+                Next
+            </UButton>
+        </div>
     </div>
 </template>
 
-<script setup>
-const reports = ref();
+<script setup lang="ts">
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+
+const reports = ref<any[]>([]);
 const loading = ref(false);
-let page = ref(1);
-const limit = ref(10);
+const isEmpty = ref(false);
 
-const onButtonClick = async (action) => {
-    if (action == "prev") {
-        page.value = page.value - 1;
-    } else if (action == "next") {
-        page.value = page.value + 1;
-    }
-    await loadData();
-};
+const page = ref(1);
+const limit = 20;
 
-onMounted(async () => {
-    await loadData();
-});
+const router = useRouter();
 
-const loadData = async () => {
+async function loadReports() {
     loading.value = true;
-    reports.value = [];
+    isEmpty.value = false;
+
     try {
-        const response = await getSchedule(limit.value, page.value);
-        reports.value = response;
-        console.log(response);
+        const { data, error } = await useFetch("/api/reports", {
+            method: "GET",
+            query: {
+                page: page.value,
+                limit,
+            },
+        });
+
+        if (error.value) {
+            console.error("❌ API Error:", error.value);
+            reports.value = [];
+            isEmpty.value = true;
+            return;
+        }
+
+        reports.value = data.value || [];
+        isEmpty.value = reports.value.length === 0;
     } catch (err) {
-        console.log(err);
+        console.error("Error fetching reports:", err);
     } finally {
         loading.value = false;
     }
-};
+}
 
-// Format ISO dates to readable format
-const formatDate = (isoString) => {
-    if (!isoString) return "N/A";
-    return new Date(isoString).toLocaleString("en-US", {
-        dateStyle: "medium",
-        timeStyle: "medium",
-    });
-};
+function nextPage() {
+    page.value++;
+    loadReports();
+}
+
+function previousPage() {
+    if (page.value > 1) {
+        page.value--;
+        loadReports();
+    }
+}
+
+function goTo(id: string, type: string) {
+    router.push(`/${id}/${type}`);
+}
+
+onMounted(loadReports);
 </script>
