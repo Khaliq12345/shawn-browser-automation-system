@@ -1,11 +1,32 @@
 import { defineEventHandler, getQuery, createError, H3Event } from "h3";
 
-export default defineEventHandler(async (event: H3Event): Promise<any> => {
+// structure type (basé sur le json de la réponse)
+interface ReportItem {
+  id: string;
+  date: string;
+  snapshot: string;
+  brand_report_id: string;
+  prompt_id: string;
+  model: string;
+  markdown: string;
+}
+
+
+type ReportsResponse = ReportItem[];
+
+export default defineEventHandler(async (event: H3Event): Promise<ReportsResponse> => {
   try {
     const config = useRuntimeConfig();
 
     const baseUrl = config.public.PARSER_API_URL;
     const apiKey = config.public.PARSER_API;
+
+    if (!baseUrl) {
+      throw createError({
+        statusCode: 500,
+        message: "PARSER_API_URL is not defined",
+      });
+    }
 
     if (!apiKey) {
       throw createError({
@@ -34,7 +55,7 @@ export default defineEventHandler(async (event: H3Event): Promise<any> => {
     if (limit) params.limit = limit;
     if (page) params.page = page;
 
-    const response = await $fetch<any>(
+    const response = await $fetch<ReportsResponse>(
       `${baseUrl}/api/report/prompts/reports`,
       {
         method: "GET",
