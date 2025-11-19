@@ -5,13 +5,8 @@
         <!-- Loading -->
         <div v-if="loading" class="text-center py-10">
             <div class="mt-2 max-w-md mx-auto">
-                <UProgress
-                    :value="globalProgress"
-                    :max="100"
-                    color="neutral"
-                    status
-                />
-                <p class="text-gray-500 mt-1">Loading reports...</p>
+                <UProgress indeterminate color="neutral" status />
+                <p class="text-gray-200 mt-1">Loading reports...</p>
             </div>
         </div>
 
@@ -45,7 +40,11 @@
                             color="neutral"
                             size="sm"
                             variant="outline"
-                            @click="goTo(report.brand_report_id, 'outputs')"
+                            @click="
+                                router.push(
+                                    `/reports/${report.brand_report_id}/outputs`,
+                                )
+                            "
                         >
                             Show Outputs
                         </UButton>
@@ -54,7 +53,11 @@
                             color="neutral"
                             size="sm"
                             variant="outline"
-                            @click="goTo(report.brand_report_id, 'metrics')"
+                            @click="
+                                router.push(
+                                    `/reports/${report.brand_report_id}/metrics`,
+                                )
+                            "
                         >
                             Show Metrics
                         </UButton>
@@ -96,8 +99,6 @@ const reports = ref<any[]>([]);
 const loading = ref(false);
 const isEmpty = ref(false);
 
-const globalProgress = ref(0);
-
 const page = ref(1);
 const limit = 20;
 
@@ -106,17 +107,9 @@ const router = useRouter();
 async function loadReports() {
     loading.value = true;
     isEmpty.value = false;
-    globalProgress.value = 0;
-
-    // Progress animation while loading
-    const progressInterval = setInterval(() => {
-        if (globalProgress.value < 90) {
-            globalProgress.value += 5;
-        }
-    }, 100);
 
     try {
-        const { data, error } = await useFetch("/api/reports", {
+        const data = await $fetch("/api/reports", {
             method: "GET",
             query: {
                 page: page.value,
@@ -124,24 +117,14 @@ async function loadReports() {
             },
         });
 
-        if (error.value) {
-            console.error("❌ API Error:", error.value);
-            reports.value = [];
-            isEmpty.value = true;
-            return;
-        }
-
-        reports.value = data.value || [];
+        reports.value = data || [];
         isEmpty.value = reports.value.length === 0;
-    } catch (err) {
-        console.error("Error fetching reports:", err);
+    } catch (error) {
+        console.error("❌ API Error:", error);
+        reports.value = [];
+        isEmpty.value = true;
     } finally {
-        clearInterval(progressInterval);
-        globalProgress.value = 100;
-
-        setTimeout(() => {
-            loading.value = false;
-        }, 300);
+        loading.value = false;
     }
 }
 
@@ -155,10 +138,6 @@ function previousPage() {
         page.value--;
         loadReports();
     }
-}
-
-function goTo(id: string, type: string) {
-    router.push(`/${id}/${type}`);
 }
 
 onMounted(async () => {
