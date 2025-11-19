@@ -36,14 +36,23 @@ export default defineEventHandler(async (event: H3Event) => {
 
     const url = `${baseUrl}/api/report/prompts/citations`;
 
+    // Construire proprement la query sans paramètres vides
+    const fetchQuery: Record<string, string> = {
+      brand_report_id,
+      model,
+    };
+    if (date && date.trim() !== "") {
+      fetchQuery.date = date;
+    }
+
     const response = await $fetch(url, {
       method: "GET",
-      query: {
-        brand_report_id,
-        date,
-        model,
+      query: fetchQuery,
+      headers: {
+        "X-API-KEY": apiKey, // N'oublie pas d'ajouter l'API key ici
       },
     });
+
     return response;
   } catch (err: any) {
     const status = err?.statusCode || err?.status || 500;
