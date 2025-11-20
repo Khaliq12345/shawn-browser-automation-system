@@ -4,7 +4,17 @@ import process from "node:process";
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
-  modules: ["@nuxt/ui", "nuxt-charts"],
+  modules: ["@nuxt/ui", "nuxt-charts", "@nuxtjs/mdc"],
+  mdc: {
+    highlight: {
+      highlighter: "shiki",
+      theme: {
+        default: "github-light",
+        dark: "github-dark",
+      },
+      shikiEngine: "oniguruma",
+    },
+  },
   css: ["~/assets/css/main.css"],
   runtimeConfig: {
     public: {

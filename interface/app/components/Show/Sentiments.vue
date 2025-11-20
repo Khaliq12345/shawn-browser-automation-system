@@ -1,5 +1,5 @@
 <template>
-    <UCollapsible class="flex flex-col gap-3">
+    <UCollapsible v-model:open="open" class="flex flex-col gap-3">
         <UButton
             class="group"
             color="neutral"
@@ -16,16 +16,12 @@
         <template #content>
             <div class="p-4 space-y-4">
                 <!-- Loading -->
-                <div v-if="loading" class="text-primary">
-                    Loading sentiments…
+                <div v-if="loading" class="text-center py-10">
+                    <div class="mt-2 max-w-md mx-auto">
+                        <UProgress indeterminate color="neutral" status />
+                        <p class="text-gray-200 mt-1">Loading Sentiments...</p>
+                    </div>
                 </div>
-
-                <!-- JSON Output -->
-                <pre
-                    v-else
-                    class="text-sm bg-gray-100 p-4 text-primary rounded overflow-auto max-h-96"
-                    >{{ JSON.stringify(sentiments, null, 2) }}
-                </pre>
             </div>
         </template>
     </UCollapsible>
@@ -41,6 +37,11 @@ const props = defineProps<{
 
 const loading = ref(false);
 const sentiments = ref<any>(null);
+const open = ref(true);
+
+defineShortcuts({
+    o: () => (open.value = !open.value),
+});
 
 async function loadSentiments() {
     loading.value = true;

@@ -1,5 +1,5 @@
 <template>
-    <UCollapsible class="flex flex-col gap-3">
+    <UCollapsible v-model:open="open" class="flex flex-col gap-3">
         <UButton
             class="group"
             color="neutral"
@@ -17,8 +17,11 @@
         <template #content>
             <div class="p-4 space-y-4">
                 <!-- Loading -->
-                <div v-if="loading" class="text-gray-500">
-                    Loading citations…
+                <div v-if="loading" class="text-center py-10">
+                    <div class="mt-2 max-w-md mx-auto">
+                        <UProgress indeterminate color="neutral" status />
+                        <p class="text-gray-200 mt-1">Loading Citations...</p>
+                    </div>
                 </div>
 
                 <!-- List -->
@@ -53,13 +56,6 @@
                             </p>
                         </div>
                     </UCard>
-
-                    <div
-                        v-if="list.length === 0"
-                        class="text-gray-500 text-center"
-                    >
-                        No citations found.
-                    </div>
                 </div>
             </div>
         </template>
@@ -75,6 +71,7 @@ const props = defineProps<{
 
 const loading = ref(false);
 const list = ref<any[]>([]);
+const open = ref(true);
 
 type Citation = {
     id?: string | number;
@@ -82,6 +79,10 @@ type Citation = {
     brand?: string;
     [key: string]: any;
 };
+
+defineShortcuts({
+    o: () => (open.value = !open.value),
+});
 
 type CitationsResponse = {
     citations: Citation[];
