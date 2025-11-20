@@ -1,37 +1,37 @@
 <template>
     <div class="space-y-8">
-        <div v-if="loading" class="flex flex-col items-center gap-2">
+        <div v-if="props.loading" class="flex flex-col items-center gap-2">
             <UProgress animation="swing" color="secondary" class="w-full" />
-            <span class="text-sm text-gray-500"
-                >Chargement des tendances...</span
-            >
+            <span class="text-sm text-gray-500">Loading trends...</span>
         </div>
 
         <div v-else>
-            <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
+            <p v-if="props.error" class="text-sm text-red-500">
+                {{ props.error }}
+            </p>
             <p
-                v-else-if="!rankData.length && !positionData.length"
+                v-else-if="!props.rankData.length && !props.mentionData.length"
                 class="text-sm text-gray-400"
             >
-                Aucune donnée disponible pour cette configuration.
+                No data available for this configuration.
             </p>
             <div v-else class="space-y-10">
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-semibold">
-                            Classement dans le temps
+                            <!--Ranking Over Time-->
                         </h3>
                         <span class="text-xs text-gray-500"
-                            >Basé sur les rangs cumulés</span
+                            >Based on cumulative ranks</span
                         >
                     </div>
                     <div ref="rankContainer" class="w-full">
                         <BarChart
-                            v-if="rankData.length"
-                            :data="rankData"
+                            v-if="props.rankData.length"
+                            :data="props.rankData"
                             x-axis="date"
-                            :categories="rankCategories"
-                            :x-formatter="formatRankXLabel"
+                            :categories="props.rankCategories"
+                            :x-formatter="props.formatRankXLabel"
                             :y-grid-line="true"
                             :y-axis="rankYAxisKeys"
                             :height="rankHeight"
@@ -40,35 +40,36 @@
                             :radius="4"
                         />
                         <p v-else class="text-sm text-gray-400 italic">
-                            Aucune donnée de classement disponible pour cette
-                            configuration.
+                            No ranking data available for this configuration.
                         </p>
                     </div>
                 </div>
 
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-semibold">Position exacte</h3>
+                        <h3 class="text-lg font-semibold">
+                            Number of mentions
+                        </h3>
                         <span class="text-xs text-gray-500"
-                            >Visualisation des positions calculées</span
+                            >Mentions visualization</span
                         >
                     </div>
-                    <div ref="positionContainer" class="w-full">
+                    <div ref="mentionContainer" class="w-full">
                         <BarChart
-                            v-if="positionData.length"
-                            :data="positionData"
+                            v-if="props.mentionData.length"
+                            :data="props.mentionData"
                             x-axis="date"
-                            :categories="positionCategories"
-                            :x-formatter="formatPositionXLabel"
+                            :categories="props.mentionCategories"
+                            :x-formatter="props.formatMentionXLabel"
                             :y-grid-line="true"
-                            :y-axis="positionYAxisKeys"
-                            :height="positionHeight"
+                            :y-axis="mentionYAxisKeys"
+                            :height="mentionHeight"
                             :group-padding="8"
                             :bar-padding="0.1"
                             :radius="4"
                         />
                         <p v-else class="text-sm text-gray-400 italic">
-                            Aucune position disponible pour cette configuration.
+                            No mentions data available for this configuration.
                         </p>
                     </div>
                 </div>
@@ -78,70 +79,33 @@
 </template>
 
 <script setup lang="ts">
-import { useRankingOverTime } from "../../composables/useRankingOverTime";
+import type { AreaCategories, ChartRow } from "../../types/ranking";
 
 const props = defineProps<{
-    brand: string;
-    brandReportId: string;
-    model?: string;
-    startDate?: string;
-    endDate?: string;
+    loading: boolean;
+    error: string | null;
+    rankData: ChartRow[];
+    mentionData: ChartRow[];
+    rankCategories: AreaCategories;
+    mentionCategories: AreaCategories;
+    formatRankXLabel: (tick: any, i?: number) => string;
+    formatMentionXLabel: (tick: any, i?: number) => string;
 }>();
 
-// Utilisation du composable
-const {
-    loading: loadingRef,
-    error: errorRef,
-    rankCategories,
-    positionCategories,
-    rankData,
-    positionData,
-    fetchRankingOverTime,
-    formatRankXLabel,
-    formatPositionXLabel,
-} = useRankingOverTime();
-
-// Liaison refs locales
-const loading = loadingRef;
-const error = errorRef;
-
 // Keys pour l'axe Y : extraites des catégories
-const rankYAxisKeys = computed(() => Object.keys(rankCategories.value));
-const positionYAxisKeys = computed(() => Object.keys(positionCategories.value));
+const rankYAxisKeys = computed(() => Object.keys(props.rankCategories));
+const mentionYAxisKeys = computed(() => Object.keys(props.mentionCategories));
 
 // Observers pour rendre la taille responsive
 const rankContainer = ref<HTMLElement | null>(null);
-const positionContainer = ref<HTMLElement | null>(null);
+const mentionContainer = ref<HTMLElement | null>(null);
 const rankHeight = ref(260);
-const positionHeight = ref(260);
+const mentionHeight = ref(260);
 let rankObserver: ResizeObserver | null = null;
-let positionObserver: ResizeObserver | null = null;
+let mentionObserver: ResizeObserver | null = null;
 
 const computeHeightFromWidth = (width: number) =>
     Math.max(200, Math.min(520, Math.round(width * 0.28)));
-
-// Watcher pour les props : déclenche le fetch à chaque changement
-watch(
-    () => [
-        props.brand,
-        props.brandReportId,
-        props.model,
-        props.startDate,
-        props.endDate,
-    ],
-    () => {
-        if (props.brand && props.brandReportId) {
-            void fetchRankingOverTime({
-                brand: props.brand,
-                brand_report_id: props.brandReportId,
-                model: props.model ?? "all",
-                start_date: props.startDate ?? null,
-                end_date: props.endDate ?? null,
-            });
-        }
-    },
-    { immediate: true },
-);
 
 onMounted(() => {
     if (typeof window === "undefined" || !("ResizeObserver" in window)) return;
@@ -162,11 +126,11 @@ onMounted(() => {
     };
 
     rankObserver = createObserver(rankContainer.value, rankHeight);
-    positionObserver = createObserver(positionContainer.value, positionHeight);
+    mentionObserver = createObserver(mentionContainer.value, mentionHeight);
 });
 
 onBeforeUnmount(() => {
     if (rankObserver) rankObserver.disconnect();
-    if (positionObserver) positionObserver.disconnect();
+    if (mentionObserver) mentionObserver.disconnect();
 });
 </script>

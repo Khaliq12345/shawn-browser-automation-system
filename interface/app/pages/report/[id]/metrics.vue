@@ -26,8 +26,9 @@
                 <UFormField label="Model">
                     <USelect
                         v-model="form.model"
-                        :options="modelOptions"
-                        option-attribute="label"
+                        :items="modelOptions"
+                        clearable
+                        placeholder="Select a model"
                     />
                 </UFormField>
 
@@ -168,12 +169,14 @@
 
             <ClientOnly>
                 <MetricsRankOverTime
-                    :key="refreshKey"
-                    :brand="form.brand"
-                    :brand-report-id="brandReportId"
-                    :model="form.model"
-                    :start-date="form.start_date"
-                    :end-date="form.end_date"
+                    :loading="rankingLoading"
+                    :error="rankingError"
+                    :rank-data="rankData"
+                    :mention-data="mentionData"
+                    :rank-categories="rankCategories"
+                    :mention-categories="mentionCategories"
+                    :format-rank-x-label="formatRankXLabel"
+                    :format-mention-x-label="formatMentionXLabel"
                 />
             </ClientOnly>
         </UCard>
@@ -188,6 +191,13 @@ import type {
     RankingEntry,
 } from "~/types/metrics";
 import MetricsRankOverTime from "~/components/metrics/RankOverTime.vue";
+import { useRankingOverTime } from "~/composables/useRankingOverTime";
+import { useToast } from "#imports"; // notifié par Zed (erreur sur const toast = useToast();)
+import { getMentionsMetrics } from "~/utils/getMentionsMetrics";
+import { getShareOfVoiceMetrics } from "~/utils/getShareOfVoiceMetrics";
+import { getCoverageMetrics } from "~/utils/getCoverageMetrics";
+import { getPositionMetrics } from "~/utils/getPositionMetrics";
+import { getRankingMetrics } from "~/utils/getRankingMetrics";
 
 const route = useRoute();
 const toast = useToast();
@@ -212,6 +222,18 @@ const form = reactive({
     start_date: undefined as string | undefined,
     end_date: undefined as string | undefined,
 });
+
+const {
+    loading: rankingLoading,
+    error: rankingError,
+    rankData,
+    mentionData,
+    rankCategories,
+    mentionCategories,
+    fetchRankingOverTime,
+    formatRankXLabel,
+    formatMentionXLabel,
+} = useRankingOverTime();
 
 const results = reactive<Record<MetricKey, any>>({
     mentions: null,
@@ -338,6 +360,15 @@ const refreshAllMetrics = async () => {
             });
         }
         refreshed.value = true;
+
+        // Fetch ranking over time data
+        await fetchRankingOverTime({
+            brand: params.brand,
+            brand_report_id: params.brand_report_id,
+            model: params.model,
+            start_date: params.start_date,
+            end_date: params.end_date,
+        });
     } catch (error) {
         console.error("Global error:", error);
         toast.add({
