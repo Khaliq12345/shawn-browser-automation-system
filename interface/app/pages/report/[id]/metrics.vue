@@ -110,7 +110,7 @@
                                     <UBadge
                                         color="success"
                                         variant="soft"
-                                        size="sm"
+                                        size="lg"
                                         >#{{ row.rank ?? "—" }}</UBadge
                                     >
                                     <span class="flex-1 font-medium truncate">{{
