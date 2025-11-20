@@ -47,8 +47,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-
 type OutputResponse = {
     snapshot_url: string;
     markdown: string;

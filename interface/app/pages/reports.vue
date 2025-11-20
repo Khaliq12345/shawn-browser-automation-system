@@ -42,7 +42,7 @@
                             variant="outline"
                             @click="
                                 router.push(
-                                    `/reports/${report.brand_report_id}/outputs`,
+                                    `/report/${report.brand_report_id}/outputs`,
                                 )
                             "
                         >
@@ -55,7 +55,7 @@
                             variant="outline"
                             @click="
                                 router.push(
-                                    `/reports/${report.brand_report_id}/metrics`,
+                                    `/report/${report.brand_report_id}/metrics`,
                                 )
                             "
                         >

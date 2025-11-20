@@ -173,11 +173,12 @@ const onButtonClick = (action: "prev" | "next") => {
 // Navigation
 const showOutput = (data: ReportItem) => {
     navigateTo({
-        path: `/reports/${brandReportId}/show`,
+        path: `/report/${brandReportId}/show`,
         query: {
             prompt_id: data.prompt_id,
             model: data.model,
             date: data.date,
+            brand_report_id: data.brand_report_id,
         },
     });
 };
