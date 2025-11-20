@@ -7,7 +7,7 @@ export type AxisFormatter = (
 export interface RankingPoint {
   date?: string;
   rank?: number;
-  position?: number;
+  mention_count?: number;
 }
 
 export interface RankingEntryResponse {

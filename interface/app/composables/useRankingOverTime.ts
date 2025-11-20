@@ -20,11 +20,13 @@ export function useRankingOverTime() {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
-  const rankCategories = ref<AreaCategories>({});
-  const positionCategories = ref<AreaCategories>({});
+  // Data / categories for ranks and mentions
   const rankData = ref<ChartRow[]>([]);
-  const positionData = ref<ChartRow[]>([]);
+  const rankCategories = ref<AreaCategories>({});
+  const mentionData = ref<ChartRow[]>([]);
+  const mentionCategories = ref<AreaCategories>({});
 
+  //format date to ISO (yyyy-mm-dd) or null if invalid
   const isoDateForPoint = (value?: string) => {
     if (!value) return null;
     const d = new Date(value);
@@ -32,7 +34,11 @@ export function useRankingOverTime() {
     return d.toISOString().slice(0, 10);
   };
 
-  const buildSeries = (ranking: any[] = [], valueKey: "rank" | "position") => {
+  // Build series data structure from ranking entries
+  const buildSeries = (
+    ranking: any[] = [],
+    valueKey: "rank" | "mention_count",
+  ) => {
     const brandOrder: string[] = [];
     const rows = new Map<string, ChartRow>();
 
@@ -47,11 +53,13 @@ export function useRankingOverTime() {
 
         if (!rows.has(isoDate)) rows.set(isoDate, { date: isoDate });
         const row = rows.get(isoDate)!;
-        const baseValue = valueKey === "rank" ? point.rank : point.position;
+        const baseValue =
+          valueKey === "rank" ? point.rank : point.mention_count;
         if (typeof baseValue === "number") row[brandKey] = baseValue;
       }
     }
 
+    // Build categories with colors
     const categories = brandOrder.reduce<AreaCategories>(
       (acc, brand, index) => {
         const paletteColor =
@@ -72,6 +80,7 @@ export function useRankingOverTime() {
       {},
     );
 
+    // Build series array sorted by date
     const series = [...rows.entries()]
       .sort(
         (a, b) =>
@@ -84,19 +93,17 @@ export function useRankingOverTime() {
     return { categories, series, hasValues };
   };
 
+  // Process response and set data or categories
   const setRankingFromResponse = async (
     response: RankingOverTimeResponse | any,
   ) => {
     loading.value = true;
     error.value = null;
-    let ranking: any[] = [];
-    if (Array.isArray(response?.data?.ranking)) ranking = response.data.ranking;
-    else if (Array.isArray(response?.ranking)) ranking = response.ranking;
-    else if (Array.isArray(response)) ranking = response;
-    else if (Array.isArray(response?.data)) ranking = response.data;
+    const ranking = (response?.data?.ranking as any[]) || [];
 
+    // Create two series: ranks and mentions
     const rankSeries = buildSeries(ranking, "rank");
-    const positionSeries = buildSeries(ranking, "position");
+    const mentionSeries = buildSeries(ranking, "mention_count");
 
     if (rankSeries.hasValues) {
       rankCategories.value = rankSeries.categories;
@@ -106,17 +113,18 @@ export function useRankingOverTime() {
       rankData.value = [];
     }
 
-    if (positionSeries.hasValues) {
-      positionCategories.value = positionSeries.categories;
-      positionData.value = positionSeries.series;
+    if (mentionSeries.hasValues) {
+      mentionCategories.value = mentionSeries.categories;
+      mentionData.value = mentionSeries.series;
     } else {
-      positionCategories.value = {};
-      positionData.value = [];
+      mentionCategories.value = {};
+      mentionData.value = [];
     }
 
     loading.value = false;
   };
 
+  // Fetch data from the server and delegate to setRankingFromResponse
   const fetchRankingOverTime = async (params: {
     brand: string;
     brand_report_id: string;
@@ -126,9 +134,9 @@ export function useRankingOverTime() {
   }) => {
     if (!params.brand || !params.brand_report_id) {
       rankData.value = [];
-      positionData.value = [];
+      mentionData.value = [];
       rankCategories.value = {};
-      positionCategories.value = {};
+      mentionCategories.value = {};
       return;
     }
     loading.value = true;
@@ -144,6 +152,7 @@ export function useRankingOverTime() {
     }
   };
 
+  // Format X-axis labels for ranks and mentions
   const formatXLabel = (tick: any, i?: number, data?: ChartRow[]) => {
     if (typeof tick === "number" && typeof data?.[tick]?.date === "string") {
       const d = new Date(data[tick].date);
@@ -166,21 +175,22 @@ export function useRankingOverTime() {
     return "";
   };
 
+  // formatters for rank and mention data
   const formatRankXLabel = (tick: any, i?: number) =>
     formatXLabel(tick, i, rankData.value);
-  const formatPositionXLabel = (tick: any, i?: number) =>
-    formatXLabel(tick, i, positionData.value);
+  const formatMentionXLabel = (tick: any, i?: number) =>
+    formatXLabel(tick, i, mentionData.value);
 
   return {
     loading,
     error,
     rankCategories,
-    positionCategories,
+    mentionCategories,
     rankData,
-    positionData,
+    mentionData,
     fetchRankingOverTime,
     setRankingFromResponse,
     formatRankXLabel,
-    formatPositionXLabel,
+    formatMentionXLabel,
   };
 }
