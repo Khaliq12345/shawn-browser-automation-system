@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@nuxt/ui": "^3.3.0",
+    "@nuxtjs/mdc": "^0.18.4",
     "nuxt": "^4.0.3",
     "nuxt-charts": "^1.0.2",
     "typescript": "^5.9.2",
