@@ -105,18 +105,18 @@
                                         results[metric.key],
                                     )"
                                     :key="idx"
-                                    class="flex flex-wrap items-center gap-2 rounded border border-gray-200 dark:border-gray-800 p-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                                    class="flex flex-wrap items-center gap-2 rounded border border-gray-200 dark:border-gray-800 p-3 text-base hover:bg-gray-50 dark:hover:bg-gray-800 transition"
                                 >
                                     <UBadge
                                         color="success"
                                         variant="soft"
-                                        size="xs"
+                                        size="sm"
                                         >#{{ row.rank ?? "—" }}</UBadge
                                     >
                                     <span class="flex-1 font-medium truncate">{{
                                         row.brand_name ?? "Unknown"
                                     }}</span>
-                                    <span class="text-xs text-gray-500"
+                                    <span class="text-sm text-gray-500"
                                         >Mentions:
                                         {{ row.mention_count ?? 0 }}</span
                                     >
@@ -184,20 +184,22 @@
 </template>
 
 <script setup lang="ts">
+import MetricsRankOverTime from "~/components/metrics/RankOverTime.vue";
+import { useRankingOverTime } from "~/composables/useRankingOverTime";
+import { getMentionsMetrics } from "~/utils/getMentionsMetrics";
+import { getShareOfVoiceMetrics } from "~/utils/getShareOfVoiceMetrics";
+import { getCoverageMetrics } from "~/utils/getCoverageMetrics";
+import { getPositionMetrics } from "~/utils/getPositionMetrics";
+import { getRankingMetrics } from "~/utils/getRankingMetrics";
+
+import { useToast } from "#imports"; // notifié par Zed (erreur sur const toast = useToast();)
+
 import type {
     MetricConfig,
     MetricKey,
     MetricRequestParams,
     RankingEntry,
 } from "~/types/metrics";
-import MetricsRankOverTime from "~/components/metrics/RankOverTime.vue";
-import { useRankingOverTime } from "~/composables/useRankingOverTime";
-import { useToast } from "#imports"; // notifié par Zed (erreur sur const toast = useToast();)
-import { getMentionsMetrics } from "~/utils/getMentionsMetrics";
-import { getShareOfVoiceMetrics } from "~/utils/getShareOfVoiceMetrics";
-import { getCoverageMetrics } from "~/utils/getCoverageMetrics";
-import { getPositionMetrics } from "~/utils/getPositionMetrics";
-import { getRankingMetrics } from "~/utils/getRankingMetrics";
 
 const route = useRoute();
 const toast = useToast();
@@ -212,7 +214,6 @@ const modelOptions = [
     { label: "All Models", value: "all" },
     { label: "ChatGPT", value: "chatgpt" },
     { label: "Perplexity", value: "perplexity" },
-    { label: "Claude", value: "claude" },
     { label: "Google", value: "google" },
 ];
 
