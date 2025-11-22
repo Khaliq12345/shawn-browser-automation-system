@@ -56,6 +56,9 @@
                         :x-num-ticks="6"
                         :y-grid-line="true"
                     />
+
+                    <div class="mt-5">SENTIMENTS RAW</div>
+                    <vue-json-pretty :data="sentiments" />
                 </div>
 
                 <div v-else class="text-center text-gray-400">
@@ -67,6 +70,9 @@
 </template>
 
 <script setup lang="ts">
+import VueJsonPretty from "vue-json-pretty";
+import "vue-json-pretty/lib/styles.css";
+
 const props = defineProps<{
     brandReportId: string;
     promptId: string;
