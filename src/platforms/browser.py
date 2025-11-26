@@ -232,11 +232,11 @@ class BrowserBase(ContextDecorator, ABC):
             headless = True
         else:
             headless = False
+            enable_xvfb_virtual_display=True,
         if headless:
             self.page = Driver(
                 headless=headless,
                 proxy=proxy,
-                enable_xvfb_virtual_display=True,
             )
         else:
             self.page = Driver(

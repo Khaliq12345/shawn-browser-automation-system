@@ -39,6 +39,21 @@ class GoogleScraper(BrowserBase):
             brand,
         )
 
+    def navigate(self) -> bool:
+        """Override navigate to use Google search URL with prompt"""
+        print("Loading the page")
+        if not self.page:
+            return False
+        try:
+            # Use Google search URL format with prompt
+            search_url = f"https://www.google.com/search?q={self.prompt}&oq={self.prompt}"
+            self.page.google_get(search_url, timeout=self.timeout, bypass_cloudflare=True)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error starting or navigating the page - {e}")
+            return False
+
+
     def find_and_fill_input(self) -> bool:
         print("Filling input")
         if not self.page:
