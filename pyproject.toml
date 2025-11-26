@@ -26,6 +26,7 @@ dependencies = [
     "sbase>=4.41.12",
     "selenium-base>=4.41.12",
     "setuptools>=80.9.0",
+    "slack-sdk>=3.39.0",
     "sqlalchemy[asyncio]>=2.0.42",
     "sqlmodel>=0.0.24",
     "undetected-chromedriver>=3.5.5",

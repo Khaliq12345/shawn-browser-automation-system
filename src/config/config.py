@@ -29,3 +29,5 @@ API_KEY = os.getenv("API_KEY")
 # PARSER
 PARSER_URL = os.getenv("PARSER_URL")
 PARSER_KEY = os.getenv("PARSER_KEY")
+#SLACK
+SLACK_TOKEN = os.getenv("SLACK_TOKEN")

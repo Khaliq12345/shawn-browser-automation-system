@@ -76,7 +76,7 @@ class BrowserBase(ContextDecorator, ABC):
             self.page.google_get(self.url, timeout=self.timeout, bypass_cloudflare=True)
             return True
         except Exception as e:
-            print(f"Error starting or navigating the page - {e}")
+            self.logger.error(f"Error starting or navigating the page - {e}")
             return False
 
     def extract_brand_info(self, s3_key: str):
@@ -171,6 +171,13 @@ class BrowserBase(ContextDecorator, ABC):
         """Platform-specific method to extract the response."""
         pass
 
+    def save_raise_error(self, error_message: str) -> None:
+        """Save, Log and raise Error"""
+        self.logger.error(error_message)
+        self.database.update_process_status(self.process_id, "failed")
+        raise ValueError(error_message)
+
+
     def process_prompt(self) -> None:
         if not self.page:
             return None
@@ -178,30 +185,31 @@ class BrowserBase(ContextDecorator, ABC):
         # Set 1: Navigate to the platform
         is_navigate = self.navigate()
         if not is_navigate:
-            self.logger.error("- Error starting or navigating the page")
-            self.database.update_process_status(self.process_id, "failed")
-            return None
+            error_message = "- Error starting or navigating the page"
+            self.save_raise_error(error_message)
         self.logger.info("- Successfully navigated to the page")
 
         # Step 2: Fill and Submit the input
         is_filled = self.find_and_fill_input()
         if not is_filled:
-            self.logger.error("- Error filling the prompt")
-            self.database.update_process_status(self.process_id, "failed")
-            return None
+            error_message = "- Error filling the prompt"
+            self.save_raise_error(error_message)
+
         self.logger.info("- Prompt successfully filled")
         self.page.sleep(5)
 
         # Step 3: Extract the generated response
         content = self.extract_response()
         if not content:
-            self.logger.error("- Error while extracting the response")
-            self.database.update_process_status(self.process_id, "failed")
-            return None
+            error_message = "- Error while extracting the response"
+            self.save_raise_error(error_message)
         self.logger.info("- Response successfully extracted")
 
         # Step 4: Save the response
-        self.save_response(content)
+        is_response_saved = self.save_response(content)
+        if not is_response_saved:
+            error_message = "- Error while saving response"
+            self.save_raise_error(error_message)
         self.logger.info("- Saving extracted data")
 
         # Step 5: Mark as Sucess on supabase
@@ -224,11 +232,17 @@ class BrowserBase(ContextDecorator, ABC):
             headless = True
         else:
             headless = False
-        self.page = Driver(
-            headless=headless,
-            proxy=proxy,
-            enable_xvfb_virtual_display=True,
-        )
+        if headless:
+            self.page = Driver(
+                headless=headless,
+                proxy=proxy,
+                enable_xvfb_virtual_display=True,
+            )
+        else:
+            self.page = Driver(
+                headless=headless,
+                proxy=proxy,
+            )
         if not self.page:
             return None
 
@@ -236,7 +250,5 @@ class BrowserBase(ContextDecorator, ABC):
         try:
             self.process_prompt()
         except Exception as e:
-            self.logger.error(f"- Error while processing prompt - {e}")
-            self.database.update_process_status(self.process_id, "failed")
-        finally:
             self.page.close()
+            self.save_raise_error(f"- Error while processing prompt - {e}")
