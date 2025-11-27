@@ -1,4 +1,5 @@
 import sys
+from sqlalchemy.exc import IntegrityError
 from typing import Optional
 
 sys.path.append(".")
@@ -156,17 +157,22 @@ class Database:
         self, process_id: str, platform: str, prompt: str, brand_report_id: str
     ):
         with Session(self.engine) as session:
-            item = Browsers(
-                process_id=process_id,
-                status="running",
-                platform=platform,
-                prompt=prompt,
-                start_time=datetime.now(),
-                end_time=None,
-                brand_report_id=brand_report_id,
-            )
-            session.add(item)
-            session.commit()
+            try:
+                item = Browsers(
+                    process_id=process_id,
+                    status="running",
+                    platform=platform,
+                    prompt=prompt,
+                    start_time=datetime.now(),
+                    end_time=None,
+                    brand_report_id=brand_report_id,
+                )
+                session.add(item)
+                session.commit()
+            except IntegrityError:
+                # Ignore l'erreur de duplication si le processus existe déjà.
+                session.rollback()
+                pass
 
     def update_process_status(
         self,
