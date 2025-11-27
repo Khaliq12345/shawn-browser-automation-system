@@ -135,10 +135,10 @@ class BrowserBase(ContextDecorator, ABC):
             self.logger.error(f"Unable to save output - {e}")
             return False
 
-        try:
-            self.extract_brand_info(basekey)
-        except Exception as e:
-            self.logger.error(f"Unable to start the parser - {e}")
+        # try:
+        #     self.extract_brand_info(basekey)
+        # except Exception as e:
+        #     self.logger.error(f"Unable to start the parser - {e}")
 
         # Save ScreenShot
         try:
