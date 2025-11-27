@@ -1,7 +1,9 @@
 import logging
+import textwrap
 from datetime import datetime
 
 from celery import Celery
+from celery.exceptions import MaxRetriesExceededError
 
 from src.config.config import REDIS_URL
 from src.platforms.chatgpt import ChatGPTScraper
@@ -9,12 +11,16 @@ from src.platforms.google import GoogleScraper
 from src.platforms.perplexity import PerplexityScraper
 from src.utils.database import Database
 from src.utils.redis_utils import RedisBase, RedisLogHandler
+from src.utils.slack_service import SlackBase
 
 app = Celery(
     "tasks",
     broker=REDIS_URL,
     backend=REDIS_URL,
 )
+
+# Permet à Celery de réessayer de se connecter au broker au démarrage (pour éviter le warning)
+app.conf.broker_connection_retry_on_startup = True
 
 
 # Scrapper configs
@@ -28,8 +34,9 @@ SCRAPER_CONFIG = {
 }
 
 
-@app.task
+@app.task(bind=True, max_retries=3, default_retry_delay=1)
 def run_browser(
+    self,
     name: str,
     prompt: str,
     process_id: str,
@@ -40,6 +47,7 @@ def run_browser(
     languague: str,
     brand: str,
     date: str,
+    retry: int = 3,
 ):
     redis_handler = None
     # Redis log wrapper
@@ -63,7 +71,8 @@ def run_browser(
     ScraperClass = config["class"]
     url = config["url"]
 
-    matching_scraper = ScraperClass(
+    try:
+        matching_scraper = ScraperClass(
         logger=task_logger,
         url=url,
         prompt=prompt,
@@ -77,9 +86,53 @@ def run_browser(
         brand=brand,
         languague=languague,
     )
-    matching_scraper.send_prompt()
-    if redis_handler:
-        task_logger.removeHandler(redis_handler)
+        matching_scraper.send_prompt()
+    except Exception as exc:
+        task_logger.exception("run_browser failed, will retry")
+
+        # Check if we've reached max retries (4th attempt)
+        if self.request.retries >= self.max_retries:
+            # Send Slack notification on final failure
+            try:
+                slack = SlackBase()
+                # Message with all task details
+                error_message = textwrap.dedent(f"""
+                    *Task Failed After {self.max_retries + 1} Attempts*
+
+                    *Date/Time:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+                    *Task Details:*
+                    • Platform: `{name}`
+                    • Brand: `{brand}`
+                    • Country: `{country}`
+                    • Language: `{languague}`
+                    • Brand Report ID: `{brand_report_id}`
+                    • Prompt ID: `{prompt_id}`
+                    • Process ID: `{process_id}`
+
+                    *Prompt:*
+                    ```
+                    {prompt}
+                    ```
+
+                    *Error:*
+                    ```
+                    {str(exc)}
+                    ```
+
+                    *Attempts:* {self.max_retries + 1} (max retries exceeded)
+                """).strip()
+                slack.send_message(error_message)
+            except Exception as slack_error:
+                task_logger.error(f"Failed to send Slack notification: {slack_error}")
+            # Raise the original exception without retrying
+            raise exc
+        else:
+            # Still have retries left, retry the task
+            raise self.retry(exc=exc)
+    finally:
+        if redis_handler:
+            task_logger.removeHandler(redis_handler)
 
 
 @app.task
