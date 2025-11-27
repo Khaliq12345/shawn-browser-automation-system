@@ -73,7 +73,7 @@ class GoogleScraper(BrowserBase):
         #     return False
 
     def extract_response(self) -> Optional[str]:
-        print("Extracting response")
+        self.logger.error("Extracting response")
         if not self.page:
             return None
         content_selector = 'div[jsmodel="k8Azyd E23uIf"]'
@@ -81,6 +81,7 @@ class GoogleScraper(BrowserBase):
 
         # click on see more (ai answer)
         if not self.page.is_element_present(see_more_selector, wait=5):
+            self.logger.error("AI Answer not visible")
             return None
         try:
             self.page.click(see_more_selector, wait=self.timeout)

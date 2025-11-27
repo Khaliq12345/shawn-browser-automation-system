@@ -239,7 +239,7 @@ class BrowserBase(ContextDecorator, ABC):
             enable_xvfb_virtual_display=False
         else:
             headless = False
-            enable_xvfb_virtual_display=True
+            enable_xvfb_virtual_display=False
         self.page = Driver(
             headless=headless,
             proxy=proxy,
@@ -253,6 +253,5 @@ class BrowserBase(ContextDecorator, ABC):
         try:
             self.process_prompt()
             self.page.close()
-        except Exception as e:
+        except Exception:
             self.page.close()
-            self.save_raise_error(f"- Error while processing prompt - {e}")
