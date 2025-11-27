@@ -51,7 +51,7 @@ class Database:
             ]
             return schedules
 
-    def update_schedule(self, brand_report_id: str, prompt_id: str, prompt: str):
+    def update_schedule(self, brand_report_id: str, prompt_id: str, prompt: str, hours: int = 24):
         """Update or create the schedule"""
         with Session(self.engine) as session:
             stmt = select(Schedules).where(
@@ -62,7 +62,7 @@ class Database:
             # update the schedule if it exists
             if schedule:
                 schedule.last_run = datetime.now()
-                schedule.next_run = parse("In 24 hours")
+                schedule.next_run = parse(f"In {hours} hours")
             # creating a new one
             else:
                 schedule = Schedules(
@@ -70,7 +70,7 @@ class Database:
                     brand_report_id=brand_report_id,
                     prompt=prompt,
                     last_run=datetime.now(),
-                    next_run=parse("In 24 hours"),
+                    next_run=parse(f"In {hours} hours"),
                 )
             session.add(schedule)
             session.commit()

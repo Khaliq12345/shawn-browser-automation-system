@@ -3,7 +3,6 @@ import textwrap
 from datetime import datetime
 
 from celery import Celery
-from celery.exceptions import MaxRetriesExceededError
 
 from src.config.config import REDIS_URL
 from src.platforms.chatgpt import ChatGPTScraper
@@ -47,7 +46,6 @@ def run_browser(
     languague: str,
     brand: str,
     date: str,
-    retry: int = 3,
 ):
     redis_handler = None
     # Redis log wrapper
@@ -161,7 +159,7 @@ def start_cronjob():
         brand = report.get("brand")
         prompt_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # Update schedule
-        database.update_schedule(brand_report_id, prompt_id, clean_prompt)
+        database.update_schedule(brand_report_id, prompt_id, clean_prompt, hours=1)
         for name in ["chatgpt", "google", "perplexity"]:
             process_id = f"{name}-{brand_report_id}-{prompt_id}-{timestamp}"
             run_browser.apply_async(

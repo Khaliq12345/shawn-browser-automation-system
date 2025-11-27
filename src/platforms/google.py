@@ -41,7 +41,7 @@ class GoogleScraper(BrowserBase):
 
     def navigate(self) -> bool:
         """Override navigate to use Google search URL with prompt"""
-        print("Loading the page")
+        self.logger.info("Loading the page")
         if not self.page:
             return False
         try:
@@ -56,20 +56,21 @@ class GoogleScraper(BrowserBase):
 
     def find_and_fill_input(self) -> bool:
         print("Filling input")
-        if not self.page:
-            return False
-        try:
-            try:
-                self.page.type('textarea[name="q"]', self.prompt, wait=self.timeout)
-            except Exception as e:
-                print(f"Can not fill the prompt input {e}")
-                return False
-            # Validate
-            self.page.click('input[type="submit"]', wait=self.timeout)
-            return True
-        except Exception as e:
-            print(f"Error in find_and_fill_input {e}")
-            return False
+        return True
+        # if not self.page:
+        #     return False
+        # try:
+        #     try:
+        #         self.page.type('textarea[name="q"]', self.prompt, wait=self.timeout)
+        #     except Exception as e:
+        #         print(f"Can not fill the prompt input {e}")
+        #         return False
+        #     # Validate
+        #     self.page.click('input[type="submit"]', wait=self.timeout)
+        #     return True
+        # except Exception as e:
+        #     print(f"Error in find_and_fill_input {e}")
+        #     return False
 
     def extract_response(self) -> Optional[str]:
         print("Extracting response")
@@ -84,14 +85,14 @@ class GoogleScraper(BrowserBase):
         try:
             self.page.click(see_more_selector, wait=self.timeout)
         except Exception as e:
-            print(f"Unable to find the see more buttons {e}")
+            self.logger.error(f"Unable to find the see more buttons {e}")
             return None
 
         # wait for content to be visible
         try:
             self.page.wait_for_element(content_selector, wait=self.timeout)
         except Exception as e:
-            print(f"Unable to find the content {e}")
+            self.logger.error(f"Unable to find the content {e}")
             return None
 
         try:
@@ -100,7 +101,7 @@ class GoogleScraper(BrowserBase):
             content_markdown = convert_to_markdown(content)
             return content_markdown
         except Exception as e:
-            print(f"Unable to extract content {e}")
+            self.logger.error(f"Unable to extract content {e}")
             return None
 
 

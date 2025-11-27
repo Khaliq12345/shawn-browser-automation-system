@@ -15,6 +15,8 @@ from src.config.config import (
     PROXY_PASSWORD,
     PARSER_URL,
     PARSER_KEY,
+    RESIDENTIAL_PROXY_PASSWORD,
+    RESIDENTIAL_PROXY_USERNAME,
     S3_BUCKET_NAME,
     HEADLESS,
 )
@@ -69,11 +71,12 @@ class BrowserBase(ContextDecorator, ABC):
 
     def navigate(self) -> bool:
         """Start the browser and navigate to the specified URL"""
-        print("Loading the page")
+        self.url = f"https://www.google.com/search?q={self.prompt}&oq={self.prompt}" if self.name == "google" else self.url
         if not self.page:
             return False
         try:
             self.page.google_get(self.url, timeout=self.timeout, bypass_cloudflare=True)
+            self.page.prompt()
             return True
         except Exception as e:
             self.logger.error(f"Error starting or navigating the page - {e}")
@@ -224,31 +227,32 @@ class BrowserBase(ContextDecorator, ABC):
         )
 
         # setup the proxy
-        proxy_username = f"user-{PROXY_USERNAME}-country-{self.country}"
-        proxy = f"http://{proxy_username}:{PROXY_PASSWORD}@dc.decodo.com:{PROXIES.get(self.country)}"
+        if self.name == "google":
+            proxy = f"http://{RESIDENTIAL_PROXY_USERNAME}:{RESIDENTIAL_PROXY_PASSWORD}@{self.country}.decodo.com:{PROXIES.get(self.country)}"
+        else:
+            proxy_username = f"user-{PROXY_USERNAME}-country-{self.country}"
+            proxy = f"http://{proxy_username}:{PROXY_PASSWORD}@dc.decodo.com:{PROXIES.get(self.country)}"
 
         # initialise page
         if HEADLESS == "yes":
             headless = True
+            enable_xvfb_virtual_display=False
         else:
             headless = False
-            enable_xvfb_virtual_display=True,
-        if headless:
-            self.page = Driver(
-                headless=headless,
-                proxy=proxy,
-            )
-        else:
-            self.page = Driver(
-                headless=headless,
-                proxy=proxy,
-            )
+            enable_xvfb_virtual_display=True
+        self.page = Driver(
+            headless=headless,
+            proxy=proxy,
+            enable_xvfb_virtual_display=enable_xvfb_virtual_display
+        )
         if not self.page:
             return None
 
+        self.page.enable_human_mode()
         # start processing the prompt
         try:
             self.process_prompt()
+            self.page.close()
         except Exception as e:
             self.page.close()
             self.save_raise_error(f"- Error while processing prompt - {e}")
