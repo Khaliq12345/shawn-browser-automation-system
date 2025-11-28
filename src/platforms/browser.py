@@ -253,5 +253,6 @@ class BrowserBase(ContextDecorator, ABC):
         try:
             self.process_prompt()
             self.page.close()
-        except Exception:
+        except Exception as e:
             self.page.close()
+            self.save_raise_error(f"Processing Error - {str(e)}")
