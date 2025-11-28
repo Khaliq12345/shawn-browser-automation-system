@@ -239,7 +239,7 @@ class BrowserBase(ContextDecorator, ABC):
             enable_xvfb_virtual_display=False
         else:
             headless = False
-            enable_xvfb_virtual_display=False
+            enable_xvfb_virtual_display=True
         self.page = Driver(
             headless=headless,
             proxy=proxy,
