@@ -4,7 +4,7 @@ from datetime import datetime
 
 from celery import Celery
 
-from src.config.config import REDIS_URL
+from src.config.config import HOURS, REDIS_URL
 from src.platforms.chatgpt import ChatGPTScraper
 from src.platforms.google import GoogleScraper
 from src.platforms.perplexity import PerplexityScraper
@@ -159,7 +159,7 @@ def start_cronjob():
         brand = report.get("brand")
         prompt_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # Update schedule
-        database.update_schedule(brand_report_id, prompt_id, clean_prompt, hours=1)
+        database.update_schedule(brand_report_id, prompt_id, clean_prompt, hours=HOURS)
         for name in ["chatgpt", "google", "perplexity"]:
             process_id = f"{name}-{brand_report_id}-{prompt_id}-{timestamp}"
             run_browser.apply_async(

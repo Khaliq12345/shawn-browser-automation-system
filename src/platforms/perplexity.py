@@ -77,8 +77,8 @@ class PerplexityScraper(BrowserBase):
         share_selector = 'button[data-testid="share-button"]'
         try:
             self.page.wait_for_element(share_selector, wait=self.timeout)
-        except Exception as e:
-            print(f"Unable to find copy button - {e}")
+        except Exception:
+            print("Unable to find copy button - Reloading")
             return None
         content_selector = 'div[id="markdown-content-0"]'
         content_element = self.page.wait_for_element(
