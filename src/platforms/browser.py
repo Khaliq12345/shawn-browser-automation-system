@@ -135,6 +135,7 @@ class BrowserBase(ContextDecorator, ABC):
             self.logger.error(f"Unable to save output - {e}")
             return False
 
+        # Start analyses
         # try:
         #     self.extract_brand_info(basekey)
         # except Exception as e:
@@ -221,38 +222,38 @@ class BrowserBase(ContextDecorator, ABC):
 
     def send_prompt(self) -> None:
         """Start the workflow"""
-        self.logger.info("- Workflow Started")
-        self.database.start_process(
-            self.process_id, self.name, self.prompt, self.brand_report_id
-        )
-
-        # setup the proxy
-        if self.name == "google":
-            proxy = f"http://{RESIDENTIAL_PROXY_USERNAME}:{RESIDENTIAL_PROXY_PASSWORD}@{self.country}.decodo.com:{PROXIES.get(self.country)}"
-        else:
-            proxy_username = f"user-{PROXY_USERNAME}-country-{self.country}"
-            proxy = f"http://{proxy_username}:{PROXY_PASSWORD}@dc.decodo.com:{PROXIES.get(self.country)}"
-
-        # initialise page
-        if HEADLESS == "yes":
-            headless = True
-            enable_xvfb_virtual_display=False
-        else:
-            headless = False
-            enable_xvfb_virtual_display=True
-        self.page = Driver(
-            headless=headless,
-            proxy=proxy,
-            enable_xvfb_virtual_display=enable_xvfb_virtual_display
-        )
-        if not self.page:
-            return None
-
-        self.page.enable_human_mode()
-        # start processing the prompt
         try:
+            self.logger.info("- Workflow Started")
+            self.database.start_process(
+                self.process_id, self.name, self.prompt, self.brand_report_id
+            )
+
+            # setup the proxy
+            if self.name == "google":
+                proxy = f"http://{RESIDENTIAL_PROXY_USERNAME}:{RESIDENTIAL_PROXY_PASSWORD}@{self.country}.decodo.com:{PROXIES.get(self.country)}"
+            else:
+                proxy_username = f"user-{PROXY_USERNAME}-country-{self.country}"
+                proxy = f"http://{proxy_username}:{PROXY_PASSWORD}@dc.decodo.com:{PROXIES.get(self.country)}"
+
+            # initialise page
+            if HEADLESS == "yes":
+                headless = True
+                enable_xvfb_virtual_display=False
+            else:
+                headless = False
+                enable_xvfb_virtual_display=True
+            self.page = Driver(
+                headless=headless,
+                proxy=proxy,
+                enable_xvfb_virtual_display=enable_xvfb_virtual_display
+            )
+            if not self.page:
+                return None
+
+            self.page.enable_human_mode()
+            # start processing the prompt
             self.process_prompt()
             self.page.close()
         except Exception as e:
-            self.page.close()
+            self.page.close() if self.page else None
             self.save_raise_error(f"Processing Error - {str(e)}")
