@@ -10,9 +10,8 @@ from src.utils.aws_storage import AWSStorage
 import os
 from typing import Optional
 from src.utils.globals import save_file
+from func_retry import retry
 from src.config.config import (
-    PROXY_USERNAME,
-    PROXY_PASSWORD,
     PARSER_URL,
     PARSER_KEY,
     RESIDENTIAL_PROXY_PASSWORD,
@@ -75,8 +74,7 @@ class BrowserBase(ContextDecorator, ABC):
         if not self.page:
             return False
         try:
-            self.page.google_get(self.url, timeout=self.timeout, bypass_cloudflare=True)
-            self.page.prompt()
+            self.page.get(self.url, timeout=self.timeout, bypass_cloudflare=True)
             return True
         except Exception as e:
             self.logger.error(f"Error starting or navigating the page - {e}")
@@ -220,20 +218,22 @@ class BrowserBase(ContextDecorator, ABC):
         self.database.update_process_status(self.process_id, "success")
         self.logger.info("- Process Successfully ended !")
 
+    
+    @retry(times=3, delay=1)
     def send_prompt(self) -> None:
         """Start the workflow"""
         try:
-            self.logger.info("- Workflow Started")
+            self.logger.info(f"- Workflow Started - {self.name}")
             self.database.start_process(
                 self.process_id, self.name, self.prompt, self.brand_report_id
             )
 
-            # setup the proxy
-            if self.name == "google":
-                proxy = f"http://{RESIDENTIAL_PROXY_USERNAME}:{RESIDENTIAL_PROXY_PASSWORD}@{self.country}.decodo.com:{PROXIES.get(self.country)}"
-            else:
-                proxy_username = f"user-{PROXY_USERNAME}-country-{self.country}"
-                proxy = f"http://{proxy_username}:{PROXY_PASSWORD}@dc.decodo.com:{PROXIES.get(self.country)}"
+            # # setup the proxy
+            # if self.name == "google":
+            #     proxy = f"http://{RESIDENTIAL_PROXY_USERNAME}:{RESIDENTIAL_PROXY_PASSWORD}@{self.country}.decodo.com:{PROXIES.get(self.country)}"
+            # else:
+            #     proxy_username = f"user-{PROXY_USERNAME}-country-{self.country}"
+            #     proxy = f"http://{proxy_username}:{PROXY_PASSWORD}@dc.decodo.com:{PROXIES.get(self.country)}"
 
             # initialise page
             if HEADLESS == "yes":
@@ -242,9 +242,11 @@ class BrowserBase(ContextDecorator, ABC):
             else:
                 headless = False
                 enable_xvfb_virtual_display=True
+
+            proxy = f"http://{RESIDENTIAL_PROXY_USERNAME}:{RESIDENTIAL_PROXY_PASSWORD}@{self.country}.decodo.com:{PROXIES.get(self.country)}"
             self.page = Driver(
                 headless=headless,
-                proxy=proxy,
+                # proxy=proxy,
                 enable_xvfb_virtual_display=enable_xvfb_virtual_display
             )
             if not self.page:

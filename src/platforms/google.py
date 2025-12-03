@@ -5,7 +5,6 @@ sys.path.append(".")
 from typing import Optional
 from src.platforms.browser import BrowserBase
 from html_to_markdown import convert_to_markdown
-import logging
 
 
 class GoogleScraper(BrowserBase):
@@ -57,20 +56,6 @@ class GoogleScraper(BrowserBase):
     def find_and_fill_input(self) -> bool:
         print("Filling input")
         return True
-        # if not self.page:
-        #     return False
-        # try:
-        #     try:
-        #         self.page.type('textarea[name="q"]', self.prompt, wait=self.timeout)
-        #     except Exception as e:
-        #         print(f"Can not fill the prompt input {e}")
-        #         return False
-        #     # Validate
-        #     self.page.click('input[type="submit"]', wait=self.timeout)
-        #     return True
-        # except Exception as e:
-        #     print(f"Error in find_and_fill_input {e}")
-        #     return False
 
     def extract_response(self) -> Optional[str]:
         self.logger.error("Extracting response")
@@ -104,21 +89,3 @@ class GoogleScraper(BrowserBase):
         except Exception as e:
             self.logger.error(f"Unable to extract content {e}")
             return None
-
-
-if __name__ == "__main__":
-    import time
-
-    logger = logging.getLogger(f"{__name__}")
-    google = GoogleScraper(
-        logger,
-        url="https://www.google.com/",
-        prompt="top brands in US",
-        name="google",
-        process_id=f"google_{time.time()}",
-        timeout=60,
-        country="us",
-        brand_report_id="brand-12345",
-        date="2025-10-07 04:07:41.285308",
-    )
-    google.send_prompt()

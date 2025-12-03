@@ -982,6 +982,15 @@ wheels = [
 ]
 
 [[package]]
+name = "func-retry"
+version = "0.1.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9e/c2/f227c4d73762d9245bcb69c5abaa81eea9d5babd84a8339c2f717cd11f0e/func_retry-0.1.4.tar.gz", hash = "sha256:62a811cac17fc44ed2adac89a74bdc1dd2c57c5c8ec87d6176e36e066e77fec6", size = 3909, upload-time = "2025-08-07T10:07:22.654Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/d3/1902654733ca9cfb7f03cf436e776ba0b82e0fb797fb1b0eea50b716f0b8/func_retry-0.1.4-py3-none-any.whl", hash = "sha256:6f8b1ea2a86d1e14295a88853fc8a83e5dfca710141e52deb5ef7d41640f74a5", size = 3747, upload-time = "2025-08-07T10:07:21.253Z" },
+]
+
+[[package]]
 name = "geoip2"
 version = "5.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3157,6 +3166,7 @@ dependencies = [
     { name = "dateparser" },
     { name = "fastapi", extra = ["standard"] },
     { name = "flower" },
+    { name = "func-retry" },
     { name = "html-to-markdown", extra = ["lxml"] },
     { name = "netstealth", extra = ["full"] },
     { name = "patchright" },
@@ -3191,6 +3201,7 @@ requires-dist = [
     { name = "dateparser", specifier = ">=1.2.2" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.116.1" },
     { name = "flower", specifier = ">=2.0.1" },
+    { name = "func-retry", specifier = ">=0.1.4" },
     { name = "html-to-markdown", extras = ["lxml"], specifier = ">=1.9.0" },
     { name = "netstealth", extras = ["full"], specifier = ">=0.1.0" },
     { name = "patchright", specifier = ">=1.55.1" },

@@ -5,7 +5,6 @@ sys.path.append(".")
 from typing import Optional
 from src.platforms.browser import BrowserBase
 from html_to_markdown import convert_to_markdown
-import logging
 
 
 class PerplexityScraper(BrowserBase):
@@ -87,21 +86,3 @@ class PerplexityScraper(BrowserBase):
         content = content_element.html if content_element else ""
         content_markdown = convert_to_markdown(content)
         return content_markdown
-
-
-if __name__ == "__main__":
-    import time
-
-    logger = logging.getLogger(f"{__name__}")
-    perplexity = PerplexityScraper(
-        logger,
-        url="https://www.perplexity.ai/",
-        prompt="Top men'shoe brand",
-        name="perplexity",
-        process_id=f"perplexity_{time.time()}",
-        timeout=60,
-        country="us",
-        brand_report_id="brand-12345",
-        date="2025-10-07 04:07:41.285308",
-    )
-    perplexity.send_prompt()

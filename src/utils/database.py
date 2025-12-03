@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 
 from dateparser import parse
-from sqlmodel import Column, Session, create_engine, select, text
+from sqlmodel import Column, Session, create_engine, or_, select, text
 
 from src.config import config
 from src.models.model import Browsers, Reports, Schedules, SQLModel
@@ -17,7 +17,9 @@ from src.models.model import Browsers, Reports, Schedules, SQLModel
 class Database:
     def __init__(self) -> None:
         self.engine = create_engine(
-            f"postgresql+psycopg://{config.DB_USER}:{config.DB_PASSWORD}@{config.DB_HOST}:5432/{config.DB_NAME}"
+            f"postgresql+psycopg://{config.DB_USER}:{config.DB_PASSWORD}@{config.DB_HOST}:5432/{config.DB_NAME}",
+            pool_size=5,
+            max_overflow=2
         )
 
     def create_db_and_tables(self):
@@ -41,7 +43,7 @@ class Database:
     def get_next_schedules(self) -> list[dict]:
         """Get schedules to run next"""
         with Session(self.engine) as session:
-            stmt = select(Schedules).where(Schedules.next_run < datetime.now())
+            stmt = select(Schedules).where(or_(Schedules.next_run < datetime.now(), Schedules.next_run is None))
             schedules_raw = session.exec(stmt).all()
             if not schedules_raw:
                 return []

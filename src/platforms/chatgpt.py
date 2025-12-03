@@ -1,13 +1,11 @@
 import sys
 
-from botasaurus_driver import Wait
 
 sys.path.append(".")
 
 from typing import Optional
 from src.platforms.browser import BrowserBase
 from html_to_markdown import convert_to_markdown
-import logging
 
 
 class ChatGPTScraper(BrowserBase):
@@ -85,21 +83,3 @@ class ChatGPTScraper(BrowserBase):
         content = content_element.html if content_element else ""
         content_markdown = convert_to_markdown(content)
         return content_markdown
-
-
-if __name__ == "__main__":
-    import time
-
-    logger = logging.getLogger(f"{__name__}")
-    chatgpt = ChatGPTScraper(
-        logger,
-        url="https://chatgpt.com",
-        prompt="Top man shoe brand",
-        name="chatgpt",
-        process_id=f"chatgpt_{time.time()}",
-        timeout=60,
-        country="us",
-        brand_report_id="brand-12345",
-        date="2025-10-07 04:07:41.285308",
-    )
-    chatgpt.send_prompt()
