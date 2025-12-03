@@ -30,19 +30,19 @@ services:
         soft: 65535
         hard: 65535
 
-  beat:
-    build: .
-    env_file:
-      - .env
-    command: uv run celery --app src.utils.celery_app beat --loglevel=INFO
-    depends_on:
-      - redis
-    restart: always
-    ulimits:
-      nproc: 65535
-      nofile:
-        soft: 65535
-        hard: 65535
+  # beat:
+  #   build: .
+  #   env_file:
+  #     - .env
+  #   command: uv run celery --app src.utils.celery_app beat --loglevel=INFO
+  #   depends_on:
+  #     - redis
+  #   restart: always
+  #   ulimits:
+  #     nproc: 65535
+  #     nofile:
+  #       soft: 65535
+  #       hard: 65535
   
   monitor:
     build: .

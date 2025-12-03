@@ -31,7 +31,7 @@ SCRAPER_CONFIG = {
 }
 
 
-@app.task(bind=True, max_retries=3, default_retry_delay=1)
+@app.task
 def run_browser(
     name: str,
     prompt: str,
@@ -116,7 +116,7 @@ def start_cronjob():
         prompt_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # Update schedule
         database.update_schedule(brand_report_id, prompt_id, clean_prompt, hours=HOURS)
-        for name in ["chatgpt", "google"]:
+        for name in ["chatgpt", "google", "perplexity"]:
             process_id = f"{name}-{brand_report_id}-{prompt_id}-{timestamp}"
             run_browser.apply_async(
                 args=(
