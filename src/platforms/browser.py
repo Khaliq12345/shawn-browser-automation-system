@@ -82,6 +82,7 @@ class BrowserBase(ContextDecorator, ABC):
             return False
         try:
             self.page.get(self.url)
+            self.logger.info(self.page.title)
             return True
         except Exception as e:
             self.logger.error(f"Error starting or navigating the page - {e}")
@@ -245,9 +246,7 @@ class BrowserBase(ContextDecorator, ABC):
     def send_prompt(self) -> None:
         """Start the workflow"""
         try:
-
             display = Display(visible=False, size=(1024, 768))
-
             display.start()
             self.logger.info(f"Workflow Started - {self.name}")
             self.database.start_process(
