@@ -82,7 +82,7 @@ class BrowserBase(ContextDecorator, ABC):
             return False
         try:
             self.page.get(self.url)
-            self.logger.info(self.page.title)
+            print(self.page.title)
             return True
         except Exception as e:
             self.logger.error(f"Error starting or navigating the page - {e}")

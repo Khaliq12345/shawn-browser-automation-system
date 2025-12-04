@@ -48,6 +48,7 @@ class GoogleScraper(BrowserBase):
             # Use Google search URL format with prompt
             search_url = f"https://www.google.com/search?q={self.prompt}&oq={self.prompt}"
             self.page.get(search_url)
+            self.logger.info(self.page.title)
             return True
         except Exception as e:
             self.logger.error(f"Error starting or navigating the page - {e}")
