@@ -1,20 +1,20 @@
 version: "4.8"
 services:
-  # api:
-  #   build: .
-  #   env_file:
-  #     - .env
-  #   command: uv run main.py
-  #   ports:
-  #     - "${APP_PORT}:8000"
-  #   depends_on:
-  #     - redis
-  #   restart: always
-  #   ulimits:
-  #     nproc: 65535
-  #     nofile:
-  #       soft: 65535
-  #       hard: 65535
+  api:
+    build: .
+    env_file:
+      - .env
+    command: uv run main.py
+    ports:
+      - "${APP_PORT}:8000"
+    depends_on:
+      - redis
+    restart: always
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
 
   worker:
     build: .
