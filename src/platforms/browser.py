@@ -28,6 +28,7 @@ import httpx
 import undetected_chromedriver as uc
 from selenium.webdriver.support import expected_conditions as EC
 from undetected_chromedriver import By
+from pyvirtualdisplay import Display
 
 # PROXY configs
 PROXIES = {
@@ -73,6 +74,7 @@ class BrowserBase(ContextDecorator, ABC):
         self.database = Database()
         # initialise page
         self.page: Optional[Chrome] = None
+        self.display = None
 
     def navigate(self) -> bool:
         """Start the browser and navigate to the specified URL"""
@@ -243,6 +245,10 @@ class BrowserBase(ContextDecorator, ABC):
     def send_prompt(self) -> None:
         """Start the workflow"""
         try:
+
+            display = Display(visible=False, size=(1024, 768))
+
+            display.start()
             self.logger.info(f"Workflow Started - {self.name}")
             self.database.start_process(
                 self.process_id, self.name, self.prompt, self.brand_report_id
@@ -273,8 +279,11 @@ class BrowserBase(ContextDecorator, ABC):
             self.process_prompt()
             self.page.close()
             self.page.quit()
+
+            display.stop()
         except Exception as e:
             if self.page:
                 self.page.close()
                 self.page.quit()
+                display.stop()
             self.save_raise_error(f"Processing Error - {str(e)}")

@@ -48,6 +48,7 @@ RUN apt-get update && apt-get install -y \
     libxrandr2 \
     xdg-utils \
     xvfb \
+    xserver-xephyr \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
@@ -73,10 +74,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
 RUN apt-get install -yqq unzip
 RUN wget -O /tmp/chromedriver.zip http://chromedriver.storage.googleapis.com/`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE`/chromedriver_linux64.zip
 RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
-
-# set Python-related environment variables
-ENV PYTHONUNBUFFERED=1
-ENV DISPLAY=:99
 
 
 # Download the latest installer

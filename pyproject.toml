@@ -24,6 +24,7 @@ dependencies = [
     "ptpython>=3.0.30",
     "pyautogui>=0.9.54",
     "pyperclip>=1.9.0",
+    "pyvirtualdisplay>=3.0",
     "redis>=6.4.0",
     "sbase>=4.41.12",
     "selenium-base>=4.41.12",
