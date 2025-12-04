@@ -35,4 +35,5 @@ dependencies = [
     "undetected-geckodriver>=1.0.7",
     "user-agent>=0.1.14",
     "uvicorn>=0.35.0",
+    "webdriver-manager>=4.0.2",
 ]

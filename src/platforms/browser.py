@@ -39,7 +39,6 @@ PROXIES = {
     "nz": "39000",
 }
 
-
 class BrowserBase(ContextDecorator, ABC):
     def __init__(
         self,
