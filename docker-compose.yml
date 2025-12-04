@@ -16,25 +16,25 @@ services:
         soft: 65535
         hard: 65535
 
-  worker:
-    build: .
-    env_file:
-      - .env
-    command: >  # New command script
+worker:
+  build: .
+  env_file:
+    - .env
+  command: >  # New command script
     sh -c "
     Xvfb :99 -screen 0 1920x1080x24 +extension GLX +render -nolisten tcp &
     export DISPLAY=:99 &&
     until xdpyinfo -display :99 >/dev/null 2>&1; do sleep 0.1; done &&  # Wait for ready
     uv run celery --app src.utils.celery_app worker --loglevel=INFO -c 1
     "
-    depends_on:
-      - redis
-    restart: always
-    ulimits:
-      nproc: 65535
-      nofile:
-        soft: 65535
-        hard: 65535
+  depends_on:
+    - redis
+  restart: always
+  ulimits:
+    nproc: 65535
+    nofile:
+      soft: 65535
+      hard: 65535
 
   beat:
     build: .
