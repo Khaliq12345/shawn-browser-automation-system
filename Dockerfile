@@ -74,6 +74,10 @@ RUN apt-get install -yqq unzip
 RUN wget -O /tmp/chromedriver.zip http://chromedriver.storage.googleapis.com/`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE`/chromedriver_linux64.zip
 RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
 
+# set Python-related environment variables
+ENV PYTHONUNBUFFERED=1
+ENV DISPLAY=:99
+
 
 # Download the latest installer
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
@@ -90,6 +94,8 @@ COPY . .
 
 # Install Python dependencies
 RUN uv sync --locked
+
+RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
 
 # RUN uv run camoufox fetch
 # RUN uv run playwright install-deps
