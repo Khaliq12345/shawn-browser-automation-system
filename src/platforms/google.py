@@ -1,10 +1,11 @@
 import sys
 
+
+
 sys.path.append(".")
 
 from typing import Optional
 from src.platforms.browser import BrowserBase
-from html_to_markdown import convert_to_markdown
 
 
 class GoogleScraper(BrowserBase):
@@ -46,7 +47,7 @@ class GoogleScraper(BrowserBase):
         try:
             # Use Google search URL format with prompt
             search_url = f"https://www.google.com/search?q={self.prompt}&oq={self.prompt}"
-            self.page.google_get(search_url, timeout=self.timeout, bypass_cloudflare=True)
+            self.page.get(search_url)
             return True
         except Exception as e:
             self.logger.error(f"Error starting or navigating the page - {e}")
@@ -54,38 +55,22 @@ class GoogleScraper(BrowserBase):
 
 
     def find_and_fill_input(self) -> bool:
-        print("Filling input")
+        self.logger.info("Filling input")
         return True
 
     def extract_response(self) -> Optional[str]:
-        self.logger.error("Extracting response")
+        self.logger.info("Extracting response")
         if not self.page:
             return None
         content_selector = 'div[jsmodel="k8Azyd E23uIf"]'
         see_more_selector = 'div[aria-controls="m-x-content"]'
 
         # click on see more (ai answer)
-        if not self.page.is_element_present(see_more_selector, wait=5):
-            self.logger.error("AI Answer not visible")
-            return None
-        try:
-            self.page.click(see_more_selector, wait=self.timeout)
-        except Exception as e:
-            self.logger.error(f"Unable to find the see more buttons {e}")
-            return None
+        self.find_and_click(see_more_selector, "Ai overview not visible", timeout=5, click=True)
 
         # wait for content to be visible
-        try:
-            self.page.wait_for_element(content_selector, wait=self.timeout)
-        except Exception as e:
-            self.logger.error(f"Unable to find the content {e}")
-            return None
+        self.find_and_click(content_selector, timeout=self.timeout, error_message="Unable to find the content")
 
-        try:
-            content_element = self.page.wait_for_element(content_selector)
-            content = content_element.html if content_element else ""
-            content_markdown = convert_to_markdown(content)
-            return content_markdown
-        except Exception as e:
-            self.logger.error(f"Unable to extract content {e}")
-            return None
+
+        content = self.extract_content(content_selector)
+        return content

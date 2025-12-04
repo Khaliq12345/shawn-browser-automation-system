@@ -1,10 +1,12 @@
 import sys
 
+from undetected_chromedriver import By
+
 sys.path.append(".")
 
+import time
 from typing import Optional
 from src.platforms.browser import BrowserBase
-from html_to_markdown import convert_to_markdown
 
 
 class PerplexityScraper(BrowserBase):
@@ -39,50 +41,35 @@ class PerplexityScraper(BrowserBase):
         )
 
     def find_and_fill_input(self) -> bool:
-        print("Filling the prompt")
+        self.logger.info("Filling the prompt")
 
         if not self.page:
             return False
 
-        self.page.sleep(5)
-        self.page.mouse_press(0, 0)
-        self.page.sleep(5)
-        try:
-            prompt_input_selector = 'div[id="ask-input"]'
-            # trying to fill the prompt
-            try:
-                self.page.type(prompt_input_selector, self.prompt, wait=self.timeout)
-            except Exception as e:
-                print(f"Can not fill the prompt input {e}")
-                return False
+        time.sleep(5)
+        prompt_input_selector = 'div[id="ask-input"]'
+        # trying to fill the prompt
+        self.find_and_click(prompt_input_selector, "Can not fill the prompt input", timeout=self.timeout)
+        element = self.page.find_element(By.CSS_SELECTOR, prompt_input_selector)
+        element.send_keys(self.prompt)
 
-            # Validate
-            try:
-                submit_button = 'button[data-testid="submit-button"]'
-                self.page.click(submit_button, wait=self.timeout)
-            except Exception as e:
-                print(f"Submit button is not available - {e}")
-                return False
-            return True
-        except Exception as e:
-            print(f"Error in find_and_fill_input {e}")
-            return False
+        # Validate
+        submit_button = 'button[data-testid="submit-button"]'
+        self.find_and_click(submit_button, "Submit button is not available ", timeout=self.timeout, click=True)
+
+        return True
 
     def extract_response(self) -> Optional[str]:
-        print("Extracting response")
+        self.logger.info("Extracting response")
         if not self.page:
             return None
+
         content = None
         share_selector = 'button[data-testid="share-button"]'
-        try:
-            self.page.wait_for_element(share_selector, wait=self.timeout)
-        except Exception:
-            print("Unable to find copy button - Reloading")
-            return None
-        content_selector = 'div[id="markdown-content-0"]'
-        content_element = self.page.wait_for_element(
-            content_selector, wait=self.timeout
-        )
-        content = content_element.html if content_element else ""
-        content_markdown = convert_to_markdown(content)
-        return content_markdown
+        self.find_and_click(share_selector, "Unable to find copy button", timeout=self.timeout)
+
+        # Get content
+        content_selector = 'div[id="markdown-content-0"]'   
+        self.find_and_click(content_selector, "Unable to find content", timeout=self.timeout)
+        content = self.extract_content(content_selector)
+        return content
