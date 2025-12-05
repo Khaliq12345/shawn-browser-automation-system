@@ -79,8 +79,8 @@ class BrowserBase(ContextDecorator, ABC):
         if not self.page:
             return False
         try:
-            self.page.goto(self.url)
-            print(self.page.title)
+            self.page.goto(self.url, timeout=self.timeout)
+            self.logger.info(self.page.title)
             return True
         except Exception as e:
             self.logger.error(f"Error starting or navigating the page - {e}")
@@ -210,7 +210,6 @@ class BrowserBase(ContextDecorator, ABC):
         self.logger.info("Successfully navigated to the page")
 
         # Step 2: Fill and Submit the input
-        self.page.pause()
         is_filled = self.find_and_fill_input()
         if not is_filled:
             error_message = "Error filling the prompt"
