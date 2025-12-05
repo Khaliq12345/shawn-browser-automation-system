@@ -3,7 +3,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 
-from src.config.config import HOURS
+from src.config.config import MINUTES
 from src.api.dependencies import databaseDepends
 from src.models.model import Prompt
 from src.utils import celery_app
@@ -36,7 +36,7 @@ def start_browser(
             prompt = prompt_data.prompt
             prompt_id = prompt_data.prompt_id
             clean_prompt = prompt.replace(brand, f"{brand}[{domain}]")
-            database.update_schedule(brand_report_id, prompt_id, clean_prompt, hours=HOURS)
+            database.update_schedule(brand_report_id, prompt_id, clean_prompt, minutes=MINUTES)
             prompt_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             for name in ["google", "chatgpt", "perplexity"]:
                 process_id = f"{name}-{brand_report_id}-{prompt_id}-{timestamp}"
