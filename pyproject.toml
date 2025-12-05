@@ -31,4 +31,5 @@ dependencies = [
     "user-agent>=0.1.14",
     "uvicorn>=0.35.0",
     "camoufox[geoip] @ git+https://github.com/coryking/camoufox.git@v142.0.1-fork.27#subdirectory=pythonlib",
+    "patchright>=1.56.0",
 ]
