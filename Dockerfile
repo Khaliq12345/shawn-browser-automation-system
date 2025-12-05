@@ -91,7 +91,7 @@ WORKDIR /app
 COPY . .
 
 # Install Python dependencies
-RUN uv sync --locked
+RUN uv sync
 
 RUN uv run pip install git+https://github.com/coryking/camoufox.git@v142.0.1-fork.27#subdirectory=pythonlib
 
