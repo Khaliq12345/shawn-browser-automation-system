@@ -1,3 +1,6 @@
+[tool.uv.sources]
+camoufox = { git = "https://github.com/coryking/camoufox.git", tag = "v142.0.1-fork.27", subdirectory = "pythonlib" }
+
 [project]
 name = "shawn-browser-automation-system"
 version = "0.1.0"
@@ -27,4 +30,5 @@ dependencies = [
     "sqlmodel>=0.0.24",
     "user-agent>=0.1.14",
     "uvicorn>=0.35.0",
+    "camoufox @ git+https://github.com/coryking/camoufox.git@v142.0.1-fork.27#subdirectory=pythonlib",
 ]

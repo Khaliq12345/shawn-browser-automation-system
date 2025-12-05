@@ -93,10 +93,6 @@ COPY . .
 # Install Python dependencies
 RUN uv sync
 
-ENV PATH="/app/.venv/bin:$PATH"
-
-RUN uv run pip install git+https://github.com/coryking/camoufox.git@v142.0.1-fork.27#subdirectory=pythonlib
-
 RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
 
 RUN uv run camoufox fetch
