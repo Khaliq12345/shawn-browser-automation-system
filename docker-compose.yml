@@ -59,17 +59,17 @@ services:
       nofile:
         soft: 65535
         hard: 65535
-  #
-  # frontend:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.frontend
-  #   ports:
-  #     - "3000:3000"
-  #   command: node .output/server/index.mjs
-  #   depends_on:
-  #     - api
-  #   restart: always
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    command: node .output/server/index.mjs
+    depends_on:
+      - api
+    restart: always
 
   redis:
     image: redis:7-alpine
