@@ -242,7 +242,7 @@ class BrowserBase(ContextDecorator, ABC):
         if HEADLESS == "yes":
             headless = True
         else:
-            headless = False
+            headless = "virtual"
         
         # if self.name == "perplexity":
         #    proxy = {
