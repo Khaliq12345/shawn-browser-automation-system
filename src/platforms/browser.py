@@ -18,8 +18,6 @@ from func_retry import retry
 from src.config.config import (
     PARSER_URL,
     PARSER_KEY,
-    PROXY_PASSWORD,
-    PROXY_USERNAME,
     RESIDENTIAL_PROXY_PASSWORD,
     RESIDENTIAL_PROXY_USERNAME,
     S3_BUCKET_NAME,
@@ -244,25 +242,50 @@ class BrowserBase(ContextDecorator, ABC):
         if HEADLESS == "yes":
             headless = True
         else:
-            headless = "virtual"
+            headless = False
         
-        if self.name == "perplexity":
-           proxy = {
-                'server': "dc.decodo.com:10000",
-                "username": PROXY_USERNAME,
-                'password': PROXY_PASSWORD
-            }
-        else:
-           proxy={
+        # if self.name == "perplexity":
+        #    proxy = {
+        #         'server': "dc.decodo.com:10000",
+        #         "username": PROXY_USERNAME,
+        #         'password': PROXY_PASSWORD
+        #     }
+        # else:
+        proxy = {
                 'server': "isp.decodo.com:10000",
                 "username": RESIDENTIAL_PROXY_USERNAME,
                 'password': RESIDENTIAL_PROXY_PASSWORD
             }
 
+        config = {
+            'window.outerHeight': 1056,
+            'window.outerWidth': 1920,
+            'window.innerHeight': 1008,
+            'window.innerWidth': 1920,
+            'window.history.length': 4,
+            'navigator.userAgent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
+            'navigator.appCodeName': 'Mozilla',
+            'navigator.appName': 'Netscape',
+            'navigator.appVersion': '5.0 (Windows)',
+            'navigator.oscpu': 'Windows NT 10.0; Win64; x64',
+            'navigator.language': 'en-US',
+            'navigator.languages': ['en-US'],
+            'navigator.platform': 'Win32',
+            'navigator.hardwareConcurrency': 12,
+            'navigator.product': 'Gecko',
+            'navigator.productSub': '20030107',
+            'navigator.maxTouchPoints': 10,
+        }
+
         with Camoufox(
-            geoip=True,
+            headless=headless, 
+            persistent_context=True,
+            user_data_dir='user-data-dir',
+            os=('windows'),
+            config=config,
+            i_know_what_im_doing=True,
             proxy=proxy,
-            headless=headless
+            geoip=True
         ) as browser:
             try:
                 self.page = browser.new_page()

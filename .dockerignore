@@ -18,3 +18,6 @@ interface/.env
 # Docker itself
 Dockerfile
 docker-compose.yml
+
+
+user-data-dir/

@@ -8,3 +8,4 @@ database.db
 test.txt
 ./output/
 ./celerybeat-schedule
+user-data-dir/
