@@ -242,11 +242,10 @@ class BrowserBase(ContextDecorator, ABC):
     @retry(times=3, delay=1)
     def send_prompt(self) -> None:
         """Start the workflow"""
-        
         if HEADLESS == "yes":
             headless = True
         else:
-            headless = False
+            headless = "virtual"
         
         if self.name == "perplexity":
            proxy = {

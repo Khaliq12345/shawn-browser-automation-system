@@ -84,6 +84,7 @@ def run_browser(
         matching_scraper.send_prompt()
     except Exception as exec:
         task_logger.error(f"run_browser failed after retries - {str(exec)}")
+        raise exec
     finally:
         if redis_handler:
             task_logger.removeHandler(redis_handler)
