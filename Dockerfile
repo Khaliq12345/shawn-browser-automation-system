@@ -96,6 +96,6 @@ RUN uv sync
 RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
 
 RUN uv run camoufox fetch
-# RUN uv run playwright install-deps
-# RUN uv run playwright install
+RUN uv run playwright install-deps
+RUN uv run playwright install
 # RUN uv run camoufox fetch

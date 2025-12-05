@@ -18,6 +18,8 @@ from func_retry import retry
 from src.config.config import (
     PARSER_URL,
     PARSER_KEY,
+    RESIDENTIAL_PROXY_PASSWORD,
+    RESIDENTIAL_PROXY_USERNAME,
     S3_BUCKET_NAME,
     HEADLESS,
 )
@@ -244,10 +246,13 @@ class BrowserBase(ContextDecorator, ABC):
         else:
             headless = "virtual"
         proxy = "http://isp.decodo.com:10000"
+        print(proxy)
         with Camoufox(
             geoip=True,
             proxy={
-                'server': proxy,
+                'server': "isp.decodo.com:10000",
+                "username": RESIDENTIAL_PROXY_USERNAME,
+                'password': RESIDENTIAL_PROXY_PASSWORD
             },
             headless=headless
         ) as browser:
