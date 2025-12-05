@@ -76,6 +76,7 @@ RUN wget -O /tmp/chromedriver.zip http://chromedriver.storage.googleapis.com/`cu
 RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
 
 
+
 # Download the latest installer
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
 
@@ -92,9 +93,11 @@ COPY . .
 # Install Python dependencies
 RUN uv sync --locked
 
+RUN uv run pip install git+https://github.com/coryking/camoufox.git@v142.0.1-fork.27#subdirectory=pythonlib
+
 RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
 
-# RUN uv run camoufox fetch
+RUN uv run camoufox fetch
 # RUN uv run playwright install-deps
 # RUN uv run playwright install
 # RUN uv run camoufox fetch

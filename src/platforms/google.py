@@ -47,7 +47,8 @@ class GoogleScraper(BrowserBase):
         try:
             # Use Google search URL format with prompt
             search_url = f"https://www.google.com/search?q={self.prompt}&oq={self.prompt}"
-            self.page.get(search_url)
+            search_url = f"https://search.brave.com/search?q={self.prompt}"
+            self.page.goto(search_url, timeout=self.timeout)
             self.logger.info(self.page.title)
             return True
         except Exception as e:
@@ -63,11 +64,14 @@ class GoogleScraper(BrowserBase):
         self.logger.info("Extracting response")
         if not self.page:
             return None
-        content_selector = 'div[jsmodel="k8Azyd E23uIf"]'
-        see_more_selector = 'div[aria-controls="m-x-content"]'
+        # content_selector = 'div[jsmodel="k8Azyd E23uIf"]'
+        # see_more_selector = 'div[aria-controls="m-x-content"]'
+
+        see_more_selector = 'button[id="llm-show-more-button"]'
+        content_selector = 'div[id="llm-snippet"]'
 
         # click on see more (ai answer)
-        self.find_and_click(see_more_selector, "Ai overview not visible", timeout=5, click=True)
+        self.find_and_click(see_more_selector, "Ai overview not visible", timeout=5*1000, click=True)
 
         # wait for content to be visible
         self.find_and_click(content_selector, timeout=self.timeout, error_message="Unable to find the content")

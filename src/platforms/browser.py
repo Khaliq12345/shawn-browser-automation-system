@@ -2,8 +2,7 @@ import sys
 import time
 
 from html_to_markdown import convert_to_markdown
-from selenium.webdriver import Chrome
-from selenium.webdriver.support.wait import WebDriverWait
+from playwright.sync_api import Page
 
 sys.path.append("..")
 
@@ -19,16 +18,11 @@ from func_retry import retry
 from src.config.config import (
     PARSER_URL,
     PARSER_KEY,
-    RESIDENTIAL_PROXY_PASSWORD,
-    RESIDENTIAL_PROXY_USERNAME,
     S3_BUCKET_NAME,
     HEADLESS,
 )
 import httpx
-import undetected_chromedriver as uc
-from selenium.webdriver.support import expected_conditions as EC
-from undetected_chromedriver import By
-from pyvirtualdisplay import Display
+from camoufox.sync_api import Camoufox
 
 # PROXY configs
 PROXIES = {
@@ -63,7 +57,7 @@ class BrowserBase(ContextDecorator, ABC):
         self.name = name
         self.process_id = process_id
         self.logger = logger
-        self.timeout = timeout
+        self.timeout = timeout * 1000
         self.bucket = S3_BUCKET_NAME
         self.storage = AWSStorage(self.bucket)
         self.country = country
@@ -73,7 +67,7 @@ class BrowserBase(ContextDecorator, ABC):
         # initialise database
         self.database = Database()
         # initialise page
-        self.page: Optional[Chrome] = None
+        self.page: Optional[Page] = None
         self.display = None
 
     def navigate(self) -> bool:
@@ -81,7 +75,7 @@ class BrowserBase(ContextDecorator, ABC):
         if not self.page:
             return False
         try:
-            self.page.get(self.url)
+            self.page.goto(self.url)
             print(self.page.title)
             return True
         except Exception as e:
@@ -93,11 +87,10 @@ class BrowserBase(ContextDecorator, ABC):
         if not self.page:
             raise ValueError("Browser is not started")
         try:
-            WebDriverWait(self.page, timeout).until(
-              EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-            )
-            element = self.page.find_element(By.CSS_SELECTOR, selector)
-            element.click() if click else None
+            if click:
+                self.page.click(selector, timeout=timeout)
+            else:
+                self.page.wait_for_selector(selector, timeout=timeout)
             return True
         except Exception as e:
             self.logger.error(error_message)
@@ -109,9 +102,8 @@ class BrowserBase(ContextDecorator, ABC):
             raise ValueError("Browser is not started")
 
         try:
-            content_element = self.page.find_element(By.CSS_SELECTOR, selector)
-            content = content_element.get_attribute("innerHTML")
-            content_markdown = convert_to_markdown(content) if content else ""
+            content = self.page.query_selector(selector)
+            content_markdown = convert_to_markdown(content.inner_html()) if content else ""
             return content_markdown
         except Exception as e:
             self.logger.error("Unable to extract content")
@@ -177,7 +169,7 @@ class BrowserBase(ContextDecorator, ABC):
 
         # Save ScreenShot
         try:
-            self.page.save_screenshot(filename=screeshot_path)
+            self.page.screenshot(path=screeshot_path)
             self.storage.save_file(f"{basekey}/{screenshot_name}", screeshot_path)
         except Exception as e:
             self.logger.error(f"Unable to save screenshot - {e}")
@@ -214,6 +206,7 @@ class BrowserBase(ContextDecorator, ABC):
         self.logger.info("Successfully navigated to the page")
 
         # Step 2: Fill and Submit the input
+        self.page.pause()
         is_filled = self.find_and_fill_input()
         if not is_filled:
             error_message = "Error filling the prompt"
@@ -245,44 +238,29 @@ class BrowserBase(ContextDecorator, ABC):
     @retry(times=3, delay=1)
     def send_prompt(self) -> None:
         """Start the workflow"""
-        try:
-            display = Display(visible=False, size=(1024, 768))
-            display.start()
-            self.logger.info(f"Workflow Started - {self.name}")
-            self.database.start_process(
-                self.process_id, self.name, self.prompt, self.brand_report_id
-            )
+        
+        if HEADLESS == "yes":
+            headless = True
+        else:
+            headless = "virtual"
+        proxy = "http://isp.decodo.com:10000"
+        with Camoufox(
+            geoip=True,
+            proxy={
+                'server': proxy,
+            },
+            headless=headless
+        ) as browser:
+            try:
+                self.page = browser.new_page()
+                self.logger.info(f"Workflow Started - {self.name}")
+                self.database.start_process(
+                    self.process_id, self.name, self.prompt, self.brand_report_id
+                )
 
-            # initialise page
-
-            if HEADLESS == "yes":
-                headless = True
-            else:
-                headless = False
-
-            proxy = f"http://{RESIDENTIAL_PROXY_USERNAME}:{RESIDENTIAL_PROXY_PASSWORD}@isp.decodo.com:10000"
-
-            options = uc.ChromeOptions()
-            options.add_argument(f"--proxy-server={proxy}")
-
-
-            self.page = uc.Chrome(options=options, version_main=142, headless=headless)
-            self.page.implicitly_wait(self.timeout) 
-
-            if not self.page:
-                return None
-            #
-            # self.page.enable_human_mode()
-
-            # start processing the prompt
-            self.process_prompt()
-            self.page.close()
-            self.page.quit()
-
-            display.stop()
-        except Exception as e:
-            if self.page:
+                # start processing the prompt
+                self.process_prompt()
                 self.page.close()
-                self.page.quit()
-                display.stop()
-            self.save_raise_error(f"Processing Error - {str(e)}")
+
+            except Exception as e:
+                self.save_raise_error(f"Processing Error - {str(e)}")

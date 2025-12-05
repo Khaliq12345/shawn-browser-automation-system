@@ -1,6 +1,5 @@
 import sys
 
-from undetected_chromedriver import By
 
 sys.path.append(".")
 
@@ -50,8 +49,7 @@ class PerplexityScraper(BrowserBase):
         prompt_input_selector = 'div[id="ask-input"]'
         # trying to fill the prompt
         self.find_and_click(prompt_input_selector, "Can not fill the prompt input", timeout=self.timeout)
-        element = self.page.find_element(By.CSS_SELECTOR, prompt_input_selector)
-        element.send_keys(self.prompt)
+        self.page.fill(prompt_input_selector, value=self.prompt)
 
         # Validate
         submit_button = 'button[data-testid="submit-button"]'

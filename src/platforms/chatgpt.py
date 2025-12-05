@@ -1,6 +1,5 @@
 import sys
 
-from undetected_chromedriver import By
 
 
 sys.path.append(".")
@@ -48,13 +47,12 @@ class ChatGPTScraper(BrowserBase):
         time.sleep(5)
         # trying to fill the prompt
         prompt_input_selector = 'div[id="prompt-textarea"]'  # "#prompt-textarea"
-        self.find_and_click(prompt_input_selector, error_message="Can not fill the prompt input", timeout=5)
-        element = self.page.find_element(By.CSS_SELECTOR, prompt_input_selector)
-        element.send_keys(self.prompt)
+        self.find_and_click(prompt_input_selector, error_message="Can not fill the prompt input", timeout=5*1000)
+        self.page.fill(prompt_input_selector, value=self.prompt)
         self.logger.info("Done Filling")
 
         # Validate
-        self.find_and_click('button[data-testid="send-button"]', error_message="Can not send prompt", timeout=5, click=True)
+        self.find_and_click('button[data-testid="send-button"]', error_message="Can not send prompt", timeout=5*1000, click=True)
         return True
 
     def extract_response(self) -> Optional[str]:
@@ -69,6 +67,6 @@ class ChatGPTScraper(BrowserBase):
 
 
         content_selector = 'article[data-turn="assistant"]'
-        self.find_and_click(content_selector, error_message="Unable to find the content", timeout=5)
+        self.find_and_click(content_selector, error_message="Unable to find the content", timeout=5*1000)
         content = self.extract_content(content_selector)
         return content
