@@ -277,16 +277,27 @@ class BrowserBase(ContextDecorator, ABC):
             'navigator.maxTouchPoints': 10,
         }
 
-        with Camoufox(
-            headless=headless, 
-            persistent_context=True,
-            user_data_dir='user-data-dir',
-            os=('windows'),
-            config=config,
-            i_know_what_im_doing=True,
-            proxy=proxy,
-            geoip=True
-        ) as browser:
+        if self.name == "chatgpt":
+            camoufox_options = Camoufox(
+                headless=headless, 
+                os=('windows'),
+                config=config,
+                i_know_what_im_doing=True,
+                proxy=proxy,
+                geoip=True
+            )
+        else:
+            camoufox_options = Camoufox(
+                headless=headless, 
+                persistent_context=True,
+                user_data_dir='user-data-dir',
+                os=('windows'),
+                config=config,
+                i_know_what_im_doing=True,
+                proxy=proxy,
+                geoip=True
+            )
+        with camoufox_options as browser:
             try:
                 self.page = browser.new_page()
                 self.logger.info(f"Workflow Started - {self.name}")
