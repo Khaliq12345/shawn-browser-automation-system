@@ -20,7 +20,7 @@ services:
     build: .
     env_file:
       - .env
-    command: uv run celery --app src.utils.celery_app worker --loglevel=INFO -c 2
+    command: uv run celery --app src.utils.celery_app worker --loglevel=INFO -c 1
     depends_on:
       - redis
     restart: always
