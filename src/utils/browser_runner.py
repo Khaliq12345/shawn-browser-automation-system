@@ -50,7 +50,7 @@ def error_handler(exc: Any, name: str, brand: str, country: str, languague: str,
         {str(exc)}
         ```
     """).strip()
-    slack.send_message(error_message)
+    # slack.send_message(error_message)
 
 
 def run_browser():

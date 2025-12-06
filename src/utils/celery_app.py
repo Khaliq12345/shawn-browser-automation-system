@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 
 from celery import Celery
+from celery.schedules import crontab
 
 from src.config.config import MINUTES, REDIS_URL
 from src.platforms.chatgpt import ChatGPTScraper
@@ -18,6 +19,15 @@ app = Celery(
 
 # Permet à Celery de réessayer de se connecter au broker au démarrage (pour éviter le warning)
 app.conf.broker_connection_retry_on_startup = True
+
+# CRON
+app.conf.beat_schedule =  {
+    "scraper-schedule": {
+        "task": "src.utils.celery_app.start_cronjob",
+        "schedule": crontab(minute="*/5"),
+        "args": (),
+    }
+}
 
 
 # Scrapper configs
@@ -133,9 +143,3 @@ def start_cronjob():
                     prompt_date,
                 )
             )
-
-
-@app.on_after_configure.connect
-def setup_periodic_task(sender: Celery, **kwargs):
-    print("running scheduler")
-    sender.add_periodic_task(300, start_cronjob.s(), name="Scraper schedule")

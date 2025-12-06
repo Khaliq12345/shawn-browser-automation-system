@@ -20,7 +20,7 @@ services:
     build: .
     env_file:
       - .env
-    command: uv run celery --app src.utils.celery_app worker --loglevel=INFO -c 1
+    command: uv run celery --app src.utils.celery_app worker --loglevel=INFO -c 2
     depends_on:
       - redis
     restart: always
@@ -75,4 +75,9 @@ services:
     image: redis:7-alpine
     restart: always
     command: ["redis-server", "--port", "6379"]
+    volumes:
+      - redis_data:/data
 
+
+volumes:
+  redis_data:
