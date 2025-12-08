@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append(".")
 
 from datetime import datetime
@@ -12,6 +13,8 @@ from src.utils.slack_service import SlackBase
 
 from src.platforms.chatgpt import ChatGPTScraper
 from src.utils.database import Database
+
+from src.config.config import MINUTES
 
 # Scrapper configs
 SCRAPER_CONFIG = {
@@ -60,22 +63,24 @@ def run_browser():
         return None
 
     to_run = schedules[0]
+    print(to_run)
     brand_report_id = to_run["brand_report_id"]
     report = database.get_report(brand_report_id)
     if not report:
         return None
+    prompt = to_run["prompt"]
+    prompt_id = to_run["prompt_id"]
 
+    database.update_schedule(brand_report_id, prompt_id, prompt, minutes=MINUTES)
     # start the scraper 
     for name in ["chatgpt", "google", "perplexity"]:
         # Get the matching configs class and url
         config = SCRAPER_CONFIG[name]
         ScraperClass = config["class"]
         url = config["url"]
-        prompt = to_run["prompt"]
         timeout = 60
         country = report["country"]
         brand_report_id = report["brand_report_id"]
-        prompt_id = to_run["prompt_id"]
         timestamp = int(datetime.now().timestamp())
         process_id = f"{name}-{brand_report_id}-{prompt_id}-{timestamp}"
         date = report["date"]
@@ -122,5 +127,4 @@ def run_browser():
 
 
 if __name__ == "__main__":
-    to_run = run_browser()
-    print(to_run)
+    run_browser()

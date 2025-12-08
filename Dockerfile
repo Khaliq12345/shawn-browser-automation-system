@@ -99,3 +99,5 @@ RUN uv run camoufox fetch
 RUN uv run playwright install-deps
 RUN uv run playwright install
 # RUN uv run camoufox fetch
+
+CMD ["uv", "run", "src/utils/browser_runner.py"]

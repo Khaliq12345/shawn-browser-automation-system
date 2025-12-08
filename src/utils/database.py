@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 
 from dateparser import parse
-from sqlmodel import Column, Session, create_engine, or_, select, text
+from sqlmodel import Column, Session, create_engine, select, text
 
 from src.config import config
 from src.models.model import Browsers, Reports, Schedules, SQLModel
@@ -43,7 +43,7 @@ class Database:
     def get_next_schedules(self) -> list[dict]:
         """Get schedules to run next"""
         with Session(self.engine) as session:
-            stmt = select(Schedules).where(or_(Schedules.next_run < datetime.now(), Schedules.next_run is None))
+            stmt = select(Schedules).where(Schedules.next_run < datetime.now())
             schedules_raw = session.exec(stmt).all()
             if not schedules_raw:
                 return []
