@@ -34,7 +34,7 @@ services:
     build: .
     env_file:
       - .env
-    command: uv run celery --app src.utils.celery_app beat --loglevel=INFO
+    command: uv run celery --app src.utils.celery_app beat --loglevel=info
     depends_on:
       - redis
     restart: always
