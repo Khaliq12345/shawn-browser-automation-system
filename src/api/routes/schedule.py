@@ -8,7 +8,7 @@ router = APIRouter(prefix="/schedule")
 
 
 @router.get("/")
-def get_schedules(database: databaseDepends, page: int, limit: int = 10):
+def get_schedules(database: databaseDepends, page: int = 1, limit: int = 10):
     """Get Schedules"""
     try:
         offset = limit * (page - 1)

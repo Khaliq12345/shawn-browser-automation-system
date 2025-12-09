@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 
 from dateparser import parse
-from sqlmodel import Column, Session, create_engine, select, text
+from sqlmodel import Session, create_engine, select, text
 
 from src.config import config
 from src.models.model import Browsers, Reports, Schedules, SQLModel
@@ -101,7 +101,7 @@ class Database:
 
         with Session(self.engine) as session:
             stmt = select(Schedules.prompt_id, Schedules.next_run).where(
-                Column(Schedules.prompt_id).in_(prompt_ids)
+                Schedules.prompt_id.in_(prompt_ids)
             )
             results = session.exec(stmt).all()
 
