@@ -40,18 +40,15 @@ class Database:
             ]
             return schedules
 
-    def get_next_schedules(self) -> list[dict]:
+    def get_next_schedules(self) -> dict | None:
         """Get schedules to run next"""
         with Session(self.engine) as session:
-            stmt = select(Schedules).where(Schedules.next_run < datetime.now())
-            schedules_raw = session.exec(stmt).all()
-            if not schedules_raw:
-                return []
-            schedules = [
-                json.loads(schedule_raw.model_dump_json())
-                for schedule_raw in schedules_raw
-            ]
-            return schedules
+            stmt = select(Schedules).where(Schedules.next_run < datetime.now()).with_for_update(skip_locked=True).order_by(Schedules.next_run).limit(1)
+            scheduled_raw = session.exec(stmt).first()
+            if not scheduled_raw:
+                return None
+
+            return json.loads(scheduled_raw.model_dump_json())
 
     def update_schedule(self, brand_report_id: str, prompt_id: str, prompt: str, minutes: int = 60):
         """Update or create the schedule"""

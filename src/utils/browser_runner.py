@@ -58,11 +58,10 @@ def error_handler(exc: Any, name: str, brand: str, country: str, languague: str,
 
 def run_browser():
     database = Database()
-    schedules = database.get_next_schedules()
-    if not schedules:
+    to_run = database.get_next_schedules()
+    if not to_run:
         return None
 
-    to_run = schedules[0]
     print(to_run)
     brand_report_id = to_run["brand_report_id"]
     report = database.get_report(brand_report_id)
