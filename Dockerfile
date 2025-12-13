@@ -64,10 +64,19 @@ RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearm
 # -----------------------------
 # Install Node.js (via NodeSource)
 # -----------------------------
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    node --version && npm --version
 
+RUN apt update && \
+    apt install -y curl && \
+    # Install Node.js LTS (we'll use 20.x here for stability)
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \ 
+    apt install -y nodejs && \
+    # Clean up APT caches
+    apt autoremove -y && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
 
 # Download the latest installer
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
@@ -75,9 +84,6 @@ ADD https://astral.sh/uv/install.sh /uv-installer.sh
 # Run the installer then remove it
 RUN sh /uv-installer.sh && rm /uv-installer.sh
 ENV PATH="/root/.local/bin/:$PATH"
-
-# Set working directory
-WORKDIR /app
 
 # Copy all files
 COPY . .
@@ -90,6 +96,6 @@ RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
 RUN uv run camoufox fetch
 RUN uv run playwright install-deps
 RUN uv run playwright install
-# RUN uv run camoufox fetch
+
 
 CMD ["uv", "run", "src/utils/browser_runner.py"]
