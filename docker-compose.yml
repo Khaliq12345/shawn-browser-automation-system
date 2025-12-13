@@ -20,6 +20,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+    env_file:
+        - .env
     ports:
       - "3000:3000"
     command: node ./interface/.output/server/index.mjs
