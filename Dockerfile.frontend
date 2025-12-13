@@ -16,6 +16,9 @@ RUN npm install
 # Assuming your source code is in a directory named 'interface'
 COPY interface ./interface
 
+
+WORKDIR /app/interface
+
 # Run the build command
 # The build output is typically placed inside the 'interface' directory or /app/.output
 # Adjust the build command path if needed
