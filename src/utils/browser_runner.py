@@ -1,12 +1,14 @@
+import logging
 import sys
+
 
 sys.path.append(".")
 
 from datetime import datetime
-import logging
 import textwrap
 from typing import Any
 
+from src.config.config import MINUTES
 from src.platforms.google import GoogleScraper
 from src.platforms.perplexity import PerplexityScraper
 from src.utils.slack_service import SlackBase
@@ -14,7 +16,6 @@ from src.utils.slack_service import SlackBase
 from src.platforms.chatgpt import ChatGPTScraper
 from src.utils.database import Database
 
-from src.config.config import MINUTES
 
 # Scrapper configs
 SCRAPER_CONFIG = {

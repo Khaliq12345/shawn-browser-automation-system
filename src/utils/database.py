@@ -43,12 +43,16 @@ class Database:
     def get_next_schedules(self) -> dict | None:
         """Get schedules to run next"""
         with Session(self.engine) as session:
-            stmt = select(Schedules).where(Schedules.next_run < datetime.now()).with_for_update(skip_locked=True).order_by(Schedules.next_run).limit(1)
+            if config.ONLY_NULL == "yes":
+                stmt = select(Schedules).where(Schedules.next_run == None).limit(1).with_for_update(skip_locked=True)
+            else:
+                stmt = select(Schedules).where(Schedules.next_run < datetime.now()).with_for_update(skip_locked=True).order_by(Schedules.next_run).limit(1)
             scheduled_raw = session.exec(stmt).first()
             if not scheduled_raw:
                 return None
 
             return json.loads(scheduled_raw.model_dump_json())
+
 
     def update_schedule(self, brand_report_id: str, prompt_id: str, prompt: str, minutes: int = 60):
         """Update or create the schedule"""
@@ -69,7 +73,7 @@ class Database:
                     brand_report_id=brand_report_id,
                     prompt=prompt,
                     last_run=datetime.now(),
-                    next_run=parse(f"In {minutes} minutes"),
+                    next_run=None,
                 )
             session.add(schedule)
             session.commit()

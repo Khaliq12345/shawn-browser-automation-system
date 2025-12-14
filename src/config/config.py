@@ -35,3 +35,5 @@ PARSER_KEY = os.getenv("PARSER_KEY")
 SLACK_TOKEN = os.getenv("SLACK_TOKEN")
 #SCHEDULE HOURS
 MINUTES = int(os.getenv("MINUTES", 60))
+#DEAL_WITH_NULL_ONLY
+ONLY_NULL = os.getenv("ONLY_NULL", "yes")
