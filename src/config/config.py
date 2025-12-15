@@ -37,3 +37,5 @@ SLACK_TOKEN = os.getenv("SLACK_TOKEN")
 MINUTES = int(os.getenv("MINUTES", 60))
 #DEAL_WITH_NULL_ONLY
 ONLY_NULL = os.getenv("ONLY_NULL", "yes")
+#PARSE OUTPUT
+PARSE_OUTPUT = os.getenv("PARSE_OUTPUT", "no")

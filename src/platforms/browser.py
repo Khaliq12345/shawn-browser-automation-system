@@ -22,6 +22,7 @@ from src.config.config import (
     RESIDENTIAL_PROXY_USERNAME,
     S3_BUCKET_NAME,
     HEADLESS,
+    PARSE_OUTPUT
 )
 import httpx
 from camoufox.sync_api import Camoufox
@@ -164,10 +165,11 @@ class BrowserBase(ContextDecorator, ABC):
             return False
 
         # Start analyses
-        try:
-            self.extract_brand_info(basekey)
-        except Exception as e:
-            self.logger.error(f"Unable to start the parser - {e}")
+        if PARSE_OUTPUT == "yes":
+            try:
+                self.extract_brand_info(basekey)
+            except Exception as e:
+                self.logger.error(f"Unable to start the parser - {e}")
 
         # Save ScreenShot
         try:

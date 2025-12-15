@@ -63,8 +63,8 @@ class PerplexityScraper(BrowserBase):
             return None
 
         content = None
-        share_selector = 'button[data-testid="share-button"]'
-        self.find_and_click(share_selector, "Unable to find copy button", timeout=self.timeout)
+        share_selector = 'button[aria-label="Share"]'
+        self.find_and_click(share_selector, "Unable to find share button", timeout=self.timeout)
 
         # Get content
         content_selector = 'div[id="markdown-content-0"]'   
