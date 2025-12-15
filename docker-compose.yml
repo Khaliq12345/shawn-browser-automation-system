@@ -6,7 +6,7 @@ services:
       - .env
     command: uv run main.py
     ports:
-      - "${APP_PORT}:8000"
+      - "${APP_PORT}:${APP_PORT}"
     restart: always
     ulimits:
       nproc: 65535
