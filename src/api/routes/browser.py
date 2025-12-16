@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from src.config.config import MINUTES
 from src.api.dependencies import databaseDepends
 from src.models.model import Prompt
-from utils.globals import PROXIES, LANGUAGUES
+from src.utils.globals import PROXIES, LANGUAGUES
 
 router = APIRouter(prefix="/browser")
 
