@@ -52,8 +52,9 @@ class PerplexityScraper(BrowserBase):
         self.page.fill(prompt_input_selector, value=self.prompt)
 
         # Validate
-        submit_button = 'button[data-testid="submit-button"]'
-        self.find_and_click(submit_button, "Submit button is not available ", timeout=self.timeout, click=True)
+        self.page.keyboard.press("Enter")
+        # submit_button = 'button[data-testid="submit-button"]'
+        # self.find_and_click(submit_button, "Submit button is not available ", timeout=self.timeout, click=True)
 
         return True
 
