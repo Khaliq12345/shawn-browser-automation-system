@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException
 from src.config.config import MINUTES
 from src.api.dependencies import databaseDepends
 from src.models.model import Prompt
+from utils.globals import PROXIES, LANGUAGUES
 
 router = APIRouter(prefix="/browser")
 
@@ -19,6 +20,13 @@ def start_browser(
     domain: str,
     brand: str,
 ):
+
+    # VALIDATE THE DATA
+    if country not in PROXIES:
+        raise HTTPException(status_code=400, detail=f"Invalid Country; Choose between {PROXIES.keys()}")
+    if languague not in LANGUAGUES:
+        raise HTTPException(status_code=400, detail=f"Invalid languague; Choose between {"; ".join(LANGUAGUES)}")
+
     try:
         # save the report
         database.add_report(
