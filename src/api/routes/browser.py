@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException
 from src.config.config import MINUTES
 from src.api.dependencies import databaseDepends
 from src.models.model import Prompt
+from src.utils.globals import PROXIES, LANGUAGUES
 
 router = APIRouter(prefix="/browser")
 
@@ -19,6 +20,13 @@ def start_browser(
     domain: str,
     brand: str,
 ):
+
+    # VALIDATE THE DATA
+    if country not in PROXIES:
+        raise HTTPException(status_code=400, detail=f"Invalid Country; Choose between {PROXIES.keys()}")
+    if languague not in LANGUAGUES:
+        raise HTTPException(status_code=400, detail=f"Invalid languague; Choose between {"; ".join(LANGUAGUES)}")
+
     try:
         # save the report
         database.add_report(
@@ -39,17 +47,17 @@ def start_browser(
         raise HTTPException(status_code=500, detail=f"Server Error: {e}")
 
 
-@router.get("/status/{process_id}")
-def check_status(database: databaseDepends, process_id: str):
+@router.get("/status/{brand_report_id}")
+def check_status(database: databaseDepends, brand_report_id: str):
     try:
         # Get the process status
-        status = database.get_process_status(process_id)
+        status = database.get_process_status(brand_report_id)
         if status:
-            output = {"process_id": process_id, "status": status}
+            output = {"brand_report_id": brand_report_id, "status": status}
             return {"details": output}
         else:
             raise HTTPException(
-                status_code=404, detail=f"Process ({process_id}) not found"
+                status_code=404, detail=f"Process ({brand_report_id}) not found"
             )
     except HTTPException as _:
         raise

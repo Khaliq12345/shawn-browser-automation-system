@@ -238,7 +238,7 @@ class BrowserBase(ContextDecorator, ABC):
 
 
 
-    @retry(times=3, delay=1)
+    @retry(times=5, delay=1)
     def send_prompt(self) -> None:
         """Start the workflow"""
         if HEADLESS == "yes":
