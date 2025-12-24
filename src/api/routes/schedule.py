@@ -2,6 +2,7 @@ from typing import Annotated, List
 
 from fastapi import APIRouter, HTTPException, Query
 
+from src.models.model import Prompt
 from src.api.dependencies import databaseDepends
 
 router = APIRouter(prefix="/schedule")
@@ -55,5 +56,20 @@ def get_next_runs(
     try:
         next_runs = database.get_next_runs(prompt_ids)
         return next_runs
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/add")
+def add_schedules(database: databaseDepends, prompt_details: List[Prompt], brand_report_id: str) -> dict:
+    """Add more prompts to brand report"""
+    try:
+        database.add_schedules(
+            prompts=prompt_details,
+            brand_report_id=brand_report_id,
+        )
+        return {
+            "status": "success",
+            "message": "Schedule added successfully",
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

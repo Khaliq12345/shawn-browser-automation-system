@@ -11,7 +11,7 @@ from dateparser import parse
 from sqlmodel import Session, create_engine, select, text
 
 from src.config import config
-from src.models.model import Browsers, Reports, Schedules, SQLModel
+from src.models.model import Browsers, Prompt, Reports, Schedules, SQLModel
 
 
 class Database:
@@ -26,6 +26,24 @@ class Database:
         SQLModel.metadata.create_all(self.engine)
 
     #  -------- Schedules ----------
+    def add_schedules(self, prompts: list[Prompt], brand_report_id: str) -> None:
+        """Add new schedules"""
+        schedules = []
+        with Session(self.engine) as session:
+            for prompt in prompts:
+                schedules.append(
+                    Schedules(
+                        prompt=prompt.prompt,
+                        prompt_id=prompt.prompt_id, 
+                        last_run=datetime.now(), 
+                        next_run=None,
+                        brand_report_id=brand_report_id
+                    )
+                )
+            session.add_all(schedules)
+            session.commit()
+
+
     def get_schedules(self, limit: int, offset: int) -> list[dict]:
         """Get all schedules"""
         with Session(self.engine) as session:
@@ -155,7 +173,6 @@ class Database:
             session.commit()
 
     #  -------- Process ----------
-
     def start_process(
         self, process_id: str, platform: str, prompt: str, brand_report_id: str
     ):
@@ -196,14 +213,22 @@ class Database:
             session.commit()
 
     # Retrieve a process status
-    def get_process_status(self, process_id: str):
-        result = None
+    def get_process_status(self, brand_report_id: str) -> str:
+        total_prompts = 0
+        total_failed_prompt = 0
         with Session(self.engine) as session:
-            stmt = select(Browsers).where(Browsers.process_id == process_id)
-            process = session.scalars(stmt)
-            process = process.one()
-            result = process.status
-        return result
+            stmt = select(Browsers).where(Browsers.brand_report_id == brand_report_id)
+            processes = session.scalars(stmt).all()
+            total_prompts = len(processes)
+            print(f"TOTAL {total_prompts}")
+            for process in processes:
+                if process.status == 'success':
+                    return 'success'
+                if process.status == 'failed':
+                    total_failed_prompt += 1
+            if total_failed_prompt == total_prompts:
+                return 'failed'
+        return 'pending'
 
     #  -------- Metrics ----------
 
