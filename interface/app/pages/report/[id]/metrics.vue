@@ -23,29 +23,30 @@
                     />
                 </UFormField>
 
-                <UFormField label="Model">
+                <UFormField label="Model" class="flex flex-col">
                     <USelect
                         v-model="form.model"
                         :items="modelOptions"
                         clearable
                         placeholder="Select a model"
+                        class="w-full"
                     />
                 </UFormField>
 
-                <UFormField label="Start Date">
-                    <UInput v-model="form.start_date" type="date" />
+                <UFormField label="Start Date" class="flex flex-col">
+                    <UInput v-model="form.start_date" type="date" class="w-full" />
                 </UFormField>
 
-                <UFormField label="End Date">
-                    <UInput v-model="form.end_date" type="date" />
+                <UFormField label="End Date" class="flex flex-col">
+                    <UInput v-model="form.end_date" type="date" class="w-full" />
                 </UFormField>
 
                 <UButton
                     block
                     size="md"
-                    color="secondary"
                     variant="solid"
                     label="Refresh Data"
+                    color="success"
                     :loading="loading"
                     :disabled="!form.brand"
                     icon="i-heroicons-arrow-path"

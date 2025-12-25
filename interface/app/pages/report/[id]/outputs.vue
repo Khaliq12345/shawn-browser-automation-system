@@ -84,7 +84,7 @@
                             block
                             trailing-icon="i-heroicons-arrow-right"
                             size="md"
-                            color="secondary"
+                            color="success"
                             variant="solid"
                             @click="showOutput(data)"
                         >
