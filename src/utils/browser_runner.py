@@ -5,13 +5,10 @@ import sys
 sys.path.append(".")
 
 from datetime import datetime
-import textwrap
-from typing import Any
 
 from src.config.config import MINUTES
 from src.platforms.google import GoogleScraper
 from src.platforms.perplexity import PerplexityScraper
-from src.utils.slack_service import SlackBase
 
 from src.platforms.chatgpt import ChatGPTScraper
 from src.utils.database import Database
@@ -26,35 +23,6 @@ SCRAPER_CONFIG = {
         "url": "https://www.perplexity.ai/",
     },
 }
-
-
-def error_handler(exc: Any, name: str, brand: str, country: str, languague: str, brand_report_id: str, prompt_id: str, process_id: str, prompt: str):
-    # Send Slack notification on final failure
-    slack = SlackBase()
-    # Message with all task details
-    error_message = textwrap.dedent(f"""
-        *Date/Time:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-        *Task Details:*
-        • Platform: `{name}`
-        • Brand: `{brand}`
-        • Country: `{country}`
-        • Language: `{languague}`
-        • Brand Report ID: `{brand_report_id}`
-        • Prompt ID: `{prompt_id}`
-        • Process ID: `{process_id}`
-
-        *Prompt:*
-        ```
-        {prompt}
-        ```
-
-        *Error:*
-        ```
-        {str(exc)}
-        ```
-    """).strip()
-    # slack.send_message(error_message)
 
 
 def run_browser():
@@ -72,6 +40,8 @@ def run_browser():
     prompt_id = to_run["prompt_id"]
 
     database.update_schedule(brand_report_id, prompt_id, prompt, minutes=MINUTES)
+
+    date = datetime.now() 
     # start the scraper 
     for name in ["chatgpt", "google", "perplexity"]:
         # Get the matching configs class and url
@@ -83,7 +53,7 @@ def run_browser():
         brand_report_id = report["brand_report_id"]
         timestamp = int(datetime.now().timestamp())
         process_id = f"{name}-{brand_report_id}-{prompt_id}-{timestamp}"
-        date = report["date"]
+        date = date
         brand = report["brand"]
         languague = report["languague"]
 

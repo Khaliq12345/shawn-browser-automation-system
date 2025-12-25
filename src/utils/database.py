@@ -226,7 +226,9 @@ class Database:
                     return 'success'
                 if process.status == 'failed':
                     total_failed_prompt += 1
-            if total_failed_prompt == total_prompts:
+            if total_prompts == 0:
+                return "pending"
+            if total_failed_prompt >= 3:
                 return 'failed'
         return 'pending'
 
