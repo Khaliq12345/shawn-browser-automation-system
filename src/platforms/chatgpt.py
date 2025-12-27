@@ -63,7 +63,7 @@ class ChatGPTScraper(BrowserBase):
         content = None
         copy_selector = 'div.justify-start button[data-testid="copy-turn-action-button"]'
 
-        self.find_and_click(copy_selector, error_message="Unable to find copy button", timeout=self.timeout)
+        self.find_and_click(copy_selector, error_message="Unable to find copy button",  timeout=20*1000)
 
 
         content_selector = 'article[data-turn="assistant"]'

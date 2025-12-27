@@ -1,18 +1,15 @@
 version: "4.8"
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
     env_file:
       - .env
     command: uv run main.py
     ports:
       - "${APP_PORT}:${APP_PORT}"
     restart: always
-    ulimits:
-      nproc: 65535
-      nofile:
-        soft: 65535
-        hard: 65535
 
   frontend:
     build:
@@ -25,6 +22,17 @@ services:
     command: node ./interface/.output/server/index.mjs
     depends_on:
       - api
+    restart: always
+
+  monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    env_file:
+      - .env
+    command: celery -A src.utils.celery_app flower
+    ports:
+      - "${FLOWER_PORT}:${FLOWER_PORT}"
     restart: always
 
   # redis:

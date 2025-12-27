@@ -48,7 +48,7 @@ class PerplexityScraper(BrowserBase):
         time.sleep(5)
         prompt_input_selector = 'div[id="ask-input"]'
         # trying to fill the prompt
-        self.find_and_click(prompt_input_selector, "Can not fill the prompt input", timeout=self.timeout)
+        self.find_and_click(prompt_input_selector, "Can not fill the prompt input", timeout=5*1000)
         self.page.fill(prompt_input_selector, value=self.prompt)
 
         # Validate
@@ -65,10 +65,10 @@ class PerplexityScraper(BrowserBase):
 
         content = None
         share_selector = 'button[aria-label="Share"]'
-        self.find_and_click(share_selector, "Unable to find share button", timeout=self.timeout)
+        self.find_and_click(share_selector, "Unable to find share button", timeout=20*1000)
 
         # Get content
         content_selector = 'div[id="markdown-content-0"]'   
-        self.find_and_click(content_selector, "Unable to find content", timeout=self.timeout)
+        self.find_and_click(content_selector, "Unable to find content", timeout=5*1000)
         content = self.extract_content(content_selector)
         return content

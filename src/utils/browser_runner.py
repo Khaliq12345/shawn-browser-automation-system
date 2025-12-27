@@ -24,6 +24,10 @@ SCRAPER_CONFIG = {
     },
 }
 
+def test_runner():
+    return "HEELO WORLD!"
+
+
 
 def run_browser():
     database = Database()

@@ -73,7 +73,7 @@ class GoogleScraper(BrowserBase):
         self.find_and_click(see_more_selector, "Ai overview not visible", timeout=5*1000, click=True)
 
         # wait for content to be visible
-        self.find_and_click(content_selector, timeout=self.timeout, error_message="Unable to find the content")
+        self.find_and_click(content_selector, timeout=20*1000, error_message="Unable to find the content")
 
 
         content = self.extract_content(content_selector)

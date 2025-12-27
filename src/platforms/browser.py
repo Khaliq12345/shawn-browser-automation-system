@@ -158,14 +158,14 @@ class BrowserBase(ContextDecorator, ABC):
         try:
             save_file(txt_out, content)
             self.storage.save_file(f"{basekey}/{text_name}", txt_out)
-            # send to parser api
-            self.logger.info("- Parsing output with LLM")
         except Exception as e:
             self.logger.error(f"Unable to save output - {e}")
             return False
 
         # Start analyses
         if PARSE_OUTPUT == "yes":
+            # send to parser api
+            self.logger.info("- Parsing output with LLM")
             try:
                 self.extract_brand_info(basekey)
             except Exception as e:
@@ -273,7 +273,7 @@ class BrowserBase(ContextDecorator, ABC):
             'navigator.language': 'en-US',
             'navigator.languages': ['en-US'],
             'navigator.platform': 'Win32',
-            'navigator.hardwareConcurrency': 12,
+            'navigator.hardwareConcurrency': 2,
             'navigator.product': 'Gecko',
             'navigator.productSub': '20030107',
             'navigator.maxTouchPoints': 10,
