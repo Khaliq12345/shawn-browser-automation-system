@@ -30,7 +30,7 @@ services:
       dockerfile: Dockerfile.simple
     env_file:
       - .env
-    command: celery -A src.utils.celery_app flower
+    command: uv run celery -A src.utils.celery_app flower
     ports:
       - "${FLOWER_PORT}:${FLOWER_PORT}"
     restart: always
