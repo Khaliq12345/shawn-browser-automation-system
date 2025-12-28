@@ -11,8 +11,10 @@ def runner():
 
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender: Celery, **kwargs):
-    sender.add_periodic_task(
-        crontab(minute="*/3"),
-        runner.s(),
-        name="BROWSER AUTOMATION"
-    )
+    for i in range(2): # send it in the env
+        schedule_num = i + 1
+        sender.add_periodic_task(
+            crontab(minute="*/3"),
+            runner.s(),
+            name=f"BROWSER AUTOMATION #{schedule_num}",
+        ) 
