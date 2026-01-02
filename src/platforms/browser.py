@@ -281,6 +281,7 @@ class BrowserBase(ContextDecorator, ABC):
 
         if self.name == "chatgpt":
             camoufox_options = Camoufox(
+                window=(1920, 1080),
                 headless=headless, 
                 i_know_what_im_doing=True,
                 proxy=proxy,
@@ -288,6 +289,7 @@ class BrowserBase(ContextDecorator, ABC):
             )
         else:
             camoufox_options = Camoufox(
+                window=(1920, 1080),
                 headless=headless, 
                 persistent_context=True,
                 user_data_dir='user-data-dir',
