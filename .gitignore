@@ -7,6 +7,6 @@ test.py
 database.db
 test.txt
 ./output/
-./celerybeat-schedule
+celerybeat-schedule
 user-data-dir/
 .python-version
