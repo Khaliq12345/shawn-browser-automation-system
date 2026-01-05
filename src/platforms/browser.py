@@ -173,7 +173,7 @@ class BrowserBase(ContextDecorator, ABC):
 
         # Save ScreenShot
         try:
-            self.page.screenshot(path=screeshot_path)
+            self.page.screenshot(path=screeshot_path, full_page=True)
             self.storage.save_file(f"{basekey}/{screenshot_name}", screeshot_path)
         except Exception as e:
             self.logger.error(f"Unable to save screenshot - {e}")
