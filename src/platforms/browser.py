@@ -1,12 +1,10 @@
 import sys
-import time
-
-from html_to_markdown import convert_to_markdown
-from playwright.sync_api import Page
 
 sys.path.append("..")
 
-
+import time
+from html_to_markdown import convert_to_markdown
+from playwright.sync_api import Page
 from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
 from src.utils.database import Database
@@ -15,27 +13,28 @@ import os
 from typing import Optional
 from src.utils.globals import save_file
 from func_retry import retry
+import random
 from src.config.config import (
     PARSER_URL,
     PARSER_KEY,
-    RESIDENTIAL_PROXY_PASSWORD,
-    RESIDENTIAL_PROXY_USERNAME,
+    PROXY_PORT,
+    SG_PROXY_PASSWORD,
+    SG_PROXY_USERNAME,
+    US_PROXY_PASSWORD,
+    US_PROXY_USERNAME,
     S3_BUCKET_NAME,
     HEADLESS,
-    PARSE_OUTPUT
+    PARSE_OUTPUT,
 )
 import httpx
 from camoufox.sync_api import Camoufox
 
-# PROXY configs
+# Proxy lists
 PROXIES = {
-    "us": "10000",
-    "sg": "10000",
-    "ca": "20000",
-    "gb": "30000",
-    "au": "30000",
-    "nz": "39000",
+    "sg": ["202.68.189.86", "203.166.129.192", "202.68.181.91"],
+    "us": ["161.77.156.64", "198.143.5.167", "161.77.50.185"],
 }
+
 
 class BrowserBase(ContextDecorator, ABC):
     def __init__(
@@ -73,6 +72,17 @@ class BrowserBase(ContextDecorator, ABC):
         self.page: Optional[Page] = None
         self.display = None
 
+    def get_proxy(self):
+        """
+        Get a random proxy from the specified country.
+        """
+        country = self.country.lower()
+
+        if country not in PROXIES:
+            raise ValueError(f"Country '{country}' not supported. Use 'sg' or 'us'")
+
+        return random.choice(PROXIES[country])
+
     def navigate(self) -> bool:
         """Start the browser and navigate to the specified URL"""
         if not self.page:
@@ -85,7 +95,9 @@ class BrowserBase(ContextDecorator, ABC):
             self.logger.error(f"Error starting or navigating the page - {e}")
             return False
 
-    def find_and_click(self, selector: str, error_message: str, timeout: int, click: bool = False) -> bool:
+    def find_and_click(
+        self, selector: str, error_message: str, timeout: int, click: bool = False
+    ) -> bool:
         """Click ELement if visible, if not raise Error"""
         if not self.page:
             raise ValueError("Browser is not started")
@@ -106,7 +118,9 @@ class BrowserBase(ContextDecorator, ABC):
 
         try:
             content = self.page.query_selector(selector)
-            content_markdown = convert_to_markdown(content.inner_html()) if content else ""
+            content_markdown = (
+                convert_to_markdown(content.inner_html()) if content else ""
+            )
             return content_markdown
         except Exception as e:
             self.logger.error("Unable to extract content")
@@ -197,7 +211,6 @@ class BrowserBase(ContextDecorator, ABC):
         self.database.update_process_status(self.process_id, "failed")
         raise ValueError(error_message)
 
-
     def process_prompt(self) -> None:
         if not self.page:
             return None
@@ -236,8 +249,6 @@ class BrowserBase(ContextDecorator, ABC):
         self.database.update_process_status(self.process_id, "success")
         self.logger.info("Process Successfully ended !")
 
-
-
     @retry(times=5, delay=1)
     def send_prompt(self) -> None:
         """Start the workflow"""
@@ -245,59 +256,58 @@ class BrowserBase(ContextDecorator, ABC):
             headless = True
         else:
             headless = "virtual"
-        
-        # if self.name == "perplexity":
-        #    proxy = {
-        #         'server': "dc.decodo.com:10000",
-        #         "username": PROXY_USERNAME,
-        #         'password': PROXY_PASSWORD
-        #     }
-        # else:
-        proxy = {
-                'server': "isp.decodo.com:10000",
-                "username": RESIDENTIAL_PROXY_USERNAME,
-                'password': RESIDENTIAL_PROXY_PASSWORD
+        if self.country == "sg":
+            proxy = {
+                "server": f"{self.get_proxy()}:{PROXY_PORT}",
+                "username": SG_PROXY_USERNAME,
+                "password": SG_PROXY_PASSWORD,
+            }
+        elif self.country == "us":
+            proxy = {
+                "server": f"{self.get_proxy()}:{PROXY_PORT}",
+                "username": US_PROXY_USERNAME,
+                "password": US_PROXY_PASSWORD,
             }
 
         config = {
-            'window.outerHeight': 1056,
-            'window.outerWidth': 1920,
-            'window.innerHeight': 1008,
-            'window.innerWidth': 1920,
-            'window.history.length': 4,
-            'navigator.userAgent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
-            'navigator.appCodeName': 'Mozilla',
-            'navigator.appName': 'Netscape',
-            'navigator.appVersion': '5.0 (Windows)',
-            'navigator.oscpu': 'Windows NT 10.0; Win64; x64',
-            'navigator.language': 'en-US',
-            'navigator.languages': ['en-US'],
-            'navigator.platform': 'Win32',
-            'navigator.hardwareConcurrency': 2,
-            'navigator.product': 'Gecko',
-            'navigator.productSub': '20030107',
-            'navigator.maxTouchPoints': 10,
+            "window.outerHeight": 1056,
+            "window.outerWidth": 1920,
+            "window.innerHeight": 1008,
+            "window.innerWidth": 1920,
+            "window.history.length": 4,
+            "navigator.userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0",
+            "navigator.appCodeName": "Mozilla",
+            "navigator.appName": "Netscape",
+            "navigator.appVersion": "5.0 (Windows)",
+            "navigator.oscpu": "Windows NT 10.0; Win64; x64",
+            "navigator.language": "en-US",
+            "navigator.languages": ["en-US"],
+            "navigator.platform": "Win32",
+            "navigator.hardwareConcurrency": 2,
+            "navigator.product": "Gecko",
+            "navigator.productSub": "20030107",
+            "navigator.maxTouchPoints": 10,
         }
 
         if self.name == "chatgpt":
             camoufox_options = Camoufox(
                 window=(1920, 1080),
-                headless=headless, 
+                headless=headless,
                 i_know_what_im_doing=True,
                 proxy=proxy,
-                geoip=True
+                geoip=True,
             )
         else:
             camoufox_options = Camoufox(
                 window=(1920, 1080),
-                headless=headless, 
+                headless=headless,
                 persistent_context=True,
-                user_data_dir='user-data-dir',
-                os=('windows'),
+                user_data_dir="user-data-dir",
+                os=("windows"),
                 config=config,
                 i_know_what_im_doing=True,
                 proxy=proxy,
-                geoip=True
+                geoip=True,
             )
         with camoufox_options as browser:
             try:
