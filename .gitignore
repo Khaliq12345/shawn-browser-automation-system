@@ -10,3 +10,4 @@ test.txt
 celerybeat-schedule
 user-data-dir/
 .python-version
+google_test.py

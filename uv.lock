@@ -8,6 +8,20 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "2captcha-python"
+version = "2.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiofiles" },
+    { name = "httpx" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/51/4a/fd434bd15bda4076abc4a86c45968796b689eed0c2256939e8cbe7ab173c/2captcha_python-2.0.2.tar.gz", hash = "sha256:9aa1468093e05cf24711bc8b23ef6294e7a9c250b76c2f71302e3fe5d91d66c6", size = 36460, upload-time = "2025-12-02T15:56:38.422Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9f/35/c21246e5b3a1decf5062b155e35cb388c0aae14ef3e90a3ed08afd75c93a/2captcha_python-2.0.2-py3-none-any.whl", hash = "sha256:41ba9fb5f164d6a16aaf7932da23bd79b6df85b09a4f014c7682d87c0b577ece", size = 30656, upload-time = "2025-12-02T15:56:37.481Z" },
+]
+
+[[package]]
 name = "aioboto3"
 version = "15.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2270,6 +2284,7 @@ name = "shawn-browser-automation-system"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "2captcha-python" },
     { name = "aioboto3" },
     { name = "botasaurus-driver" },
     { name = "botasaurus-humancursor" },
@@ -2298,6 +2313,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "2captcha-python", specifier = ">=2.0.2" },
     { name = "aioboto3", specifier = ">=15.1.0" },
     { name = "botasaurus-driver", specifier = ">=4.0.92" },
     { name = "botasaurus-humancursor", specifier = ">=4.0.83" },
