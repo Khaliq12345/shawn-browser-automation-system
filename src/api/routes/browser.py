@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from src.config.config import MINUTES
 from src.api.dependencies import databaseDepends
 from src.models.model import Prompt
-from src.utils.globals import PROXIES, LANGUAGUES
+from src.utils.globals import COUNTRIES, LANGUAGUES
 
 router = APIRouter(prefix="/browser")
 
@@ -22,10 +22,16 @@ def start_browser(
 ):
 
     # VALIDATE THE DATA
-    if country not in PROXIES:
-        raise HTTPException(status_code=400, detail=f"Invalid Country; Choose between {PROXIES.keys()}")
+    if country not in COUNTRIES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid Country; Choose between {"; ".join(COUNTRIES)}",
+        )
     if languague not in LANGUAGUES:
-        raise HTTPException(status_code=400, detail=f"Invalid languague; Choose between {"; ".join(LANGUAGUES)}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid languague; Choose between {"; ".join(LANGUAGUES)}",
+        )
 
     try:
         # save the report
@@ -38,7 +44,9 @@ def start_browser(
             prompt = prompt_data.prompt
             prompt_id = prompt_data.prompt_id
             clean_prompt = prompt.replace(brand, f"{brand}[{domain}]")
-            database.update_schedule(brand_report_id, prompt_id, clean_prompt, minutes=MINUTES)
+            database.update_schedule(
+                brand_report_id, prompt_id, clean_prompt, minutes=MINUTES
+            )
         output = {
             "message": "Run scheduled",
         }
