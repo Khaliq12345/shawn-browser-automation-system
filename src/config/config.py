@@ -49,6 +49,6 @@ ONLY_NULL = os.getenv("ONLY_NULL", "yes")
 # PARSE OUTPUT
 PARSE_OUTPUT = os.getenv("PARSE_OUTPUT", "no")
 # HOW MANY RUN TO SCHEDULE PER BEAT RUN
-RUN_PER_BEAT_RUN = int(os.getenv("RUN_PER_BEAT_RUN", 1))
+RUN_PER_BEAT_RUN = int(os.getenv("RUN_PER_BEAT_RUN", 2))
 # CAPTCHA
 CAPTCHA_API_KEY = os.getenv("CAPTCHA_API_KEY", "")
