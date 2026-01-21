@@ -24,7 +24,7 @@ def runner_parallel():
 def run_browser_task():
     """Individual browser task that can be run in parallel"""
     run_browser()
-    print("SCRAPING STARTED")
+    return "SCRAPING STARTED"
 
 
 @app.on_after_configure.connect
