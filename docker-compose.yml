@@ -42,7 +42,7 @@ services:
       dockerfile: Dockerfile.simple
     env_file:
       - .env
-    command: uv run celery -A src.utils.celery_app beat
+    command: uv run celery -A src.utils.celery_app beat  -l INFO
     restart: always
 
 
