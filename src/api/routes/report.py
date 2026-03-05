@@ -16,3 +16,14 @@ def get_report(database: databaseDepends, limit: int = 20, page: int = 1):
         raise HTTPException(
             status_code=500, detail=f"Server Error - Unable to execute the request: {e}"
         )
+
+
+@router.get("/status")
+def get_report_status(database: databaseDepends):
+    try:
+        reports = database.get_reports(limit, offset)
+        return reports
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Server Error - Unable to execute the request: {e}"
+        )
