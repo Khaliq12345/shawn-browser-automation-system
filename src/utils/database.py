@@ -215,22 +215,15 @@ class Database:
     # Retrieve a process status
     def get_process_status(self, brand_report_id: str) -> str:
         total_prompts = 0
-        total_failed_prompt = 0
         with Session(self.engine) as session:
             stmt = select(Browsers).where(Browsers.brand_report_id == brand_report_id)
             processes = session.scalars(stmt).all()
             total_prompts = len(processes)
             print(f"TOTAL {total_prompts}")
             for process in processes:
-                if process.status == 'success':
-                    return 'success'
-                if process.status == 'failed':
-                    total_failed_prompt += 1
-            if total_prompts == 0:
-                return "pending"
-            if total_failed_prompt >= 3:
-                return 'failed'
-        return 'pending'
+                if process.status == 'running':
+                    return 'running'
+        return 'completed'
 
     #  -------- Metrics ----------
 

@@ -24,9 +24,9 @@ SCRAPER_CONFIG = {
     },
 }
 
+
 def test_runner():
     return "HEELO WORLD!"
-
 
 
 def run_browser():
@@ -45,8 +45,8 @@ def run_browser():
 
     database.update_schedule(brand_report_id, prompt_id, prompt, minutes=MINUTES)
 
-    date = datetime.now() 
-    # start the scraper 
+    date = datetime.now()
+    # start the scraper
     for name in ["chatgpt", "google", "perplexity"]:
         # Get the matching configs class and url
         config = SCRAPER_CONFIG[name]
@@ -61,7 +61,7 @@ def run_browser():
         brand = report["brand"]
         languague = report["languague"]
 
-        #setup a logger
+        # setup a logger
         task_logger = logging.getLogger(f"{__name__}.{process_id}")
         task_logger.setLevel(logging.INFO)
 
@@ -70,7 +70,9 @@ def run_browser():
         ch.setLevel(logging.DEBUG)
 
         # create formatter
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
 
         # add formatter to ch
         ch.setFormatter(formatter)
@@ -82,19 +84,19 @@ def run_browser():
 
         try:
             matching_scraper = ScraperClass(
-            logger=task_logger,
-            url=url,
-            prompt=prompt,
-            name=name,
-            process_id=process_id,
-            timeout=timeout,
-            country=country,
-            brand_report_id=brand_report_id,
-            prompt_id=prompt_id,
-            date=date,
-            brand=brand,
-            languague=languague,
-        )
+                logger=task_logger,
+                url=url,
+                prompt=prompt,
+                name=name,
+                process_id=process_id,
+                timeout=timeout,
+                country=country,
+                brand_report_id=brand_report_id,
+                prompt_id=prompt_id,
+                date=date,
+                brand=brand,
+                languague=languague,
+            )
             matching_scraper.send_prompt()
         except Exception as e:
             task_logger.exception(f"run_browser failed, will retry - {str(e)}")
