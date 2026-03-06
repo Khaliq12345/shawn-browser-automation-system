@@ -223,7 +223,7 @@ class Database:
             for process in processes:
                 if process.status == 'running':
                     return 'running'
-        return 'completed'
+        return 'completed' if total_prompts > 0 else 'not started'
 
     #  -------- Metrics ----------
 
