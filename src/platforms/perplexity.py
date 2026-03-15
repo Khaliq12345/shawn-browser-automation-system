@@ -48,7 +48,9 @@ class PerplexityScraper(BrowserBase):
         time.sleep(5)
         prompt_input_selector = 'div[id="ask-input"]'
         # trying to fill the prompt
-        self.find_and_click(prompt_input_selector, "Can not fill the prompt input", timeout=5*1000)
+        self.find_and_click(
+            prompt_input_selector, "Can not fill the prompt input", timeout=5 * 1000
+        )
         self.page.fill(prompt_input_selector, value=self.prompt)
 
         # Validate
@@ -58,6 +60,33 @@ class PerplexityScraper(BrowserBase):
 
         return True
 
+    def get_markdown_content(self) -> str:
+        if not self.page:
+            raise ValueError("Browser is not started")
+
+        try:
+            download_button = 'button[aria-label="Download"]'
+            markdown_option = "text=Markdown"
+
+            # open download menu
+            self.page.locator(download_button).click()
+
+            # wait for download to start when clicking markdown
+            with self.page.expect_download() as download_info:
+                self.page.locator(markdown_option).click()
+
+            download = download_info.value
+
+            # read downloaded file
+            path = download.path()
+            with open(path, "r", encoding="utf-8") as f:
+                markdown = f.read()
+
+            return markdown
+        except Exception as e:
+            self.logger.error("Unable to download markdown")
+            raise ValueError(f"Unable to download markdown - {str(e)}")
+
     def extract_response(self) -> Optional[str]:
         self.logger.info("Extracting response")
         if not self.page:
@@ -65,10 +94,14 @@ class PerplexityScraper(BrowserBase):
 
         content = None
         share_selector = 'button[aria-label="Share"]'
-        self.find_and_click(share_selector, "Unable to find share button", timeout=20*1000)
-
+        self.find_and_click(
+            share_selector, "Unable to find share button", timeout=20 * 1000
+        )
         # Get content
-        content_selector = 'div[id="markdown-content-0"]'   
-        self.find_and_click(content_selector, "Unable to find content", timeout=5*1000)
-        content = self.extract_content(content_selector)
+        # content_selector = 'div[id="markdown-content-0"]'
+        # self.find_and_click(
+        #     content_selector, "Unable to find content", timeout=5 * 1000
+        # )
+        # content = self.extract_content(content_selector)
+        content = self.get_markdown_content()
         return content

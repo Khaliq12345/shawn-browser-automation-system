@@ -47,7 +47,7 @@ def run_browser():
 
     date = datetime.now()
     # start the scraper
-    for name in ["chatgpt", "google", "perplexity"]:
+    for name in ["perplexity"]:
         # Get the matching configs class and url
         config = SCRAPER_CONFIG[name]
         ScraperClass = config["class"]
