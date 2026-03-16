@@ -39,13 +39,11 @@ def start_browser(
             brand_report_id, languague, country, brand, domain, datetime.now()
         )
 
-        # modify the prompt to always have domain with the name
         for prompt_data in prompts:
             prompt = prompt_data.prompt
             prompt_id = prompt_data.prompt_id
-            clean_prompt = prompt.replace(brand, f"{brand}[{domain}]")
             database.update_schedule(
-                brand_report_id, prompt_id, clean_prompt, minutes=MINUTES
+                brand_report_id, prompt_id, prompt, minutes=MINUTES
             )
         output = {
             "message": "Run scheduled",
