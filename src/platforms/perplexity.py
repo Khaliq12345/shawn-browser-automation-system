@@ -69,6 +69,7 @@ class PerplexityScraper(BrowserBase):
             markdown_option = "text=Markdown"
 
             # open download menu
+            time.sleep(5)
             self.page.locator(download_button).click()
 
             # wait for download to start when clicking markdown
