@@ -65,12 +65,12 @@ class PerplexityScraper(BrowserBase):
             raise ValueError("Browser is not started")
 
         try:
-            download_button = 'button[aria-label="Download"]'
+            download_button = "div.-ml-sm:nth-child(1) > button:nth-child(2)"
             markdown_option = "text=Markdown"
 
             # open download menu
             time.sleep(5)
-            self.page.locator(download_button).click()
+            self.page.locator(download_button).first.click()
 
             # wait for download to start when clicking markdown
             with self.page.expect_download() as download_info:
