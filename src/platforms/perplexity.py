@@ -103,6 +103,7 @@ class PerplexityScraper(BrowserBase):
         self.find_and_click(
             share_selector, "Unable to find share button", timeout=20 * 1000
         )
+        print("SHARE BUTTON", self.page.locator(share_selector).first.inner_html())
         # Get content
         # content_selector = 'div[id="markdown-content-0"]'
         # self.find_and_click(
