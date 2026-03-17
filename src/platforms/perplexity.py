@@ -65,11 +65,16 @@ class PerplexityScraper(BrowserBase):
             raise ValueError("Browser is not started")
 
         try:
+            bottom_section = "div.justify-between:nth-child(2)"
             download_button = "div.-ml-sm:nth-child(1) > button:nth-child(2)"
             markdown_option = "text=Markdown"
 
             # open download menu
             time.sleep(5)
+            buttons = self.page.locator(bottom_section).first.locator("button").all()
+            for idx, button in enumerate(buttons):
+                print(f"Button - {idx}")
+                print(button.inner_html())
             self.page.locator(download_button).first.click()
 
             # wait for download to start when clicking markdown
@@ -104,5 +109,6 @@ class PerplexityScraper(BrowserBase):
         #     content_selector, "Unable to find content", timeout=5 * 1000
         # )
         # content = self.extract_content(content_selector)
+        # self.page.pause()
         content = self.get_markdown_content()
         return content
