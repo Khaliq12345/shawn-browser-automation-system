@@ -74,7 +74,7 @@ class PerplexityScraper(BrowserBase):
             buttons = self.page.locator(bottom_section).first.locator("button").all()
             for idx, button in enumerate(buttons):
                 print(f"Button - {idx}")
-                print(button.inner_html())
+                self.logger.info(f"BUTTON - {button.inner_html()}")
             self.page.locator(download_button).first.click()
 
             # wait for download to start when clicking markdown
@@ -103,7 +103,9 @@ class PerplexityScraper(BrowserBase):
         self.find_and_click(
             share_selector, "Unable to find share button", timeout=20 * 1000
         )
-        print("SHARE BUTTON", self.page.locator(share_selector).first.inner_html())
+        self.logger.info(
+            f"SHARE BUTTON - {self.page.locator(share_selector).first.inner_html()}"
+        )
         # Get content
         # content_selector = 'div[id="markdown-content-0"]'
         # self.find_and_click(
