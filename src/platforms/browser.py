@@ -3,6 +3,7 @@ import sys
 sys.path.append("..")
 
 import time
+import requests
 from html_to_markdown import convert_to_markdown
 from playwright.sync_api import Page
 from abc import ABC, abstractmethod
@@ -71,6 +72,19 @@ class BrowserBase(ContextDecorator, ABC):
         # initialise page
         self.page: Optional[Page] = None
         self.display = None
+
+    def debug_snapshot(self, label: str) -> str:
+        if not self.page:
+            raise ValueError("Browser is not started")
+        buffer = self.page.screenshot(full_page=True)
+        response = requests.post(
+            "https://litterbox.catbox.moe/resources/internals/api.php",
+            data={"reqtype": "fileupload", "time": "24h"},
+            files={"fileToUpload": (f"{label}.png", buffer, "image/png")},
+        )
+        url = response.text.strip()
+        self.logger.info(f"[DEBUG] {label}: {url}")
+        return url
 
     def get_proxy(self):
         """
@@ -255,7 +269,7 @@ class BrowserBase(ContextDecorator, ABC):
         if HEADLESS == "yes":
             headless = True
         else:
-            headless = "virtual"
+            headless = False
         if self.country == "sg":
             proxy = {
                 "server": f"{self.get_proxy()}:{PROXY_PORT}",

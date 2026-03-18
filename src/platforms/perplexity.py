@@ -6,7 +6,6 @@ sys.path.append(".")
 import time
 from typing import Optional
 from src.platforms.browser import BrowserBase
-import requests
 
 
 class PerplexityScraper(BrowserBase):
@@ -61,19 +60,6 @@ class PerplexityScraper(BrowserBase):
 
         return True
 
-    def debug_snapshot(self, label: str) -> str:
-        if not self.page:
-            raise ValueError("Browser is not started")
-        buffer = self.page.screenshot(full_page=True)
-        response = requests.post(
-            "https://litterbox.catbox.moe/resources/internals/api.php",
-            data={"reqtype": "fileupload", "time": "24h"},
-            files={"fileToUpload": (f"{label}.png", buffer, "image/png")},
-        )
-        url = response.text.strip()
-        self.logger.info(f"[DEBUG] {label}: {url}")
-        return url
-
     def get_markdown_content(self) -> str:
         if not self.page:
             raise ValueError("Browser is not started")
@@ -116,9 +102,6 @@ class PerplexityScraper(BrowserBase):
         share_selector = 'button[aria-label="Share"]'
         self.find_and_click(
             share_selector, "Unable to find share button", timeout=20 * 1000
-        )
-        self.logger.info(
-            f"SHARE BUTTON - {self.page.locator(share_selector).first.inner_html()}"
         )
         # Get content
         # content_selector = 'div[id="markdown-content-0"]'
