@@ -6,6 +6,7 @@ sys.path.append(".")
 import time
 from typing import Optional
 from src.platforms.browser import BrowserBase
+import requests
 
 
 class PerplexityScraper(BrowserBase):
@@ -60,36 +61,49 @@ class PerplexityScraper(BrowserBase):
 
         return True
 
+    def debug_snapshot(self, label: str) -> str:
+        if not self.page:
+            raise ValueError("Browser is not started")
+        buffer = self.page.screenshot(full_page=True)
+        response = requests.post(
+            "https://litterbox.catbox.moe/resources/internals/api.php",
+            data={"reqtype": "fileupload", "time": "24h"},
+            files={"fileToUpload": (f"{label}.png", buffer, "image/png")},
+        )
+        url = response.text.strip()
+        self.logger.info(f"[DEBUG] {label}: {url}")
+        return url
+
     def get_markdown_content(self) -> str:
         if not self.page:
             raise ValueError("Browser is not started")
-
         try:
-            bottom_section = "div.justify-between:nth-child(2)"
             download_button = "div.-ml-sm:nth-child(1) > button:nth-child(2)"
             markdown_option = "text=Markdown"
 
-            # open download menu
-            time.sleep(5)
-            buttons = self.page.locator(bottom_section).first.locator("button").all()
-            for idx, button in enumerate(buttons):
-                print(f"Button - {idx}")
-                self.logger.info(f"BUTTON - {button.inner_html()}")
+            # wait for the button to actually be visible instead of blind sleep
+            self.page.wait_for_selector(download_button, state="visible", timeout=15000)
+            self.debug_snapshot("01-before-click")
+
             self.page.locator(download_button).first.click()
 
-            # wait for download to start when clicking markdown
-            with self.page.expect_download() as download_info:
+            # wait for the dropdown to appear
+            self.page.wait_for_selector(markdown_option, state="visible", timeout=10000)
+            self.debug_snapshot("02-dropdown-open")
+
+            with self.page.expect_download(timeout=15000) as download_info:
                 self.page.locator(markdown_option).click()
 
-            download = download_info.value
+            self.debug_snapshot("03-after-download")
 
-            # read downloaded file
+            download = download_info.value
             path = download.path()
             with open(path, "r", encoding="utf-8") as f:
                 markdown = f.read()
-
             return markdown
+
         except Exception as e:
+            self.debug_snapshot("on-failure")  # <-- this is the money shot
             self.logger.error("Unable to download markdown")
             raise ValueError(f"Unable to download markdown - {str(e)}")
 
