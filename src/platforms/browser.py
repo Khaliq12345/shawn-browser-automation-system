@@ -269,7 +269,7 @@ class BrowserBase(ContextDecorator, ABC):
         if HEADLESS == "yes":
             headless = True
         else:
-            headless = False
+            headless = "virtual"
         if self.country == "sg":
             proxy = {
                 "server": f"{self.get_proxy()}:{PROXY_PORT}",
@@ -303,7 +303,7 @@ class BrowserBase(ContextDecorator, ABC):
             "navigator.maxTouchPoints": 10,
         }
 
-        if self.name == "chatgpt":
+        if self.name in ["chatgpt", "perplexity"]:
             camoufox_options = Camoufox(
                 window=(1920, 1080),
                 headless=headless,
