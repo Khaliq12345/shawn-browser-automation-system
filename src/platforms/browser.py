@@ -310,7 +310,7 @@ class BrowserBase(ContextDecorator, ABC):
                 i_know_what_im_doing=True,
                 proxy=proxy,
                 geoip=True,
-                humanize=True,
+                # humanize=True,
             )
         else:
             camoufox_options = Camoufox(
@@ -323,7 +323,7 @@ class BrowserBase(ContextDecorator, ABC):
                 i_know_what_im_doing=True,
                 proxy=proxy,
                 geoip=True,
-                humanize=True,
+                # humanize=True,
             )
         with camoufox_options as browser:
             try:
