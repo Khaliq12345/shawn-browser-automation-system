@@ -1,7 +1,6 @@
 import sys
 
 
-
 sys.path.append(".")
 
 import time
@@ -47,12 +46,21 @@ class ChatGPTScraper(BrowserBase):
         time.sleep(5)
         # trying to fill the prompt
         prompt_input_selector = 'div[id="prompt-textarea"]'  # "#prompt-textarea"
-        self.find_and_click(prompt_input_selector, error_message="Can not fill the prompt input", timeout=5*1000)
+        self.find_and_click(
+            prompt_input_selector,
+            error_message="Can not fill the prompt input",
+            timeout=5 * 1000,
+        )
         self.page.fill(prompt_input_selector, value=self.prompt)
         self.logger.info("Done Filling")
 
         # Validate
-        self.find_and_click('button[data-testid="send-button"]', error_message="Can not send prompt", timeout=5*1000, click=True)
+        self.find_and_click(
+            'button[data-testid="send-button"]',
+            error_message="Can not send prompt",
+            timeout=5 * 1000,
+            click=True,
+        )
         return True
 
     def extract_response(self) -> Optional[str]:
@@ -61,12 +69,19 @@ class ChatGPTScraper(BrowserBase):
             return None
 
         content = None
-        copy_selector = 'div.justify-start button[data-testid="copy-turn-action-button"]'
+        copy_selector = (
+            'div.justify-start button[data-testid="copy-turn-action-button"]'
+        )
 
-        self.find_and_click(copy_selector, error_message="Unable to find copy button",  timeout=20*1000)
+        self.find_and_click(
+            copy_selector, error_message="Unable to find copy button", timeout=20 * 1000
+        )
 
-
-        content_selector = 'article[data-turn="assistant"]'
-        self.find_and_click(content_selector, error_message="Unable to find the content", timeout=5*1000)
+        content_selector = "div.markdown"
+        self.find_and_click(
+            content_selector,
+            error_message="Unable to find the content",
+            timeout=5 * 1000,
+        )
         content = self.extract_content(content_selector)
         return content
