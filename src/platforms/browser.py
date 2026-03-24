@@ -269,7 +269,7 @@ class BrowserBase(ContextDecorator, ABC):
         if HEADLESS == "yes":
             headless = True
         else:
-            headless = False
+            headless = "virtual"
         if self.country == "sg":
             proxy = {
                 "server": f"{self.get_proxy()}:{PROXY_PORT}",
