@@ -96,6 +96,7 @@ class PerplexityScraper(BrowserBase):
             return None
 
         content = None
+        self.page.wait_for_timeout(5000)
         share_selector = 'button[aria-label="Share"]'
         self.find_and_click(
             share_selector, "Unable to find share button", timeout=20 * 1000
