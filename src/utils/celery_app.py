@@ -16,6 +16,7 @@ def runner_parallel():
     """
 
     # Create a group of tasks to run in parallel
+    RUN_PER_BEAT_RUN = 2
     job = group(run_browser_task.s() for _ in range(RUN_PER_BEAT_RUN))
     job.apply_async()
 
