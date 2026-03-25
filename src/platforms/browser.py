@@ -306,6 +306,7 @@ class BrowserBase(ContextDecorator, ABC):
         if self.name in ["chatgpt", "perplexity"]:
             camoufox_options = Camoufox(
                 window=(1920, 1080),
+                slow_mo=3000,
                 headless=headless,
                 i_know_what_im_doing=True,
                 proxy=proxy,
@@ -314,6 +315,7 @@ class BrowserBase(ContextDecorator, ABC):
             )
         else:
             camoufox_options = Camoufox(
+                slow_mo=3000,
                 window=(1920, 1080),
                 headless=headless,
                 persistent_context=True,
