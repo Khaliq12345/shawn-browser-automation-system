@@ -64,7 +64,7 @@ class PerplexityScraper(BrowserBase):
         if not self.page:
             raise ValueError("Browser is not started")
         try:
-            download_button = "div.-ml-sm:nth-child(1) > button:nth-child(2)"
+            download_button = 'button[aria-label="Download"]'
             markdown_option = "text=Markdown"
 
             # wait for the button to actually be visible instead of blind sleep
