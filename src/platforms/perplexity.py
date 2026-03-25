@@ -70,15 +70,19 @@ class PerplexityScraper(BrowserBase):
             # wait for the button to actually be visible instead of blind sleep
             self.page.wait_for_selector(download_button, state="visible", timeout=15000)
             self.page.wait_for_timeout(5000)
+            self.debug_snapshot("on-before-download-click")
             self.page.locator(download_button).first.click()
 
             # wait for the dropdown to appear
+
+            self.debug_snapshot("on-before-markdown-click")
             self.page.wait_for_selector(markdown_option, state="visible", timeout=10000)
             self.page.wait_for_timeout(5000)
 
             with self.page.expect_download(timeout=15000) as download_info:
                 self.page.locator(markdown_option).click()
 
+            self.debug_snapshot("on-after-download")
             download = download_info.value
             path = download.path()
             with open(path, "r", encoding="utf-8") as f:
