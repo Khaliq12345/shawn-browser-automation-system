@@ -117,7 +117,7 @@ class BrowserBase(ContextDecorator, ABC):
             raise ValueError("Browser is not started")
         try:
             if click:
-                self.page.click(selector, timeout=timeout)
+                self.page.click(selector, timeout=timeout, force=True)
             else:
                 self.page.wait_for_selector(selector, timeout=timeout)
             return True
