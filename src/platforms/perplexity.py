@@ -101,7 +101,12 @@ class PerplexityScraper(BrowserBase):
 
         content = None
         self.page.wait_for_timeout(5000)
-        self.find_and_click("main", "Unable to click on main", 20 * 1000, click=True)
+        try:
+            self.find_and_click(
+                "main", "Unable to click on main", 20 * 1000, click=True
+            )
+        except Exception as _:
+            self.debug_snapshot("on-failure")  # <-- this is the money shot
         self.page.keyboard.press("End")
         share_selector = 'div[class="-ml-sm gap-xs flex flex-shrink-0 items-center"] button:nth-child(1)'
         self.find_and_click(
