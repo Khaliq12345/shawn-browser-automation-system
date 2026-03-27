@@ -221,6 +221,7 @@ class BrowserBase(ContextDecorator, ABC):
 
     def save_raise_error(self, error_message: str) -> None:
         """Save, Log and raise Error"""
+        self.debug_snapshot("on-failure")
         self.logger.error(error_message)
         self.database.update_process_status(self.process_id, "failed")
         raise ValueError(error_message)
@@ -263,7 +264,7 @@ class BrowserBase(ContextDecorator, ABC):
         self.database.update_process_status(self.process_id, "success")
         self.logger.info("Process Successfully ended !")
 
-    @retry(times=5, delay=120)
+    @retry(times=5, delay=60)
     def send_prompt(self) -> None:
         """Start the workflow"""
         if HEADLESS == "yes":
