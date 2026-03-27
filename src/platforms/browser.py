@@ -263,7 +263,7 @@ class BrowserBase(ContextDecorator, ABC):
         self.database.update_process_status(self.process_id, "success")
         self.logger.info("Process Successfully ended !")
 
-    @retry(times=5, delay=1)
+    @retry(times=5, delay=120)
     def send_prompt(self) -> None:
         """Start the workflow"""
         if HEADLESS == "yes":
