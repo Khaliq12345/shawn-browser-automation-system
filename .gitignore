@@ -11,3 +11,5 @@ celerybeat-schedule
 user-data-dir/
 .python-version
 google_test.py
+sample.py
+prompts_normalized.csv

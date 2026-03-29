@@ -35,4 +35,5 @@ dependencies = [
     "2captcha-python>=2.0.2",
     "selectolax>=0.4.7",
     "lxml>=6.0.2",
+    "pandas>=3.0.1",
 ]
