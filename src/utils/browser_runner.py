@@ -1,6 +1,7 @@
+import asyncio
 import logging
-import multiprocessing
 import sys
+import threading
 
 sys.path.append(".")
 from datetime import datetime
@@ -25,56 +26,47 @@ SCRAPER_CONFIG = {
 PROCESS_TIMEOUT = 600  # 10 min max per attempt
 
 
-def _run_scraper(scraper_class, scraper_kwargs, result_queue):
+def _run_scraper(scraper_class, scraper_kwargs, result):
     """
-    Runs in a completely isolated subprocess — no shared asyncio loop,
-    no shared memory with the parent Celery worker process.
+    Runs in an isolated thread with a brand new event loop.
+    Playwright sync API requires no existing event loop in the current thread.
     """
-    # Set up a fresh logger inside the subprocess
-    process_id = scraper_kwargs["process_id"]
-    logger = logging.getLogger(process_id)
-    logger.setLevel(logging.INFO)
-    ch = logging.StreamHandler()
-    ch.setFormatter(
-        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    )
-    logger.addHandler(ch)
-    scraper_kwargs["logger"] = logger
+    # Give this thread a clean event loop — critical for Playwright sync API
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
     try:
         scraper = scraper_class(**scraper_kwargs)
         scraper.send_prompt()
-        result_queue.put(("success", None))
+        result["status"] = "success"
     except Exception as e:
-        result_queue.put(("error", e))
+        result["status"] = "error"
+        result["message"] = str(e)
+        result["type"] = type(e).__name__
+    finally:
+        loop.close()
 
 
-@retry(times=5, delay=2)
-def _run_in_process(ScraperClass, scraper_kwargs, task_logger):
+@retry(times=5, delay=60)
+def _run_in_thread(ScraperClass, scraper_kwargs, task_logger):
     """
-    Spawns a fresh process for each attempt.
-    Returns normally on success, raises on failure or timeout.
+    Spawns a fresh thread for each attempt — isolates asyncio state
+    from the Celery worker and from previous failed attempts.
     """
-    result_queue = multiprocessing.Queue()
-    p = multiprocessing.Process(
-        target=_run_scraper,
-        args=(ScraperClass, scraper_kwargs, result_queue),
-    )
-    p.start()
-    p.join(timeout=PROCESS_TIMEOUT)
+    result = {}
+    t = threading.Thread(target=_run_scraper, args=(ScraperClass, scraper_kwargs, result))
+    t.start()
+    t.join(timeout=PROCESS_TIMEOUT)
 
-    if p.is_alive():
-        task_logger.error(f"Process timed out after {PROCESS_TIMEOUT}s — terminating")
-        p.terminate()
-        p.join()
+    if t.is_alive():
+        task_logger.error(f"Thread timed out after {PROCESS_TIMEOUT}s")
         raise TimeoutError(f"send_prompt timed out after {PROCESS_TIMEOUT}s")
 
-    if result_queue.empty():
-        raise RuntimeError("Process exited without reporting a result")
+    if not result:
+        raise RuntimeError("Thread exited without reporting a result")
 
-    status, error = result_queue.get()
-    if status == "error":
-        raise error
+    if result["status"] == "error":
+        raise RuntimeError(f"{result['type']}: {result['message']}")
 
 
 def test_runner():
@@ -123,7 +115,7 @@ def run_browser():
 
         # Logger is not picklable — pass everything else, logger is recreated in subprocess
         scraper_kwargs = dict(
-            logger=None,  # placeholder, replaced inside _run_scraper
+            logger=task_logger,  # logger is safe to share across threads
             url=url,
             prompt=prompt,
             name=name,
@@ -138,12 +130,11 @@ def run_browser():
         )
 
         try:
-            _run_in_process(ScraperClass, scraper_kwargs, task_logger)
+            _run_in_thread(ScraperClass, scraper_kwargs, task_logger)
             task_logger.info(f"[{name}] Completed successfully")
         except Exception as e:
             task_logger.error(f"[{name}] All retries exhausted: {e}")
 
 
 if __name__ == "__main__":
-    multiprocessing.set_start_method("spawn", force=True)
     run_browser()
