@@ -6,12 +6,13 @@ import time
 import requests
 from html_to_markdown import convert_to_markdown
 from playwright.sync_api import Page
+from selectolax.parser import HTMLParser
 from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
 from src.utils.database import Database
 from src.utils.aws_storage import AWSStorage
 import os
-from typing import Optional
+from typing import Dict, Optional
 from src.utils.globals import save_file
 from func_retry import retry
 import random
@@ -125,17 +126,19 @@ class BrowserBase(ContextDecorator, ABC):
             self.logger.error(error_message)
             raise ValueError(f"{error_message} {str(e)}")
 
-    def extract_content(self, selector: str) -> str | None:
+    def extract_content(self, selector: str) -> dict:
         """Extract content from an element"""
         if not self.page:
             raise ValueError("Browser is not started")
 
         try:
             content = self.page.query_selector(selector)
+            if not content:
+                return {'markdown': "", 'html': ""}
             content_markdown = (
-                convert_to_markdown(content.inner_html()) if content else ""
+                convert_to_markdown(content.inner_html())
             )
-            return content_markdown
+            return {'markdown': content_markdown, 'html': content.inner_html()}
         except Exception as e:
             self.logger.error("Unable to extract content")
             raise ValueError(f"Unable to extract content - {str(e)}")
@@ -163,18 +166,24 @@ class BrowserBase(ContextDecorator, ABC):
         response.raise_for_status()
         self.logger.info("- LLM Parser Started")
 
-    def save_response(self, content: Optional[str]) -> bool:
+    def save_response(self, content: Optional[Dict[str, str] | str]) -> bool:
         """Save the generated output from the prompt in html and text file"""
         if not self.page:
+            return False
+        
+        if isinstance(content, str):
             return False
 
         basekey = f"{self.name}/{self.process_id}"
         save_folder = f"responses/{basekey}/"
-        text_name = "output.txt"
+        markdown_name = "output.txt"
         screenshot_name = "screenshot.png"
+        html_name = "output.html"
+
         # video_name = "video.mp4"
-        txt_out = os.path.join(save_folder, text_name)
+        markdown_out = os.path.join(save_folder, markdown_name)
         screeshot_path = os.path.join(save_folder, screenshot_name)
+        html_out = os.path.join(save_folder, html_name)
         # video_path = os.path.join(save_folder, video_name)
 
         # break the flow if no response in found
@@ -182,10 +191,12 @@ class BrowserBase(ContextDecorator, ABC):
             self.logger.error("No generated output")
             return False
 
-        # Save Text Result
+        # Save Text Result (Markdown and html)
         try:
-            save_file(txt_out, content)
-            self.storage.save_file(f"{basekey}/{text_name}", txt_out)
+            save_file(markdown_out, content['markdown'])
+            save_file(html_out, content['html'])
+            self.storage.save_file(f"{basekey}/{markdown_name}", markdown_out)
+            self.storage.save_file(f"{basekey}/{html_name}", html_out)
         except Exception as e:
             self.logger.error(f"Unable to save output - {e}")
             return False

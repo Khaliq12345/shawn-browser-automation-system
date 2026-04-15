@@ -97,7 +97,7 @@ class PerplexityScraper(BrowserBase):
             self.logger.error("Unable to download markdown")
             raise ValueError(f"Unable to download markdown - {str(e)}")
 
-    def extract_response(self) -> Optional[str]:
+    def extract_response(self) -> dict | None:
         self.logger.info("Extracting response")
         if not self.page:
             return None
@@ -123,4 +123,4 @@ class PerplexityScraper(BrowserBase):
         # content = self.extract_content(content_selector)
         # self.page.pause()
         content = self.get_markdown_content()
-        return content
+        return {"markdown": content, "html": ""}

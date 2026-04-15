@@ -5,7 +5,7 @@ import requests
 
 sys.path.append(".")
 
-from typing import Optional
+from typing import Dict, Optional
 from src.platforms.browser import BrowserBase
 from src.config.config import CAPTCHA_API_KEY
 
@@ -207,7 +207,7 @@ class GoogleScraper(BrowserBase):
         self.logger.info("Filling input")
         return True
 
-    def extract_response(self) -> Optional[str]:
+    def extract_response(self) -> Optional[Dict[str, str] | str]:
         self.logger.info("Extracting response")
         if not self.page:
             return None
