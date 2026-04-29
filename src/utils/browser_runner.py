@@ -1,23 +1,19 @@
+import asyncio
 import logging
 import sys
-
+import threading
 
 sys.path.append(".")
-
 from datetime import datetime
-import textwrap
-from typing import Any
 
+from func_retry import retry
 from src.config.config import MINUTES
+from src.platforms.chatgpt import ChatGPTScraper
 from src.platforms.google import GoogleScraper
 from src.platforms.perplexity import PerplexityScraper
-from src.utils.slack_service import SlackBase
-
-from src.platforms.chatgpt import ChatGPTScraper
 from src.utils.database import Database
 
-
-# Scrapper configs
+# Scraper configs
 SCRAPER_CONFIG = {
     "chatgpt": {"class": ChatGPTScraper, "url": "https://chatgpt.com/"},
     "google": {"class": GoogleScraper, "url": "https://www.google.com/"},
@@ -27,34 +23,54 @@ SCRAPER_CONFIG = {
     },
 }
 
+PROCESS_TIMEOUT = 600  # 10 min max per attempt
 
-def error_handler(exc: Any, name: str, brand: str, country: str, languague: str, brand_report_id: str, prompt_id: str, process_id: str, prompt: str):
-    # Send Slack notification on final failure
-    slack = SlackBase()
-    # Message with all task details
-    error_message = textwrap.dedent(f"""
-        *Date/Time:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-        *Task Details:*
-        • Platform: `{name}`
-        • Brand: `{brand}`
-        • Country: `{country}`
-        • Language: `{languague}`
-        • Brand Report ID: `{brand_report_id}`
-        • Prompt ID: `{prompt_id}`
-        • Process ID: `{process_id}`
+def _run_scraper(scraper_class, scraper_kwargs, result):
+    """
+    Runs in an isolated thread with a brand new event loop.
+    Playwright sync API requires no existing event loop in the current thread.
+    """
+    # Give this thread a clean event loop — critical for Playwright sync API
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
-        *Prompt:*
-        ```
-        {prompt}
-        ```
+    try:
+        scraper = scraper_class(**scraper_kwargs)
+        scraper.send_prompt()
+        result["status"] = "success"
+    except Exception as e:
+        result["status"] = "error"
+        result["message"] = str(e)
+        result["type"] = type(e).__name__
+    finally:
+        loop.close()
 
-        *Error:*
-        ```
-        {str(exc)}
-        ```
-    """).strip()
-    # slack.send_message(error_message)
+
+@retry(times=5, delay=60)
+def _run_in_thread(ScraperClass, scraper_kwargs, task_logger):
+    """
+    Spawns a fresh thread for each attempt — isolates asyncio state
+    from the Celery worker and from previous failed attempts.
+    """
+    result = {}
+    t = threading.Thread(target=_run_scraper, args=(ScraperClass, scraper_kwargs, result))
+    t.start()
+    t.join(timeout=PROCESS_TIMEOUT)
+
+    if t.is_alive():
+        task_logger.error(f"Thread timed out after {PROCESS_TIMEOUT}s")
+        raise TimeoutError(f"send_prompt timed out after {PROCESS_TIMEOUT}s")
+
+    if not result:
+        raise RuntimeError("Thread exited without reporting a result")
+
+    if result["status"] == "error":
+        raise RuntimeError(f"{result['type']}: {result['message']}")
+
+
+def test_runner():
+    return "HEELO WORLD!"
 
 
 def run_browser():
@@ -62,58 +78,49 @@ def run_browser():
     to_run = database.get_next_schedules()
     if not to_run:
         return None
-
     print(to_run)
+
     brand_report_id = to_run["brand_report_id"]
     report = database.get_report(brand_report_id)
     if not report:
         return None
+
     prompt = to_run["prompt"]
     prompt_id = to_run["prompt_id"]
-
     database.update_schedule(brand_report_id, prompt_id, prompt, minutes=MINUTES)
-    # start the scraper 
+    date = datetime.now()
+
     for name in ["chatgpt", "google", "perplexity"]:
-        # Get the matching configs class and url
         config = SCRAPER_CONFIG[name]
         ScraperClass = config["class"]
         url = config["url"]
-        timeout = 60
+
         country = report["country"]
         brand_report_id = report["brand_report_id"]
         timestamp = int(datetime.now().timestamp())
         process_id = f"{name}-{brand_report_id}-{prompt_id}-{timestamp}"
-        date = report["date"]
         brand = report["brand"]
         languague = report["languague"]
 
-        #setup a logger
+        # Logger for the parent process (subprocess gets its own)
         task_logger = logging.getLogger(f"{__name__}.{process_id}")
         task_logger.setLevel(logging.INFO)
-
-        # create console handler and set level to debug
         ch = logging.StreamHandler()
         ch.setLevel(logging.DEBUG)
-
-        # create formatter
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-        # add formatter to ch
-        ch.setFormatter(formatter)
-
-        # add ch to logger
+        ch.setFormatter(
+            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        )
         task_logger.addHandler(ch)
-
         task_logger.info("Getting matching class...")
 
-        try:
-            matching_scraper = ScraperClass(
-            logger=task_logger,
+        # Logger is not picklable — pass everything else, logger is recreated in subprocess
+        scraper_kwargs = dict(
+            logger=task_logger,  # logger is safe to share across threads
             url=url,
             prompt=prompt,
             name=name,
             process_id=process_id,
-            timeout=timeout,
+            timeout=60,
             country=country,
             brand_report_id=brand_report_id,
             prompt_id=prompt_id,
@@ -121,9 +128,12 @@ def run_browser():
             brand=brand,
             languague=languague,
         )
-            matching_scraper.send_prompt()
+
+        try:
+            _run_in_thread(ScraperClass, scraper_kwargs, task_logger)
+            task_logger.info(f"[{name}] Completed successfully")
         except Exception as e:
-            task_logger.exception(f"run_browser failed, will retry - {str(e)}")
+            task_logger.error(f"[{name}] All retries exhausted: {e}")
 
 
 if __name__ == "__main__":

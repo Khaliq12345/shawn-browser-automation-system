@@ -1,18 +1,15 @@
 version: "4.8"
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
     env_file:
       - .env
     command: uv run main.py
     ports:
       - "${APP_PORT}:${APP_PORT}"
     restart: always
-    ulimits:
-      nproc: 65535
-      nofile:
-        soft: 65535
-        hard: 65535
 
   frontend:
     build:
@@ -27,13 +24,33 @@ services:
       - api
     restart: always
 
-  # redis:
-  #   image: redis:7-alpine
-  #   restart: always
-  #   command: ["redis-server", "--port", "6379"]
-  #   volumes:
-  #     - redis_data:/data
+  monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    env_file:
+      - .env
+    command: uv run celery -A src.utils.celery_app flower
+    ports:
+      - "${FLOWER_PORT}:${FLOWER_PORT}"
+    restart: always
 
-#
-# volumes:
-#   redis_data:
+
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    env_file:
+      - .env
+    command: uv run celery -A src.utils.celery_app beat  -l INFO
+    restart: always
+
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    command: 'uv run celery -A src.utils.celery_app worker -c 1 -n "${SERVER_NAME}@%h"'
+    restart: always

@@ -32,4 +32,8 @@ dependencies = [
     "uvicorn>=0.35.0",
     "camoufox[geoip] @ git+https://github.com/coryking/camoufox.git@v142.0.1-fork.27#subdirectory=pythonlib",
     "patchright>=1.56.0",
+    "2captcha-python>=2.0.2",
+    "selectolax>=0.4.7",
+    "lxml>=6.0.2",
+    "pandas>=3.0.1",
 ]

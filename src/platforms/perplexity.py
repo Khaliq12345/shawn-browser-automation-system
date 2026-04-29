@@ -48,26 +48,79 @@ class PerplexityScraper(BrowserBase):
         time.sleep(5)
         prompt_input_selector = 'div[id="ask-input"]'
         # trying to fill the prompt
-        self.find_and_click(prompt_input_selector, "Can not fill the prompt input", timeout=self.timeout)
+        self.find_and_click(
+            prompt_input_selector, "Can not fill the prompt input", timeout=5 * 1000
+        )
         self.page.fill(prompt_input_selector, value=self.prompt)
 
         # Validate
-        submit_button = 'button[data-testid="submit-button"]'
-        self.find_and_click(submit_button, "Submit button is not available ", timeout=self.timeout, click=True)
+        self.page.keyboard.press("Enter")
+        # submit_button = 'button[data-testid="submit-button"]'
+        # self.find_and_click(submit_button, "Submit button is not available ", timeout=self.timeout, click=True)
 
         return True
 
-    def extract_response(self) -> Optional[str]:
+    def get_markdown_content(self) -> str:
+        if not self.page:
+            raise ValueError("Browser is not started")
+        try:
+            download_button = 'div[class="-ml-sm gap-xs flex flex-shrink-0 items-center"] button:nth-child(2)'
+            markdown_option = "text=Markdown"
+
+            # wait for the button to actually be visible instead of blind sleep
+            self.page.wait_for_timeout(5000)
+            self.debug_snapshot("on-before-download-click")
+            self.find_and_click(
+                download_button,
+                "Unable to find the download button",
+                20 * 1000,
+                click=True,
+            )
+
+            with self.page.expect_download(timeout=15000) as download_info:
+                self.find_and_click(
+                    markdown_option,
+                    "Unable to find the markdown button",
+                    20 * 1000,
+                    click=True,
+                )
+
+            self.debug_snapshot("on-after-download")
+            download = download_info.value
+            path = download.path()
+            with open(path, "r", encoding="utf-8") as f:
+                markdown = f.read()
+            return markdown
+
+        except Exception as e:
+            self.debug_snapshot("on-failure")  # <-- this is the money shot
+            self.logger.error("Unable to download markdown")
+            raise ValueError(f"Unable to download markdown - {str(e)}")
+
+    def extract_response(self) -> dict | None:
         self.logger.info("Extracting response")
         if not self.page:
             return None
 
         content = None
-        share_selector = 'button[aria-label="Share"]'
-        self.find_and_click(share_selector, "Unable to find share button", timeout=self.timeout)
-
+        self.page.wait_for_timeout(5000)
+        try:
+            self.find_and_click(
+                "main", "Unable to click on main", 20 * 1000, click=True
+            )
+        except Exception as _:
+            self.debug_snapshot("on-failure")  # <-- this is the money shot
+        self.page.keyboard.press("End")
+        share_selector = 'div[class="-ml-sm gap-xs flex flex-shrink-0 items-center"] button:nth-child(1)'
+        self.find_and_click(
+            share_selector, "Unable to find share button", timeout=20 * 1000
+        )
         # Get content
-        content_selector = 'div[id="markdown-content-0"]'   
-        self.find_and_click(content_selector, "Unable to find content", timeout=self.timeout)
-        content = self.extract_content(content_selector)
-        return content
+        # content_selector = 'div[id="markdown-content-0"]'
+        # self.find_and_click(
+        #     content_selector, "Unable to find content", timeout=5 * 1000
+        # )
+        # content = self.extract_content(content_selector)
+        # self.page.pause()
+        content = self.get_markdown_content()
+        return {"markdown": content, "html": ""}

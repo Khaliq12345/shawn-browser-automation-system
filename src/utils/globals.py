@@ -1,5 +1,9 @@
 import os
 
+COUNTRIES = ["us", "sg"]
+
+LANGUAGUES = ["en"]
+
 
 # Write down the output files
 def save_file(file_path: str, content: str):

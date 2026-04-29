@@ -1,41 +1,42 @@
 import sys
-import time
-
-from html_to_markdown import convert_to_markdown
-from playwright.sync_api import Page
 
 sys.path.append("..")
 
-
+import time
+import requests
+from html_to_markdown import convert_to_markdown
+from playwright.sync_api import Page
+from selectolax.parser import HTMLParser
 from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
 from src.utils.database import Database
 from src.utils.aws_storage import AWSStorage
 import os
-from typing import Optional
+from typing import Dict, Optional
 from src.utils.globals import save_file
 from func_retry import retry
+import random
 from src.config.config import (
     PARSER_URL,
     PARSER_KEY,
-    RESIDENTIAL_PROXY_PASSWORD,
-    RESIDENTIAL_PROXY_USERNAME,
+    PROXY_PORT,
+    SG_PROXY_PASSWORD,
+    SG_PROXY_USERNAME,
+    US_PROXY_PASSWORD,
+    US_PROXY_USERNAME,
     S3_BUCKET_NAME,
     HEADLESS,
-    PARSE_OUTPUT
+    PARSE_OUTPUT,
 )
 import httpx
 from camoufox.sync_api import Camoufox
 
-# PROXY configs
+# Proxy lists
 PROXIES = {
-    "us": "10000",
-    "sg": "10000",
-    "ca": "20000",
-    "gb": "30000",
-    "au": "30000",
-    "nz": "39000",
+    "sg": ["202.68.189.86", "203.166.129.192", "202.68.181.91"],
+    "us": ["161.77.156.64", "198.143.5.167", "161.77.50.185"],
 }
+
 
 class BrowserBase(ContextDecorator, ABC):
     def __init__(
@@ -73,6 +74,30 @@ class BrowserBase(ContextDecorator, ABC):
         self.page: Optional[Page] = None
         self.display = None
 
+    def debug_snapshot(self, label: str) -> str:
+        if not self.page:
+            raise ValueError("Browser is not started")
+        buffer = self.page.screenshot(full_page=True)
+        response = requests.post(
+            "https://litterbox.catbox.moe/resources/internals/api.php",
+            data={"reqtype": "fileupload", "time": "24h"},
+            files={"fileToUpload": (f"{label}.png", buffer, "image/png")},
+        )
+        url = response.text.strip()
+        self.logger.info(f"[DEBUG] {label}: {url}")
+        return url
+
+    def get_proxy(self):
+        """
+        Get a random proxy from the specified country.
+        """
+        country = self.country.lower()
+
+        if country not in PROXIES:
+            raise ValueError(f"Country '{country}' not supported. Use 'sg' or 'us'")
+
+        return random.choice(PROXIES[country])
+
     def navigate(self) -> bool:
         """Start the browser and navigate to the specified URL"""
         if not self.page:
@@ -85,13 +110,15 @@ class BrowserBase(ContextDecorator, ABC):
             self.logger.error(f"Error starting or navigating the page - {e}")
             return False
 
-    def find_and_click(self, selector: str, error_message: str, timeout: int, click: bool = False) -> bool:
+    def find_and_click(
+        self, selector: str, error_message: str, timeout: int, click: bool = False
+    ) -> bool:
         """Click ELement if visible, if not raise Error"""
         if not self.page:
             raise ValueError("Browser is not started")
         try:
             if click:
-                self.page.click(selector, timeout=timeout)
+                self.page.click(selector, timeout=timeout, force=True)
             else:
                 self.page.wait_for_selector(selector, timeout=timeout)
             return True
@@ -99,15 +126,19 @@ class BrowserBase(ContextDecorator, ABC):
             self.logger.error(error_message)
             raise ValueError(f"{error_message} {str(e)}")
 
-    def extract_content(self, selector: str) -> str | None:
+    def extract_content(self, selector: str) -> dict:
         """Extract content from an element"""
         if not self.page:
             raise ValueError("Browser is not started")
 
         try:
             content = self.page.query_selector(selector)
-            content_markdown = convert_to_markdown(content.inner_html()) if content else ""
-            return content_markdown
+            if not content:
+                return {'markdown': "", 'html': ""}
+            content_markdown = (
+                convert_to_markdown(content.inner_html())
+            )
+            return {'markdown': content_markdown, 'html': content.inner_html()}
         except Exception as e:
             self.logger.error("Unable to extract content")
             raise ValueError(f"Unable to extract content - {str(e)}")
@@ -135,18 +166,24 @@ class BrowserBase(ContextDecorator, ABC):
         response.raise_for_status()
         self.logger.info("- LLM Parser Started")
 
-    def save_response(self, content: Optional[str]) -> bool:
+    def save_response(self, content: Optional[Dict[str, str] | str]) -> bool:
         """Save the generated output from the prompt in html and text file"""
         if not self.page:
+            return False
+        
+        if isinstance(content, str):
             return False
 
         basekey = f"{self.name}/{self.process_id}"
         save_folder = f"responses/{basekey}/"
-        text_name = "output.txt"
+        markdown_name = "output.txt"
         screenshot_name = "screenshot.png"
+        html_name = "output.html"
+
         # video_name = "video.mp4"
-        txt_out = os.path.join(save_folder, text_name)
+        markdown_out = os.path.join(save_folder, markdown_name)
         screeshot_path = os.path.join(save_folder, screenshot_name)
+        html_out = os.path.join(save_folder, html_name)
         # video_path = os.path.join(save_folder, video_name)
 
         # break the flow if no response in found
@@ -154,18 +191,20 @@ class BrowserBase(ContextDecorator, ABC):
             self.logger.error("No generated output")
             return False
 
-        # Save Text Result
+        # Save Text Result (Markdown and html)
         try:
-            save_file(txt_out, content)
-            self.storage.save_file(f"{basekey}/{text_name}", txt_out)
-            # send to parser api
-            self.logger.info("- Parsing output with LLM")
+            save_file(markdown_out, content['markdown'])
+            save_file(html_out, content['html'])
+            self.storage.save_file(f"{basekey}/{markdown_name}", markdown_out)
+            self.storage.save_file(f"{basekey}/{html_name}", html_out)
         except Exception as e:
             self.logger.error(f"Unable to save output - {e}")
             return False
 
         # Start analyses
         if PARSE_OUTPUT == "yes":
+            # send to parser api
+            self.logger.info("- Parsing output with LLM")
             try:
                 self.extract_brand_info(basekey)
             except Exception as e:
@@ -173,7 +212,7 @@ class BrowserBase(ContextDecorator, ABC):
 
         # Save ScreenShot
         try:
-            self.page.screenshot(path=screeshot_path)
+            self.page.screenshot(path=screeshot_path, full_page=True)
             self.storage.save_file(f"{basekey}/{screenshot_name}", screeshot_path)
         except Exception as e:
             self.logger.error(f"Unable to save screenshot - {e}")
@@ -193,10 +232,10 @@ class BrowserBase(ContextDecorator, ABC):
 
     def save_raise_error(self, error_message: str) -> None:
         """Save, Log and raise Error"""
+        self.debug_snapshot("on-failure")
         self.logger.error(error_message)
         self.database.update_process_status(self.process_id, "failed")
         raise ValueError(error_message)
-
 
     def process_prompt(self) -> None:
         if not self.page:
@@ -236,66 +275,68 @@ class BrowserBase(ContextDecorator, ABC):
         self.database.update_process_status(self.process_id, "success")
         self.logger.info("Process Successfully ended !")
 
-
-
-    @retry(times=3, delay=1)
     def send_prompt(self) -> None:
         """Start the workflow"""
         if HEADLESS == "yes":
             headless = True
         else:
             headless = "virtual"
-        
-        # if self.name == "perplexity":
-        #    proxy = {
-        #         'server': "dc.decodo.com:10000",
-        #         "username": PROXY_USERNAME,
-        #         'password': PROXY_PASSWORD
-        #     }
-        # else:
-        proxy = {
-                'server': "isp.decodo.com:10000",
-                "username": RESIDENTIAL_PROXY_USERNAME,
-                'password': RESIDENTIAL_PROXY_PASSWORD
+        if self.country == "sg":
+            proxy = {
+                "server": f"{self.get_proxy()}:{PROXY_PORT}",
+                "username": SG_PROXY_USERNAME,
+                "password": SG_PROXY_PASSWORD,
+            }
+        elif self.country == "us":
+            proxy = {
+                "server": f"{self.get_proxy()}:{PROXY_PORT}",
+                "username": US_PROXY_USERNAME,
+                "password": US_PROXY_PASSWORD,
             }
 
         config = {
-            'window.outerHeight': 1056,
-            'window.outerWidth': 1920,
-            'window.innerHeight': 1008,
-            'window.innerWidth': 1920,
-            'window.history.length': 4,
-            'navigator.userAgent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
-            'navigator.appCodeName': 'Mozilla',
-            'navigator.appName': 'Netscape',
-            'navigator.appVersion': '5.0 (Windows)',
-            'navigator.oscpu': 'Windows NT 10.0; Win64; x64',
-            'navigator.language': 'en-US',
-            'navigator.languages': ['en-US'],
-            'navigator.platform': 'Win32',
-            'navigator.hardwareConcurrency': 12,
-            'navigator.product': 'Gecko',
-            'navigator.productSub': '20030107',
-            'navigator.maxTouchPoints': 10,
+            "window.outerHeight": 1056,
+            "window.outerWidth": 1920,
+            "window.innerHeight": 1008,
+            "window.innerWidth": 1920,
+            "window.history.length": 4,
+            "navigator.userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0",
+            "navigator.appCodeName": "Mozilla",
+            "navigator.appName": "Netscape",
+            "navigator.appVersion": "5.0 (Windows)",
+            "navigator.oscpu": "Windows NT 10.0; Win64; x64",
+            "navigator.language": "en-US",
+            "navigator.languages": ["en-US"],
+            "navigator.platform": "Win32",
+            "navigator.hardwareConcurrency": 2,
+            "navigator.product": "Gecko",
+            "navigator.productSub": "20030107",
+            "navigator.maxTouchPoints": 10,
         }
 
-        if self.name == "chatgpt":
+        if self.name in ["chatgpt", "perplexity"]:
             camoufox_options = Camoufox(
-                headless=headless, 
+                window=(1920, 1080),
+                slow_mo=3000,
+                headless=headless,
                 i_know_what_im_doing=True,
                 proxy=proxy,
-                geoip=True
+                geoip=True,
+                # humanize=True,
             )
         else:
             camoufox_options = Camoufox(
-                headless=headless, 
+                slow_mo=3000,
+                window=(1920, 1080),
+                headless=headless,
                 persistent_context=True,
-                user_data_dir='user-data-dir',
-                os=('windows'),
+                user_data_dir="user-data-dir",
+                os=("windows"),
                 config=config,
                 i_know_what_im_doing=True,
                 proxy=proxy,
-                geoip=True
+                geoip=True,
+                # humanize=True,
             )
         with camoufox_options as browser:
             try:
