@@ -55,12 +55,13 @@ class ChatGPTScraper(BrowserBase):
         self.logger.info("Done Filling")
 
         # Validate
-        self.find_and_click(
-            'button[data-testid="send-button"]',
-            error_message="Can not send prompt",
-            timeout=5 * 1000,
-            click=True,
-        )
+        # self.find_and_click(
+        #     'button[data-testid="send-button"]',
+        #     error_message="Can not send prompt",
+        #     timeout=5 * 1000,
+        #     click=True,
+        # )
+        self.page.keyboard.press("Enter")
         return True
 
     def extract_response(self) -> Optional[str]:
