@@ -54,7 +54,9 @@ def _run_in_thread(ScraperClass, scraper_kwargs, task_logger):
     from the Celery worker and from previous failed attempts.
     """
     result = {}
-    t = threading.Thread(target=_run_scraper, args=(ScraperClass, scraper_kwargs, result))
+    t = threading.Thread(
+        target=_run_scraper, args=(ScraperClass, scraper_kwargs, result)
+    )
     t.start()
     t.join(timeout=PROCESS_TIMEOUT)
 

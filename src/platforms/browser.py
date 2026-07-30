@@ -4,9 +4,8 @@ sys.path.append("..")
 
 import time
 import requests
-from html_to_markdown import convert_to_markdown
+import pyhtml2md
 from playwright.sync_api import Page
-from selectolax.parser import HTMLParser
 from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
 from src.utils.database import Database
@@ -14,7 +13,6 @@ from src.utils.aws_storage import AWSStorage
 import os
 from typing import Dict, Optional
 from src.utils.globals import save_file
-from func_retry import retry
 import random
 from src.config.config import (
     PARSER_URL,
@@ -78,14 +76,14 @@ class BrowserBase(ContextDecorator, ABC):
         if not self.page:
             raise ValueError("Browser is not started")
         buffer = self.page.screenshot(full_page=True)
-        response = requests.post(
-            "https://litterbox.catbox.moe/resources/internals/api.php",
-            data={"reqtype": "fileupload", "time": "24h"},
-            files={"fileToUpload": (f"{label}.png", buffer, "image/png")},
-        )
-        url = response.text.strip()
-        self.logger.info(f"[DEBUG] {label}: {url}")
-        return url
+
+        # Placeholder: litterbox upload disabled/not working, save locally instead
+        path = f"/tmp/{label}.png"
+        with open(path, "wb") as f:
+            f.write(buffer)
+
+        self.logger.info(f"[DEBUG] {label}: {path}")
+        return path
 
     def get_proxy(self):
         """
@@ -134,11 +132,9 @@ class BrowserBase(ContextDecorator, ABC):
         try:
             content = self.page.query_selector(selector)
             if not content:
-                return {'markdown': "", 'html': ""}
-            content_markdown = (
-                convert_to_markdown(content.inner_html())
-            )
-            return {'markdown': content_markdown, 'html': content.inner_html()}
+                return {"markdown": "", "html": ""}
+            content_markdown = pyhtml2md.convert(content.inner_html())
+            return {"markdown": content_markdown, "html": content.inner_html()}
         except Exception as e:
             self.logger.error("Unable to extract content")
             raise ValueError(f"Unable to extract content - {str(e)}")
@@ -170,7 +166,7 @@ class BrowserBase(ContextDecorator, ABC):
         """Save the generated output from the prompt in html and text file"""
         if not self.page:
             return False
-        
+
         if isinstance(content, str):
             return False
 
@@ -193,8 +189,8 @@ class BrowserBase(ContextDecorator, ABC):
 
         # Save Text Result (Markdown and html)
         try:
-            save_file(markdown_out, content['markdown'])
-            save_file(html_out, content['html'])
+            save_file(markdown_out, content["markdown"])
+            save_file(html_out, content["html"])
             self.storage.save_file(f"{basekey}/{markdown_name}", markdown_out)
             self.storage.save_file(f"{basekey}/{html_name}", html_out)
         except Exception as e:
@@ -320,7 +316,7 @@ class BrowserBase(ContextDecorator, ABC):
                 slow_mo=3000,
                 headless=headless,
                 i_know_what_im_doing=True,
-                proxy=proxy,
+                # proxy=proxy,
                 geoip=True,
                 # humanize=True,
             )
@@ -334,7 +330,7 @@ class BrowserBase(ContextDecorator, ABC):
                 os=("windows"),
                 config=config,
                 i_know_what_im_doing=True,
-                proxy=proxy,
+                # proxy=proxy,
                 geoip=True,
                 # humanize=True,
             )

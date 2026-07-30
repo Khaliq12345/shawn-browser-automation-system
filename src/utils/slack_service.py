@@ -9,10 +9,21 @@ class SlackBase:
     def __init__(self) -> None:
         self.client = WebClient(token=SLACK_TOKEN)
 
-
-    def send_message(self,name: str, brand: str, country: str, languague: str, brand_report_id: str, prompt_id: str, process_id: str, prompt: str, exc: Any):
+    def send_message(
+        self,
+        name: str,
+        brand: str,
+        country: str,
+        languague: str,
+        brand_report_id: str,
+        prompt_id: str,
+        process_id: str,
+        prompt: str,
+        exc: Any,
+    ):
         # Message with all task details
-        error_message = textwrap.dedent(f"""
+        error_message = textwrap.dedent(
+            f"""
             *Date/Time:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
             *Task Details:*
@@ -33,5 +44,6 @@ class SlackBase:
             ```
             {str(exc)}
             ```
-        """).strip()
+        """
+        ).strip()
         self.client.chat_postMessage(channel="#scraper", text=error_message)

@@ -211,22 +211,22 @@ class GoogleScraper(BrowserBase):
         self.logger.info("Extracting response")
         if not self.page:
             return None
-        content_selector = 'div[jsmodel="k8Azyd E23uIf"]'
+        content_selector = 'div[jsname="KFl8ub"]'
         see_more_selector = 'div[aria-controls="m-x-content"]'
 
         # see_more_selector = 'button[id="llm-show-more-button"]'
         # content_selector = 'div[id="llm-snippet"]'
 
         # click on see more (ai answer)
-        try:
-            self.find_and_click(
-                see_more_selector,
-                "Ai overview not visible",
-                timeout=5 * 1000,
-                click=True,
-            )
-        except Exception as _:
-            return "Ai overview not visible"
+        # try:
+        #     self.find_and_click(
+        #         see_more_selector,
+        #         "Ai overview not visible",
+        #         timeout=5 * 1000,
+        #         click=True,
+        #     )
+        # except Exception as _:
+        #     return "Ai overview not visible"
 
         # wait for content to be visible
         self.find_and_click(
