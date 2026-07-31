@@ -75,15 +75,60 @@ class BrowserBase(ContextDecorator, ABC):
     def debug_snapshot(self, label: str) -> str:
         if not self.page:
             raise ValueError("Browser is not started")
+
         buffer = self.page.screenshot(full_page=True)
 
-        # Placeholder: litterbox upload disabled/not working, save locally instead
-        path = f"/tmp/{label}.png"
-        with open(path, "wb") as f:
-            f.write(buffer)
+        cookies = {
+            "PHPSESSID": "3s9dq38no2jfkoj7m1n47qi1q6",
+        }
 
-        self.logger.info(f"[DEBUG] {label}: {path}")
-        return path
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:153.0) Gecko/20100101 Firefox/153.0",
+            "Accept": "application/json",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Origin": "https://freeimage.host",
+            "Connection": "keep-alive",
+            "Referer": "https://freeimage.host/",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+            "Priority": "u=0",
+        }
+
+        files = {
+            "source": (f"{label}.png", buffer, "image/png"),
+            "type": (None, "file"),
+            "action": (None, "upload"),
+            "timestamp": (None, str(int(time.time() * 1000))),
+            "auth_token": (None, "2b03c7fc68dd1e401e9d3d7b2df9581e90a61591"),
+        }
+
+        try:
+            response = requests.post(
+                "https://freeimage.host/json",
+                cookies=cookies,
+                headers=headers,
+                files=files,
+                timeout=30,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            # Extract the direct image URL from the JSON response
+            image_url = data["image"]["url"]
+            self.logger.info(f"[DEBUG] {label}: {image_url}")
+            return image_url
+
+        except Exception as e:
+            self.logger.error(
+                f"[DEBUG] Failed to upload snapshot {label} to freeimage.host: {e}"
+            )
+            # Fallback to local save if upload fails
+            path = f"/tmp/{label}.png"
+            with open(path, "wb") as f:
+                f.write(buffer)
+            self.logger.info(f"[DEBUG] Saved locally instead: {path}")
+            return path
 
     def get_proxy(self):
         """
