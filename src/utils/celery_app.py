@@ -1,8 +1,12 @@
 from celery import Celery
 from celery.schedules import crontab
+from kombu import Exchange, Queue
 from src.config.config import REDIS_URL, SERVER_NAME, RUN_PER_BEAT_RUN
 from src.utils.browser_runner import run_browser
 from celery import group
+import logging
+
+logger = logging.getLogger(__name__)
 
 app = Celery(SERVER_NAME, broker=REDIS_URL)
 
@@ -39,24 +43,40 @@ app.conf.result_serializer = "json"
 app.conf.broker_heartbeat = 10  # Detect dead broker connections faster
 app.conf.broker_heartbeat_checkrate = 2
 
+# --Queue---
+app.conf.task_create_missing_queues = True
+app.conf.task_queues = (
+    Queue("beat_triggers", Exchange("beat_triggers"), routing_key="beat_triggers"),
+    Queue("new_jobs", Exchange("new_jobs"), routing_key="new_jobs"),
+    Queue("scheduled_jobs", Exchange("scheduled_jobs"), routing_key="scheduled_jobs"),
+)
+app.conf.task_default_queue = "beat_triggers"
 
-@app.task
+
+@app.task(queue="beat_triggers")
 def runner_parallel():
     """
-    Runs multiple browser instances in parallel using Celery's group.
+    Triggers every 3 mins via Beat. Dynamically routes browser tasks
+    to different queues based on priority logic.
     """
-
-    # Create a group of tasks to run in parallel
     RUN_PER_BEAT_RUN = 2
-    job = group(run_browser_task.s() for _ in range(RUN_PER_BEAT_RUN))
-    job.apply_async()
+    for i in range(RUN_PER_BEAT_RUN):
+        # Dynamically assign the first run to high_priority, others to default
+        if i == 0:
+            target_queue = "new_jobs"
+        else:
+            target_queue = "scheduled_jobs"
 
-    return f"Launched {RUN_PER_BEAT_RUN} parallel browser tasks"
+        # Dispatch the task to the chosen queue dynamically
+        run_browser_task.apply_async(queue=target_queue)
+        logger.info(f"Added to {target_queue}")
+
+    return f"Dispatched {RUN_PER_BEAT_RUN} tasks dynamically."
 
 
 @app.task
 def run_browser_task():
-    """Individual browser task that can be run in parallel"""
+    """Single task definition handled by whichever queue it lands in"""
     run_browser()
     return "SCRAPING DONE!"
 

@@ -16,7 +16,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     env_file:
-        - .env
+      - .env
     ports:
       - "${FRONTEND_PORT}:3000"
     command: node ./interface/.output/server/index.mjs
@@ -35,7 +35,6 @@ services:
       - "${FLOWER_PORT}:${FLOWER_PORT}"
     restart: always
 
-
   beat:
     build:
       context: .
@@ -45,12 +44,22 @@ services:
     command: uv run celery -A src.utils.celery_app beat  -l INFO
     restart: always
 
-
   worker:
     build:
       context: .
       dockerfile: Dockerfile
     env_file:
       - .env
-    command: 'uv run celery -A src.utils.celery_app worker -c 1 -n "${SERVER_NAME}@%h"'
+    command: 'uv run celery -A src.utils.celery_app worker -c 1 -n "${SERVER_NAME}@%h" -l INFO'
     restart: always
+
+  trigger_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    command: uv run celery -A src.utils.celery_app worker -c 1 -Q beat_triggers -n trigger_worker@%h -l INFO
+    restart: always
+    depends_on:
+      - redis
