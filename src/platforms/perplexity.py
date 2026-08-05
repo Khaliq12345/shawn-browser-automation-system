@@ -51,9 +51,15 @@ class PerplexityScraper(BrowserBase):
         self.find_and_click(
             prompt_input_selector, "Can not fill the prompt input", timeout=5 * 1000
         )
-        self.page.fill(prompt_input_selector, value=self.prompt)
 
-        # Validate
+        self.page.fill(
+            prompt_input_selector,
+            value="Hi",
+        )
+        self.page.keyboard.press("Enter")
+        time.sleep(10)
+
+        self.page.fill(prompt_input_selector, value=self.prompt)
         self.page.keyboard.press("Enter")
         # submit_button = 'button[data-testid="submit-button"]'
         # self.find_and_click(submit_button, "Submit button is not available ", timeout=self.timeout, click=True)
@@ -64,26 +70,14 @@ class PerplexityScraper(BrowserBase):
         if not self.page:
             raise ValueError("Browser is not started")
         try:
-            download_button = 'div[class="-ml-sm gap-xs flex flex-shrink-0 items-center"] button:nth-child(2)'
-            markdown_option = "text=Markdown"
-
             # wait for the button to actually be visible instead of blind sleep
             self.page.wait_for_timeout(5000)
             self.debug_snapshot("on-before-download-click")
-            self.find_and_click(
-                download_button,
-                "Unable to find the download button",
-                20 * 1000,
-                click=True,
+            self.page.get_by_role("button", name="Download").nth(1).click(
+                timeout=20 * 1000
             )
-
             with self.page.expect_download(timeout=15000) as download_info:
-                self.find_and_click(
-                    markdown_option,
-                    "Unable to find the markdown button",
-                    20 * 1000,
-                    click=True,
-                )
+                self.page.get_by_role("menuitem", name="Markdown").click()
 
             self.debug_snapshot("on-after-download")
             download = download_info.value
@@ -111,7 +105,7 @@ class PerplexityScraper(BrowserBase):
         except Exception as _:
             self.debug_snapshot("on-failure")  # <-- this is the money shot
         self.page.keyboard.press("End")
-        share_selector = 'div[class="-ml-sm gap-xs flex flex-shrink-0 items-center"] button:nth-child(1)'
+        share_selector = 'div[class="-ml-sm gap-xs flex flex-shrink-0 items-center"] button:nth-child(2)'
         self.find_and_click(
             share_selector, "Unable to find share button", timeout=20 * 1000
         )

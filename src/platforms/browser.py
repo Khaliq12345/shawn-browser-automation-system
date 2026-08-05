@@ -33,6 +33,8 @@ from camoufox.sync_api import Camoufox
 PROXIES = {
     "sg": ["203.166.129.166", "203.166.131.119", "203.166.143.83"],
     "us": ["88.209.233.36", "88.209.235.214", "185.123.144.167"],
+    # "sg": ["isp.decodo.com"],
+    # "us": ["isp.decodo.com"],
 }
 
 
@@ -359,11 +361,14 @@ class BrowserBase(ContextDecorator, ABC):
             camoufox_options = Camoufox(
                 window=(1920, 1080),
                 slow_mo=3000,
+                locale=f"en-{self.country.upper()}",
                 headless=headless,
                 i_know_what_im_doing=True,
                 proxy=proxy,
                 geoip=True,
-                # humanize=True,
+                os=("windows"),
+                config=config,
+                humanize=True,
             )
         else:
             camoufox_options = Camoufox(
