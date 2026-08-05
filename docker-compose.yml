@@ -61,5 +61,3 @@ services:
       - .env
     command: uv run celery -A src.utils.celery_app worker -c 1 -Q beat_triggers -n trigger_worker@%h -l INFO
     restart: always
-    depends_on:
-      - redis
