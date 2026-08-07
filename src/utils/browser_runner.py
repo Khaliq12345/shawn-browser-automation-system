@@ -93,49 +93,57 @@ def run_browser():
     date = datetime.now()
 
     for name in ["chatgpt", "perplexity", "google"]:
-        config = SCRAPER_CONFIG[name]
-        ScraperClass = config["class"]
-        url = config["url"]
+        try:
+            config = SCRAPER_CONFIG[name]
+            ScraperClass = config["class"]
+            url = config["url"]
 
-        country = report["country"]
-        brand_report_id = report["brand_report_id"]
-        timestamp = int(datetime.now().timestamp())
-        process_id = f"{name}-{brand_report_id}-{prompt_id}-{timestamp}"
-        brand = report["brand"]
-        languague = report["languague"]
+            country = report["country"]
+            brand_report_id = report["brand_report_id"]
+            timestamp = int(datetime.now().timestamp())
+            process_id = f"{name}-{brand_report_id}-{prompt_id}-{timestamp}"
+            brand = report["brand"]
+            languague = report["languague"]
 
-        # Logger for the parent process (subprocess gets its own)
-        task_logger = logging.getLogger(f"{__name__}.{process_id}")
-        task_logger.setLevel(logging.INFO)
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        ch.setFormatter(
-            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        )
-        task_logger.addHandler(ch)
-        task_logger.info("Getting matching class...")
+            # Logger for the parent process (subprocess gets its own)
+            task_logger = logging.getLogger(f"{__name__}.{process_id}")
+            task_logger.setLevel(logging.INFO)
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.DEBUG)
+            ch.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                )
+            )
+            task_logger.addHandler(ch)
+            task_logger.info("Getting matching class...")
 
-        # Logger is not picklable — pass everything else, logger is recreated in subprocess
-        scraper_kwargs = dict(
-            logger=task_logger,  # logger is safe to share across threads
-            url=url,
-            prompt=prompt,
-            name=name,
-            process_id=process_id,
-            timeout=60,
-            country=country,
-            brand_report_id=brand_report_id,
-            prompt_id=prompt_id,
-            date=date,
-            brand=brand,
-            languague=languague,
-        )
+            # Logger is not picklable — pass everything else, logger is recreated in subprocess
+            scraper_kwargs = dict(
+                logger=task_logger,  # logger is safe to share across threads
+                url=url,
+                prompt=prompt,
+                name=name,
+                process_id=process_id,
+                timeout=60,
+                country=country,
+                brand_report_id=brand_report_id,
+                prompt_id=prompt_id,
+                date=date,
+                brand=brand,
+                languague=languague,
+            )
+        except Exception as e:
+            task_logger.error(f"[{name}] All retries exhausted: {e}")
+            database.update_process_status(process_id, "failed")
 
         try:
             _run_in_thread(ScraperClass, scraper_kwargs, task_logger)
             task_logger.info(f"[{name}] Completed successfully")
+            database.update_process_status(process_id, "success")
         except Exception as e:
             task_logger.error(f"[{name}] All retries exhausted: {e}")
+            database.update_process_status(process_id, "failed")
 
 
 if __name__ == "__main__":

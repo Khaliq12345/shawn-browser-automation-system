@@ -31,10 +31,8 @@ from camoufox.sync_api import Camoufox
 
 # Proxy lists
 PROXIES = {
-    "sg": ["203.166.129.166", "203.166.131.119", "203.166.143.83"],
-    "us": ["88.209.233.36", "88.209.235.214", "185.123.144.167"],
-    # "sg": ["isp.decodo.com"],
-    # "us": ["isp.decodo.com"],
+    "sg": ["isp.decodo.com"],
+    "us": ["isp.decodo.com"],
 }
 
 
@@ -278,7 +276,8 @@ class BrowserBase(ContextDecorator, ABC):
         """Save, Log and raise Error"""
         self.debug_snapshot("on-failure")
         self.logger.error(error_message)
-        self.database.update_process_status(self.process_id, "failed")
+        # if save:
+        #     self.database.update_process_status(self.process_id, "failed")
         raise ValueError(error_message)
 
     def process_prompt(self) -> None:
@@ -315,8 +314,8 @@ class BrowserBase(ContextDecorator, ABC):
             self.save_raise_error(error_message)
         self.logger.info("Saving extracted data")
 
-        # Step 5: Mark as Sucess on supabase
-        self.database.update_process_status(self.process_id, "success")
+        # Step 5: Mark as Sucess
+        # self.database.update_process_status(self.process_id, "success")
         self.logger.info("Process Successfully ended !")
 
     def send_prompt(self) -> None:
