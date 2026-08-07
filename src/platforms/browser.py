@@ -363,12 +363,12 @@ class BrowserBase(ContextDecorator, ABC):
                 slow_mo=3000,
                 locale=f"en-{self.country.upper()}",
                 headless=headless,
-                i_know_what_im_doing=True,
+                # i_know_what_im_doing=True,
                 proxy=proxy,
                 geoip=True,
-                os=("windows"),
-                config=config,
-                humanize=True,
+                # os=("windows"),
+                # config=config,
+                humanize=self.name == "chatgpt",
             )
         else:
             camoufox_options = Camoufox(
@@ -377,12 +377,13 @@ class BrowserBase(ContextDecorator, ABC):
                 headless=headless,
                 persistent_context=True,
                 user_data_dir="user-data-dir",
-                os=("windows"),
-                config=config,
-                i_know_what_im_doing=True,
+                # os=("windows"),
+                locale=f"en-{self.country.upper()}",
+                # config=config,
+                # i_know_what_im_doing=True,
                 proxy=proxy,
                 geoip=True,
-                # humanize=True,
+                humanize=True,
             )
         with camoufox_options as browser:
             try:

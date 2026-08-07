@@ -45,7 +45,7 @@ class PerplexityScraper(BrowserBase):
         if not self.page:
             return False
 
-        time.sleep(5)
+        self.page.wait_for_timeout(2000)
         prompt_input_selector = 'div[id="ask-input"]'
         # trying to fill the prompt
         self.find_and_click(
@@ -57,13 +57,14 @@ class PerplexityScraper(BrowserBase):
             value="Hi",
         )
         self.page.keyboard.press("Enter")
-        time.sleep(10)
+        self.page.wait_for_timeout(2000)
 
         self.page.fill(prompt_input_selector, value=self.prompt)
+        self.page.wait_for_timeout(2000)
         self.page.keyboard.press("Enter")
+        self.page.wait_for_timeout(2000)
         # submit_button = 'button[data-testid="submit-button"]'
         # self.find_and_click(submit_button, "Submit button is not available ", timeout=self.timeout, click=True)
-
         return True
 
     def get_markdown_content(self) -> str:
@@ -71,9 +72,9 @@ class PerplexityScraper(BrowserBase):
             raise ValueError("Browser is not started")
         try:
             # wait for the button to actually be visible instead of blind sleep
-            self.page.wait_for_timeout(5000)
+            self.page.wait_for_timeout(2000)
             self.debug_snapshot("on-before-download-click")
-            self.page.get_by_role("button", name="Download").nth(1).click(
+            self.page.get_by_role("button", name="Download").nth(-1).click(
                 timeout=20 * 1000
             )
             with self.page.expect_download(timeout=15000) as download_info:
@@ -97,7 +98,6 @@ class PerplexityScraper(BrowserBase):
             return None
 
         content = None
-        self.page.wait_for_timeout(5000)
         try:
             self.find_and_click(
                 "main", "Unable to click on main", 20 * 1000, click=True

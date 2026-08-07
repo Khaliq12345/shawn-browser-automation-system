@@ -47,7 +47,7 @@ def _run_scraper(scraper_class, scraper_kwargs, result):
         loop.close()
 
 
-@retry(times=5, delay=60)
+@retry(times=5, delay=5)
 def _run_in_thread(ScraperClass, scraper_kwargs, task_logger):
     """
     Spawns a fresh thread for each attempt — isolates asyncio state
@@ -92,7 +92,7 @@ def run_browser():
     database.update_schedule(brand_report_id, prompt_id, prompt, minutes=MINUTES)
     date = datetime.now()
 
-    for name in ["chatgpt", "perplexity", "google"]:
+    for name in ["google", "perplexity", "chatgpt"]:
         config = SCRAPER_CONFIG[name]
         ScraperClass = config["class"]
         url = config["url"]

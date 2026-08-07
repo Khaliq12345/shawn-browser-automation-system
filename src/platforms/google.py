@@ -212,7 +212,7 @@ class GoogleScraper(BrowserBase):
         if not self.page:
             return None
         content_selector = 'div[jsname="KFl8ub"]'
-        see_more_selector = 'div[aria-controls="m-x-content"]'
+        # see_more_selector = 'div[aria-controls="m-x-content"]'
 
         # see_more_selector = 'button[id="llm-show-more-button"]'
         # content_selector = 'div[id="llm-snippet"]'
@@ -229,11 +229,14 @@ class GoogleScraper(BrowserBase):
         #     return "Ai overview not visible"
 
         # wait for content to be visible
-        self.find_and_click(
-            content_selector,
-            timeout=20 * 1000,
-            error_message="Unable to find the content",
-        )
+        try:
+            self.find_and_click(
+                content_selector,
+                timeout=20 * 1000,
+                error_message="Unable to find the content",
+            )
+        except Exception as e:
+            self.logger.error(f"Unable to find the content - {e}")
 
         content = self.extract_content(content_selector)
         return content

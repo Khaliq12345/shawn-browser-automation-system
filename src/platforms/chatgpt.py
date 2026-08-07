@@ -51,17 +51,17 @@ class ChatGPTScraper(BrowserBase):
             error_message="Can not fill the prompt input",
             timeout=5 * 1000,
         )
-        self.page.fill(prompt_input_selector, value=self.prompt)
-        self.logger.info("Done Filling")
-
-        # Validate
-        # self.find_and_click(
-        #     'button[data-testid="send-button"]',
-        #     error_message="Can not send prompt",
-        #     timeout=5 * 1000,
-        #     click=True,
-        # )
+        self.page.type(
+            prompt_input_selector,
+            text="Hi",
+        )
         self.page.keyboard.press("Enter")
+        self.page.wait_for_timeout(2000)
+        self.page.type(prompt_input_selector, text=self.prompt)
+        self.page.keyboard.press("Enter")
+        self.page.wait_for_timeout(2000)
+
+        self.logger.info("Done Filling")
         return True
 
     def extract_response(self) -> Optional[str]:
