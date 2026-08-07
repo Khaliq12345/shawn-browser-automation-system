@@ -177,7 +177,8 @@ class BrowserBase(ContextDecorator, ABC):
             raise ValueError("Browser is not started")
 
         try:
-            content = self.page.query_selector(selector)
+            contents = self.page.query_selector_all(selector)
+            content = contents[-1]
             if not content:
                 return {"markdown": "", "html": ""}
             content_markdown = pyhtml2md.convert(content.inner_html())
