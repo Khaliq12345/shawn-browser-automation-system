@@ -105,10 +105,10 @@ class PerplexityScraper(BrowserBase):
         except Exception as _:
             self.debug_snapshot("on-failure")  # <-- this is the money shot
         self.page.keyboard.press("End")
-        share_selector = 'div[class="-ml-sm gap-xs flex flex-shrink-0 items-center"] button:nth-child(2)'
-        self.find_and_click(
-            share_selector, "Unable to find share button", timeout=20 * 1000
-        )
+        # share_selector = 'div[class="-ml-sm gap-xs flex flex-shrink-0 items-center"] button:nth-child(2)'
+        # self.find_and_click(
+        #     share_selector, "Unable to find share button", timeout=20 * 1000
+        # )
         # Get content
         # content_selector = 'div[id="markdown-content-0"]'
         # self.find_and_click(
