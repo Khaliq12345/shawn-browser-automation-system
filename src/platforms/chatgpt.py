@@ -51,12 +51,6 @@ class ChatGPTScraper(BrowserBase):
             error_message="Can not fill the prompt input",
             timeout=5 * 1000,
         )
-        self.page.type(
-            prompt_input_selector,
-            text="Hi",
-        )
-        self.page.keyboard.press("Enter")
-        self.page.wait_for_timeout(2000)
         self.page.type(prompt_input_selector, text=self.prompt)
         self.page.keyboard.press("Enter")
         self.page.wait_for_timeout(2000)
