@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  worker_new_jobs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    command: uv run celery -A src.utils.celery_app worker -c 1 -Q new_jobs -n server1_new@%h -l INFO
+    restart: always
+
+  worker_scheduled_jobs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    command: uv run celery -A src.utils.celery_app worker -c 1 -Q scheduled_jobs -n server2_scheduled@%h -l INFO
+    restart: always

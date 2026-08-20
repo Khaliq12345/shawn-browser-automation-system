@@ -1,5 +1,6 @@
 import sys
 
+
 sys.path.append("..")
 
 import time
@@ -208,7 +209,9 @@ class BrowserBase(ContextDecorator, ABC):
         response.raise_for_status()
         self.logger.info("- LLM Parser Started")
 
-    def save_response(self, content: Optional[Dict[str, str] | str]) -> bool:
+    def save_response(
+        self, content: Optional[Dict[str, str] | str], selector: str | None = None
+    ) -> bool:
         """Save the generated output from the prompt in html and text file"""
         if not self.page:
             return False
@@ -254,7 +257,10 @@ class BrowserBase(ContextDecorator, ABC):
 
         # Save ScreenShot
         try:
-            self.page.screenshot(path=screeshot_path, full_page=True)
+            if selector:
+                self.page.locator(selector).last.screenshot(path=screeshot_path)
+            else:
+                self.page.screenshot(path=screeshot_path, full_page=True)
             self.storage.save_file(f"{basekey}/{screenshot_name}", screeshot_path)
         except Exception as e:
             self.logger.error(f"Unable to save screenshot - {e}")
@@ -280,7 +286,7 @@ class BrowserBase(ContextDecorator, ABC):
         #     self.database.update_process_status(self.process_id, "failed")
         raise ValueError(error_message)
 
-    def process_prompt(self) -> None:
+    def process_prompt(self, selector: str | None) -> None:
         if not self.page:
             return None
 
@@ -308,7 +314,7 @@ class BrowserBase(ContextDecorator, ABC):
         self.logger.info("Response successfully extracted")
 
         # Step 4: Save the response
-        is_response_saved = self.save_response(content)
+        is_response_saved = self.save_response(content, selector)
         if not is_response_saved:
             error_message = "Error while saving response"
             self.save_raise_error(error_message)
@@ -394,7 +400,12 @@ class BrowserBase(ContextDecorator, ABC):
                 )
 
                 # start processing the prompt
-                self.process_prompt()
+                selector = (
+                    ".flex.flex-col.gap-4.\\@3xl\\:gap-8.w-full.pt-4.\\@3xl\\:pt-8"
+                    if self.name == "perplexity"
+                    else None
+                )
+                self.process_prompt(selector)
                 self.page.close()
 
             except Exception as e:
