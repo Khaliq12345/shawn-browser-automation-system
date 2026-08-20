@@ -1,7 +1,6 @@
 # --- Stage 1: Builder ---
 FROM node:22-alpine AS builder
 
-# Set working directory directly to the interface folder
 WORKDIR /app
 
 # Copy package files from the interface directory
@@ -9,7 +8,9 @@ COPY interface/package.json interface/package-lock.json ./interface/
 
 # Move into the interface directory to install dependencies locally there
 WORKDIR /app/interface
-RUN npm install
+
+# Use npm ci for reliable, non-interactive, reproducible builds in containers
+RUN npm ci
 
 # Copy the rest of the application source code into the current working directory (/app/interface)
 COPY interface/ .
