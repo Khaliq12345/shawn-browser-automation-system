@@ -3,8 +3,6 @@ import sys
 
 sys.path.append(".")
 
-import time
-from typing import Optional
 from src.platforms.browser import BrowserBase
 
 
@@ -52,14 +50,7 @@ class PerplexityScraper(BrowserBase):
             prompt_input_selector, "Can not fill the prompt input", timeout=5 * 1000
         )
 
-        self.page.fill(
-            prompt_input_selector,
-            value="Hi",
-        )
-        self.page.keyboard.press("Enter")
-        self.page.wait_for_timeout(2000)
-
-        self.page.fill(prompt_input_selector, value=self.prompt)
+        self.page.type(prompt_input_selector, text=self.prompt)
         self.page.wait_for_timeout(2000)
         self.page.keyboard.press("Enter")
         self.page.wait_for_timeout(2000)
@@ -85,6 +76,15 @@ class PerplexityScraper(BrowserBase):
             path = download.path()
             with open(path, "r", encoding="utf-8") as f:
                 markdown = f.read()
+
+            self.page.reload(timeout=20 * 1000, wait_until="load")
+            self.logger.info("Deleting the session")
+            self.page.get_by_label("Main", exact=True).get_by_role(
+                "button", name="Session actions"
+            ).click()
+
+            self.page.get_by_text("Delete").click(timeout=20 * 1000)
+            self.page.get_by_role("button", name="Delete").click(timeout=20 * 1000)
             return markdown
 
         except Exception as e:

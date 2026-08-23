@@ -343,54 +343,35 @@ class BrowserBase(ContextDecorator, ABC):
                 "password": US_PROXY_PASSWORD,
             }
 
-        config = {
-            "window.outerHeight": 1056,
-            "window.outerWidth": 1920,
-            "window.innerHeight": 1008,
-            "window.innerWidth": 1920,
-            "window.history.length": 4,
-            "navigator.userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0",
-            "navigator.appCodeName": "Mozilla",
-            "navigator.appName": "Netscape",
-            "navigator.appVersion": "5.0 (Windows)",
-            "navigator.oscpu": "Windows NT 10.0; Win64; x64",
-            "navigator.language": "en-US",
-            "navigator.languages": ["en-US"],
-            "navigator.platform": "Win32",
-            "navigator.hardwareConcurrency": 2,
-            "navigator.product": "Gecko",
-            "navigator.productSub": "20030107",
-            "navigator.maxTouchPoints": 10,
+        # 1. Group shared options to keep code DRY and maintainable
+        common_options = {
+            "window": (1920, 1080),
+            "slow_mo": 3000,
+            "locale": f"en-{self.country.upper()}",
+            "headless": headless,
+            "proxy": proxy,
+            "geoip": True,
+            "humanize": True,
         }
 
-        if self.name in ["chatgpt", "perplexity"]:
-            camoufox_options = Camoufox(
-                window=(1920, 1080),
-                slow_mo=3000,
-                locale=f"en-{self.country.upper()}",
-                headless=headless,
-                # i_know_what_im_doing=True,
-                proxy=proxy,
-                geoip=True,
-                # os=("windows"),
-                # config=config,
-                humanize=self.name == "chatgpt",
-            )
-        else:
-            camoufox_options = Camoufox(
-                slow_mo=3000,
-                window=(1920, 1080),
-                headless=headless,
-                persistent_context=True,
-                user_data_dir="user-data-dir",
-                # os=("windows"),
-                locale=f"en-{self.country.upper()}",
-                # config=config,
-                # i_know_what_im_doing=True,
-                proxy=proxy,
-                geoip=True,
-                humanize=True,
-            )
+        # 2. Add case-specific overrides
+        match self.name:
+            case "google":
+                camoufox_options = Camoufox(
+                    **common_options,
+                    persistent_context=True,
+                    user_data_dir="user-data-dir",
+                )
+            case "perplexity":
+                camoufox_options = Camoufox(
+                    **common_options,
+                    persistent_context=True,
+                    user_data_dir="./perplexity-user-data-dir",
+                )
+            case _:  # "chatgpt" or default fallback
+                camoufox_options = Camoufox(**common_options)
+
+        # 3. Execution block
         with camoufox_options as browser:
             try:
                 self.page = browser.new_page()
@@ -399,12 +380,8 @@ class BrowserBase(ContextDecorator, ABC):
                     self.process_id, self.name, self.prompt, self.brand_report_id
                 )
 
-                # start processing the prompt
-                selector = (
-                    ".flex.flex-col.gap-4.\\@3xl\\:gap-8.w-full.pt-4.\\@3xl\\:pt-8"
-                    if self.name == "perplexity"
-                    else None
-                )
+                # Start processing the prompt
+                selector = None
                 self.process_prompt(selector)
                 self.page.close()
 

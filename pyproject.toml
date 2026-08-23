@@ -30,4 +30,5 @@ dependencies = [
     "lxml>=6.0.2",
     "pandas>=3.0.1",
     "pyhtml2md>=1.8.0",
+    "botasaurus-driver>=4.0.101",
 ]

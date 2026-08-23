@@ -21,3 +21,6 @@ docker-compose.yml
 
 
 user-data-dir/
+perplexity-user-data-dir/
+test2.py
+cred.json
