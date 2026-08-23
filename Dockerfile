@@ -49,7 +49,6 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     xvfb \
     xserver-xephyr \
-    awscli \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
