@@ -9,6 +9,8 @@ services:
       - .env
     command: uv run celery -A src.utils.celery_app worker -c 1 -Q new_jobs -n server1_new@%h -l INFO
     restart: always
+    volumes:
+      - /opt/perplexity-user-data-dir:/app/perplexity-user-data-dir
 
   worker_scheduled_jobs:
     build:
@@ -18,3 +20,5 @@ services:
       - .env
     command: uv run celery -A src.utils.celery_app worker -c 1 -Q scheduled_jobs -n server2_scheduled@%h -l INFO
     restart: always
+    volumes:
+      - /opt/perplexity-user-data-dir:/app/perplexity-user-data-dir

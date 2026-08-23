@@ -80,20 +80,6 @@ ENV PATH="/root/.local/bin/:$PATH"
 # Set working directory
 WORKDIR /app
 
-# Accept AWS credentials as build arguments
-ARG AWS_ACCESS_KEY_ID
-ARG AWS_SECRET_KEY_ID
-ARG AWS_DEFAULT_REGION=eu-north-1
-
-
-# Set them as environment variables so the AWS CLI picks them up
-ENV AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-ENV AWS_SECRET_ACCESS_KEY=$AWS_SECRET_KEY_ID
-ENV AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
-
-# Download the folder directly from S3 during the build
-RUN aws s3 cp s3://brandpeak-browser-sessions/perplexity-user-data-dir/ /app/perplexity-user-data-dir/ --recursive
-
 # Copy all other project files
 COPY . .
 
