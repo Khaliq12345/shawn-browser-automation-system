@@ -49,6 +49,7 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     xvfb \
     xserver-xephyr \
+    awscli \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
@@ -84,8 +85,6 @@ ARG AWS_ACCESS_KEY_ID
 ARG AWS_SECRET_KEY_ID
 ARG AWS_DEFAULT_REGION=eu-north-1
 
-# Install AWS CLI (or ensure it's available)
-RUN apt-get update && apt-get install -y awscli && rm -rf /var/lib/apt/lists/*
 
 # Set them as environment variables so the AWS CLI picks them up
 ENV AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
