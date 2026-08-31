@@ -89,7 +89,7 @@ def run_browser():
 
     prompt = to_run["prompt"]
     prompt_id = to_run["prompt_id"]
-    database.update_schedule(brand_report_id, prompt_id, prompt, minutes=MINUTES)
+    # database.update_schedule(brand_report_id, prompt_id, prompt, minutes=MINUTES)
     date = datetime.now()
 
     for name in ["chatgpt", "perplexity", "google"]:

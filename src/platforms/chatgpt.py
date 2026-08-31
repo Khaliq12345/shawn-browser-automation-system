@@ -75,7 +75,9 @@ class ChatGPTScraper(BrowserBase):
         time.sleep(5)
         # trying to fill the prompt
         self.page.get_by_test_id("desktop-app-shell").locator("form").click()
+        self.page.wait_for_timeout(2000)
         self.page.get_by_role("textbox", name="Chat with ChatGPT").type(self.prompt)
+        self.page.wait_for_timeout(2000)
         # self.find_and_click(
         #     prompt_input_selector,
         #     error_message="Can not fill the prompt input",
