@@ -4,6 +4,7 @@ import sys
 sys.path.append(".")
 
 from src.platforms.browser import BrowserBase
+import pyperclip
 
 
 class PerplexityScraper(BrowserBase):
@@ -37,7 +38,92 @@ class PerplexityScraper(BrowserBase):
             brand,
         )
 
-    def find_and_fill_input(self) -> bool:
+    def wait_for_answer_complete(self, selector, timeout=60000, stable_for=2000):
+        if not self.page:
+            return False
+        locator = self.page.locator(selector).last
+
+        start_time = self.page.evaluate("Date.now()")
+        last_text = ""
+        last_change = self.page.evaluate("Date.now()")
+
+        while self.page.evaluate("Date.now()") - start_time < timeout:
+            try:
+                current_text = locator.inner_text().strip()
+
+                if current_text != last_text:
+                    last_text = current_text
+                    last_change = self.page.evaluate("Date.now()")
+                # Answer has not changed for 2 seconds
+                if (
+                    current_text
+                    and self.page.evaluate("Date.now()") - last_change >= stable_for
+                ):
+                    return current_text
+            except Exception:
+                pass
+            self.page.wait_for_timeout(500)
+        return last_text
+
+    def remove_modal(self):
+        if not self.page:
+            return False
+        self.logger.info("Removing modal")
+        selector = 'div[data-type="portal"]'
+        try:
+            self.page.wait_for_selector(
+                selector,
+                state="attached",
+                timeout=3000,
+            )
+            self.logger.info("Portal found")
+            self.page.evaluate(
+                """
+                selector => {
+                    document.querySelectorAll(selector).forEach(el => el.remove());
+                }
+                """,
+                selector,
+            )
+            self.logger.info("Portal removed")
+
+        except Exception:
+            self.logger.info("Portal not found within 3 seconds")
+
+    def get_valid_answer(self):
+        if not self.page:
+            return False
+        prompt_input_selector = 'div[id="ask-input"]'
+        LOADING_SELECTOR = 'svg[class="animate-pplxIndicator fill-mode-both h-full w-auto shrink-0 transform-gpu will-change-transform"]'
+        for idx in range(1, 6):
+            self.page.type(prompt_input_selector, text=self.prompt)
+            self.page.wait_for_timeout(3000)
+            self.page.keyboard.press("Enter")
+            self.remove_modal()
+            try:
+                loading = self.page.locator(LOADING_SELECTOR)
+                # Only wait briefly for loading to appear
+                loading.wait_for(state="visible", timeout=3000)
+                # If it appeared, wait for it to disappear
+                loading.wait_for(state="hidden", timeout=60000)
+            except Exception:
+                self.logger.info("Loading indicator did not appear or is already gone")
+            self.remove_modal()
+            self.wait_for_answer_complete(
+                "div.break-words.min-w-0.flex-1",
+            )
+            # Get the latest answer
+            copy_button = self.page.locator('button[aria-label="Copy"]').last
+            copy_button.click()
+            copied_text = pyperclip.paste()
+            # If we got a valid answer, stop the loop
+            if "Sign up and repeat your request" not in copied_text:
+                self.logger.info("Valid answer received. Stopping.")
+                return copied_text
+
+            self.logger.info(f"Attempt {idx} failed, retrying...")
+
+    def find_and_fill_input(self, use_botasarus: bool = False) -> bool:
         self.logger.info("Filling the prompt")
 
         if not self.page:
@@ -47,15 +133,13 @@ class PerplexityScraper(BrowserBase):
         prompt_input_selector = 'div[id="ask-input"]'
         # trying to fill the prompt
         self.find_and_click(
-            prompt_input_selector, "Can not fill the prompt input", timeout=5 * 1000
+            prompt_input_selector, "Can not fill the prompt input", timeout=30 * 1000
         )
 
         self.page.type(prompt_input_selector, text=self.prompt)
         self.page.wait_for_timeout(2000)
         self.page.keyboard.press("Enter")
         self.page.wait_for_timeout(2000)
-        # submit_button = 'button[data-testid="submit-button"]'
-        # self.find_and_click(submit_button, "Submit button is not available ", timeout=self.timeout, click=True)
         return True
 
     def get_markdown_content(self) -> str:
@@ -99,6 +183,7 @@ class PerplexityScraper(BrowserBase):
 
         content = None
         try:
+            self.remove_modal()
             self.find_and_click(
                 "main", "Unable to click on main", 20 * 1000, click=True
             )
@@ -116,5 +201,6 @@ class PerplexityScraper(BrowserBase):
         # )
         # content = self.extract_content(content_selector)
         # self.page.pause()
-        content = self.get_markdown_content()
-        return {"markdown": content, "html": ""}
+        # content = self.get_markdown_content()
+        content = self.get_valid_answer()
+        return {"markdown": content or "", "html": ""}

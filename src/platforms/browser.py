@@ -1,5 +1,7 @@
 import sys
 
+from patchright.sync_api import Browser
+
 
 sys.path.append("..")
 
@@ -18,7 +20,6 @@ import random
 from src.config.config import (
     PARSER_URL,
     PARSER_KEY,
-    PROXY_PORT,
     SG_PROXY_PASSWORD,
     SG_PROXY_USERNAME,
     US_PROXY_PASSWORD,
@@ -29,6 +30,8 @@ from src.config.config import (
 )
 import httpx
 from camoufox.sync_api import Camoufox
+from patchright.sync_api import sync_playwright
+from xvfbwrapper import Xvfb
 
 # Proxy lists
 PROXIES = {
@@ -324,12 +327,33 @@ class BrowserBase(ContextDecorator, ABC):
         # self.database.update_process_status(self.process_id, "success")
         self.logger.info("Process Successfully ended !")
 
+    def setup_page(self, browser: Browser):
+        self.page = browser.new_page()
+        self.logger.info(f"Workflow Started - {self.name}")
+        self.database.start_process(
+            self.process_id,
+            self.name,
+            self.prompt,
+            self.brand_report_id,
+        )
+
+        # Start processing the prompt
+        selector = (
+            'div[class="break-words min-w-0 flex-1"]'
+            if self.name == "perplexity"
+            else None
+        )
+        self.process_prompt(selector)
+        self.page.close() if self.page else None
+
     def send_prompt(self) -> None:
         """Start the workflow"""
         if HEADLESS == "yes":
             headless = True
         else:
             headless = "virtual"
+
+        PROXY_PORT = f"1000{random.randint(1, 7)}"
         if self.country == "sg":
             proxy = {
                 "server": f"{self.get_proxy()}:{PROXY_PORT}",
@@ -346,44 +370,32 @@ class BrowserBase(ContextDecorator, ABC):
         # 1. Group shared options to keep code DRY and maintainable
         common_options = {
             "window": (1920, 1080),
-            "slow_mo": 3000,
+            "slow_mo": 1000,
             "locale": f"en-{self.country.upper()}",
             "headless": headless,
             "proxy": proxy,
             "geoip": True,
-            "humanize": True,
+            "humanize": False,
         }
 
         # 2. Add case-specific overrides
         match self.name:
             case "google":
-                camoufox_options = Camoufox(
-                    **common_options,
-                    persistent_context=True,
-                    user_data_dir="user-data-dir",
-                )
-            case "perplexity":
-                camoufox_options = Camoufox(
-                    **common_options,
-                    persistent_context=True,
-                    user_data_dir="./perplexity-user-data-dir",
-                )
-            case _:  # "chatgpt" or default fallback
+                with Xvfb():
+                    with sync_playwright() as p:
+                        try:
+                            browser = p.chromium.launch(
+                                proxy=proxy,
+                                headless=False,
+                            )
+                            self.setup_page(browser)
+                        except Exception as e:
+                            self.save_raise_error(f"Processing Error - {str(e)}")
+            case _:
                 camoufox_options = Camoufox(**common_options)
-
-        # 3. Execution block
-        with camoufox_options as browser:
-            try:
-                self.page = browser.new_page()
-                self.logger.info(f"Workflow Started - {self.name}")
-                self.database.start_process(
-                    self.process_id, self.name, self.prompt, self.brand_report_id
-                )
-
-                # Start processing the prompt
-                selector = None
-                self.process_prompt(selector)
-                self.page.close()
-
-            except Exception as e:
-                self.save_raise_error(f"Processing Error - {str(e)}")
+                # 3. Execution block
+                with camoufox_options as browser:
+                    try:
+                        self.setup_page(browser)
+                    except Exception as e:
+                        self.save_raise_error(f"Processing Error - {str(e)}")

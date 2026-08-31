@@ -188,8 +188,12 @@ class GoogleScraper(BrowserBase):
             return False
         try:
             # Use Google search URL format with prompt
-            search_url = f"https://www.google.com/search?q={self.prompt}"
+            search_url = "https://www.google.com"
             self.page.goto(search_url, timeout=self.timeout)
+            self.page.get_by_role("combobox", name="Search").click()
+            self.page.get_by_role("combobox", name="Search").fill(self.prompt)
+            self.page.keyboard.press("Enter")
+            self.page.wait_for_load_state(timeout=50000, state="load")
             captcha_solved = self.check_and_solve_captcha()
             if captcha_solved:
                 self.page.goto("https://www.google.com", timeout=50000)
@@ -234,6 +238,7 @@ class GoogleScraper(BrowserBase):
                 content_selector,
                 timeout=20 * 1000,
                 error_message="Unable to find the content",
+                click=True,
             )
         except Exception as e:
             self.logger.error(f"Unable to find the content - {e}")
