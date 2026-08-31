@@ -381,16 +381,19 @@ class BrowserBase(ContextDecorator, ABC):
         # 2. Add case-specific overrides
         match self.name:
             case "google":
-                with Xvfb():
-                    with sync_playwright() as p:
-                        try:
-                            browser = p.chromium.launch(
-                                proxy=proxy,
-                                headless=False,
-                            )
-                            self.setup_page(browser)
-                        except Exception as e:
-                            self.save_raise_error(f"Processing Error - {str(e)}")
+                # with Xvfb():
+                with sync_playwright() as p:
+                    try:
+                        browser = p.chromium.launch(
+                            # user_data_dir="...",
+                            # channel="chrome",
+                            proxy=proxy,
+                            headless=False,
+                            # no_viewport=True,
+                        )
+                        self.setup_page(browser)
+                    except Exception as e:
+                        self.save_raise_error(f"Processing Error - {str(e)}")
             case _:
                 camoufox_options = Camoufox(**common_options)
                 # 3. Execution block
