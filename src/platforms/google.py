@@ -215,6 +215,14 @@ class GoogleScraper(BrowserBase):
         self.logger.info("Extracting response")
         if not self.page:
             return None
+        captcha_solved = self.check_and_solve_captcha()
+        if captcha_solved:
+            self.page.goto("https://www.google.com", timeout=50000)
+            self.page.fill(selector='textarea[title="Search"]', value=self.prompt)
+            self.page.keyboard.press("Enter")
+            self.page.wait_for_load_state(timeout=self.timeout)
+
+            self.logger.info(self.page.title)
         content_selector = 'div[jsname="KFl8ub"]'
 
         self.page.get_by_role("button", name="Show more AI Overview").click(
