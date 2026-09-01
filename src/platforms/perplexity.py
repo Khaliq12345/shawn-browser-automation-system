@@ -120,26 +120,10 @@ class PerplexityScraper(BrowserBase):
             if "Sign up and repeat your request" not in copied_text:
                 self.logger.info("Valid answer received. Stopping.")
                 return copied_text
-
+            self.logger.info(f"COPIED TEXT {copied_text[:20]}")
             self.logger.info(f"Attempt {idx} failed, retrying...")
 
-    def find_and_fill_input(self, use_botasarus: bool = False) -> bool:
-        self.logger.info("Filling the prompt")
-
-        if not self.page:
-            return False
-
-        self.page.wait_for_timeout(2000)
-        prompt_input_selector = 'div[id="ask-input"]'
-        # trying to fill the prompt
-        self.find_and_click(
-            prompt_input_selector, "Can not fill the prompt input", timeout=30 * 1000
-        )
-
-        self.page.type(prompt_input_selector, text=self.prompt)
-        self.page.wait_for_timeout(2000)
-        self.page.keyboard.press("Enter")
-        self.page.wait_for_timeout(2000)
+    def find_and_fill_input(self) -> bool:
         return True
 
     def get_markdown_content(self) -> str:
@@ -190,17 +174,5 @@ class PerplexityScraper(BrowserBase):
         except Exception as _:
             self.debug_snapshot("on-failure")  # <-- this is the money shot
         self.page.keyboard.press("End")
-        # share_selector = 'div[class="-ml-sm gap-xs flex flex-shrink-0 items-center"] button:nth-child(2)'
-        # self.find_and_click(
-        #     share_selector, "Unable to find share button", timeout=20 * 1000
-        # )
-        # Get content
-        # content_selector = 'div[id="markdown-content-0"]'
-        # self.find_and_click(
-        #     content_selector, "Unable to find content", timeout=5 * 1000
-        # )
-        # content = self.extract_content(content_selector)
-        # self.page.pause()
-        # content = self.get_markdown_content()
         content = self.get_valid_answer()
         return {"markdown": content or "", "html": ""}
