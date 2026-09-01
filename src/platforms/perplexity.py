@@ -95,7 +95,7 @@ class PerplexityScraper(BrowserBase):
             return False
         prompt_input_selector = 'div[id="ask-input"]'
         LOADING_SELECTOR = 'svg[class="animate-pplxIndicator fill-mode-both h-full w-auto shrink-0 transform-gpu will-change-transform"]'
-        for idx in range(1, 11):
+        for idx in range(1, 6):
             self.page.type(prompt_input_selector, text=self.prompt)
             self.page.wait_for_timeout(3000)
             self.page.keyboard.press("Enter")
@@ -175,4 +175,6 @@ class PerplexityScraper(BrowserBase):
             self.debug_snapshot("on-failure")  # <-- this is the money shot
         self.page.keyboard.press("End")
         content = self.get_valid_answer()
+        if not content:
+            raise RuntimeError("Perplexity Failed: Hit rate-limit / sign-up wall")
         return {"markdown": content or "", "html": ""}

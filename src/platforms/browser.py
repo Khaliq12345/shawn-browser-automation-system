@@ -391,7 +391,7 @@ class BrowserBase(ContextDecorator, ABC):
 
         # 2. Add case-specific overrides
         match self.name:
-            case "google" | "perplexity":
+            case "google":
                 self.logger.info("Using this one... ")
                 camoufox_options = Camoufox(
                     **common_options,
