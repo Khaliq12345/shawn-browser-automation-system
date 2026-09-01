@@ -351,7 +351,7 @@ class BrowserBase(ContextDecorator, ABC):
         if HEADLESS == "yes":
             headless = True
         else:
-            headless = False  # "virtual"
+            headless = "virtual"
 
         PROXY_PORT = f"1000{random.randint(1, 7)}"
         if self.country == "sg":
@@ -381,24 +381,16 @@ class BrowserBase(ContextDecorator, ABC):
         # 2. Add case-specific overrides
         match self.name:
             case "google":
-                with Xvfb():
-                    with sync_playwright() as p:
-                        try:
-                            browser = p.chromium.launch(
-                                # user_data_dir="...",
-                                # channel="chrome",
-                                proxy=proxy,
-                                headless=False,
-                                # no_viewport=True,
-                            )
-                            self.setup_page(browser)
-                        except Exception as e:
-                            self.save_raise_error(f"Processing Error - {str(e)}")
+                camoufox_options = Camoufox(
+                    **common_options,
+                    persistent_context=True,
+                    user_data_dir="user_data_dir",
+                )
             case _:
                 camoufox_options = Camoufox(**common_options)
-                # 3. Execution block
-                with camoufox_options as browser:
-                    try:
-                        self.setup_page(browser)
-                    except Exception as e:
-                        self.save_raise_error(f"Processing Error - {str(e)}")
+        # 3. Execution block
+        with camoufox_options as browser:
+            try:
+                self.setup_page(browser)
+            except Exception as e:
+                self.save_raise_error(f"Processing Error - {str(e)}")
