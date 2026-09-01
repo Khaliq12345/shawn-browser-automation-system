@@ -1,7 +1,7 @@
+import base64
 import sys
 
 from patchright.sync_api import Browser
-
 
 sys.path.append("..")
 
@@ -30,8 +30,6 @@ from src.config.config import (
 )
 import httpx
 from camoufox.sync_api import Camoufox
-from patchright.sync_api import sync_playwright
-from xvfbwrapper import Xvfb
 
 # Proxy lists
 PROXIES = {
@@ -261,7 +259,20 @@ class BrowserBase(ContextDecorator, ABC):
         # Save ScreenShot
         try:
             if selector:
-                self.page.locator(selector).last.screenshot(path=screeshot_path)
+                locator = self.page.locator(selector).last
+                locator.wait_for(state="visible")
+                locator.scroll_into_view_if_needed()
+                box = locator.bounding_box()
+                if box:
+                    self.page.screenshot(
+                        clip={
+                            "x": box["x"],
+                            "y": box["y"],
+                            "width": box["width"],
+                            "height": box["height"],
+                        },
+                        path=screeshot_path,
+                    )
             else:
                 self.page.screenshot(path=screeshot_path, full_page=True)
             self.storage.save_file(f"{basekey}/{screenshot_name}", screeshot_path)
@@ -380,7 +391,8 @@ class BrowserBase(ContextDecorator, ABC):
 
         # 2. Add case-specific overrides
         match self.name:
-            case "google":
+            case "google" | "perplexity":
+                self.logger.info("Using this one... ")
                 camoufox_options = Camoufox(
                     **common_options,
                     persistent_context=True,
