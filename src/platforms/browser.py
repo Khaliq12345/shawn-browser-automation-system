@@ -1,14 +1,11 @@
-import base64
 import sys
-
-from patchright.sync_api import Browser
 
 sys.path.append("..")
 
 import time
 import requests
 import pyhtml2md
-from playwright.sync_api import Page
+from playwright.sync_api import Browser, Page
 from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
 from src.utils.database import Database
