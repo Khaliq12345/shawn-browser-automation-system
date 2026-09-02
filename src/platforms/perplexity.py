@@ -116,11 +116,11 @@ class PerplexityScraper(BrowserBase):
             copy_button = self.page.locator('button[aria-label="Copy"]').last
             copy_button.click()
             copied_text = pyperclip.paste()
+            self.logger.info(f"COPIED TEXT {copied_text[:20]}")
             # If we got a valid answer, stop the loop
             if "Sign up and repeat your request" not in copied_text:
                 self.logger.info("Valid answer received. Stopping.")
                 return copied_text
-            self.logger.info(f"COPIED TEXT {copied_text[:20]}")
             self.logger.info(f"Attempt {idx} failed, retrying...")
 
     def find_and_fill_input(self) -> bool:
