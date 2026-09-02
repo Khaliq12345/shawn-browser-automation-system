@@ -402,6 +402,7 @@ class BrowserBase(ContextDecorator, ABC):
                 camoufox_options = Camoufox(**common_options)
         # 3. Execution block
         with camoufox_options as browser:
+            print(browser.browser_type, browser.version, headless)
             try:
                 self.setup_page(browser)
             except Exception as e:
