@@ -24,12 +24,10 @@ dependencies = [
     "sqlmodel>=0.0.24",
     "user-agent>=0.1.14",
     "uvicorn>=0.35.0",
-    "camoufox[geoip,gui]",
     "2captcha-python>=2.0.2",
     "selectolax>=0.4.7",
     "lxml>=6.0.2",
     "pandas>=3.0.1",
     "pyhtml2md>=1.8.0",
-    "patchright>=1.62.1",
-    "xvfbwrapper>=0.2.29",
+    "camoufox[geoip]>=0.5.5",
 ]

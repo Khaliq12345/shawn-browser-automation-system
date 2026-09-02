@@ -89,6 +89,5 @@ RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
 
 RUN uv run camoufox fetch
 RUN uv run playwright install-deps
-RUN uv run patchright install chromium
 
 CMD ["uv", "run", "src/utils/browser_runner.py"]
