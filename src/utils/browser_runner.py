@@ -92,28 +92,7 @@ def run_browser():
     database.update_schedule(brand_report_id, prompt_id, prompt, minutes=MINUTES)
     date = datetime.now()
 
-    for name in [
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-        "perplexity",
-    ]:
+    for name in ["chatgpt", "perplexity", "google"]:
         try:
             config = SCRAPER_CONFIG[name]
             ScraperClass = config["class"]
