@@ -10,7 +10,7 @@ services:
     command: uv run celery -A src.utils.celery_app worker -c 1 -Q new_jobs -n server1_new@%h -l INFO
     restart: always
     volumes:
-      - /opt/perplexity-user-data-dir:/app/perplexity-user-data-dir
+      - /home/worker/perplexity_user_data_dir:/app/perplexity_user_data_dir
 
   worker_scheduled_jobs:
     build:
