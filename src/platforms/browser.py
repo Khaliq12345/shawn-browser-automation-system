@@ -384,22 +384,27 @@ class BrowserBase(ContextDecorator, ABC):
             "proxy": proxy,
             "geoip": True,
             "humanize": False,
+            "os": "linux",
         }
 
         # 2. Add case-specific overrides
         match self.name:
             case "google":
-                self.logger.info("Using this one... ")
                 camoufox_options = Camoufox(
                     **common_options,
                     persistent_context=True,
                     user_data_dir="user_data_dir",
                 )
+            case "perplexity":
+                camoufox_options = Camoufox(
+                    **common_options,
+                    persistent_context=True,
+                    user_data_dir="perplexity_user_data_dir",
+                )
             case _:
                 camoufox_options = Camoufox(**common_options)
         # 3. Execution block
         with camoufox_options as browser:
-            print(browser.browser_type, browser.version, headless)
             try:
                 self.setup_page(browser)
             except Exception as e:

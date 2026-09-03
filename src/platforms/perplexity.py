@@ -164,7 +164,6 @@ class PerplexityScraper(BrowserBase):
         self.logger.info("Extracting response")
         if not self.page:
             return None
-
         content = None
         try:
             self.remove_modal()
