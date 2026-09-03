@@ -374,7 +374,6 @@ class BrowserBase(ContextDecorator, ABC):
                 "username": US_PROXY_USERNAME,
                 "password": US_PROXY_PASSWORD,
             }
-        print(proxy, PROXY_PORT)
         # 1. Group shared options to keep code DRY and maintainable
         common_options = {
             "window": (1920, 1080),

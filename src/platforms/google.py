@@ -218,12 +218,13 @@ class GoogleScraper(BrowserBase):
             return None
         content_selector = 'div[jsname="KFl8ub"]'
 
-        try:
-            self.page.get_by_role("button", name="Show more AI Overview").click(
-                timeout=20 * 1000
-            )
-        except Exception as _:
-            return {"markdown": "", "html": ""}
+        # try:
+        #     self.page.get_by_role("button", name="Show more AI Overview").click(
+        #         timeout=20 * 1000
+        #     )
+        # except Exception as _:
+        #     print("Error clicking...")
+        #     return {"markdown": "", "html": ""}
 
         self.page.wait_for_timeout(2000)
         try:
@@ -232,6 +233,7 @@ class GoogleScraper(BrowserBase):
                 timeout=20 * 1000,
                 error_message="Unable to find the content",
             )
+            self.page.wait_for_timeout(3000)
         except Exception as e:
             self.logger.error(f"Unable to find the content - {e}")
 
