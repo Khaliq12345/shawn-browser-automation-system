@@ -47,7 +47,7 @@ def _run_scraper(scraper_class, scraper_kwargs, result):
         loop.close()
 
 
-@retry(times=5, delay=5)
+@retry(times=10, delay=5)
 def _run_in_thread(ScraperClass, scraper_kwargs, task_logger):
     """
     Spawns a fresh thread for each attempt — isolates asyncio state
