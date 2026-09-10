@@ -5,6 +5,7 @@ sys.path.append(".")
 
 from src.platforms.browser import BrowserBase
 import pyperclip
+from playwright.sync_api import expect
 
 
 class PerplexityScraper(BrowserBase):
@@ -95,17 +96,23 @@ class PerplexityScraper(BrowserBase):
             return False
         prompt_input_selector = 'div[id="ask-input"]'
         LOADING_SELECTOR = 'svg[class="animate-pplxIndicator fill-mode-both h-full w-auto shrink-0 transform-gpu will-change-transform"]'
+        NEW_LOADING_SELECTOR = (
+            'div[class="_sharedDuration_orhia_1 _defaultShimmer_orhia_9 min-w-0"]'
+        )
         for idx in range(1, 3):
             self.page.type(prompt_input_selector, text=self.prompt)
             self.page.wait_for_timeout(3000)
             self.page.keyboard.press("Enter")
             self.remove_modal()
             try:
-                loading = self.page.locator(LOADING_SELECTOR)
+                loading = self.page.locator(NEW_LOADING_SELECTOR).last
                 # Only wait briefly for loading to appear
                 loading.wait_for(state="visible", timeout=3000)
                 # If it appeared, wait for it to disappear
                 loading.wait_for(state="hidden", timeout=60000)
+                self.logger.info("LOCATOR IS HIDDEN!!")
+                # Wait until 'Thinking' is no longer present in the element's content
+                # expect(loading).not_to_contain_text("Thinking", timeout=60000)
             except Exception:
                 self.logger.info("Loading indicator did not appear or is already gone")
             self.remove_modal()

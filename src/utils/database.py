@@ -18,8 +18,11 @@ class Database:
     def __init__(self) -> None:
         self.engine = create_engine(
             f"postgresql+psycopg://{config.DB_USER}:{config.DB_PASSWORD}@{config.DB_HOST}:5432/{config.DB_NAME}",
-            pool_size=5,
-            max_overflow=2
+            pool_size=5,  # Number of persistent connections
+            max_overflow=5,  # Extra temporary connections
+            pool_timeout=30,  # Seconds to wait for a free connection
+            pool_recycle=1800,  # Recycle connections every 30 minutes
+            pool_pre_ping=True,  # Verify connection before using it
         )
 
     def create_db_and_tables(self):
@@ -34,15 +37,14 @@ class Database:
                 schedules.append(
                     Schedules(
                         prompt=prompt.prompt,
-                        prompt_id=prompt.prompt_id, 
-                        last_run=datetime.now(), 
+                        prompt_id=prompt.prompt_id,
+                        last_run=datetime.now(),
                         next_run=None,
-                        brand_report_id=brand_report_id
+                        brand_report_id=brand_report_id,
                     )
                 )
             session.add_all(schedules)
             session.commit()
-
 
     def get_schedules(self, limit: int, offset: int) -> list[dict]:
         """Get all schedules"""
@@ -62,17 +64,29 @@ class Database:
         """Get schedules to run next"""
         with Session(self.engine) as session:
             if config.ONLY_NULL == "yes":
-                stmt = select(Schedules).where(Schedules.next_run == None).limit(1).with_for_update(skip_locked=True)
+                stmt = (
+                    select(Schedules)
+                    .where(Schedules.next_run == None)
+                    .limit(1)
+                    .with_for_update(skip_locked=True)
+                )
             else:
-                stmt = select(Schedules).where(Schedules.next_run < datetime.now()).with_for_update(skip_locked=True).order_by(Schedules.next_run).limit(1)
+                stmt = (
+                    select(Schedules)
+                    .where(Schedules.next_run < datetime.now())
+                    .with_for_update(skip_locked=True)
+                    .order_by(Schedules.next_run)
+                    .limit(1)
+                )
             scheduled_raw = session.exec(stmt).first()
             if not scheduled_raw:
                 return None
 
             return json.loads(scheduled_raw.model_dump_json())
 
-
-    def update_schedule(self, brand_report_id: str, prompt_id: str, prompt: str, minutes: int = 60):
+    def update_schedule(
+        self, brand_report_id: str, prompt_id: str, prompt: str, minutes: int = 60
+    ):
         """Update or create the schedule"""
         with Session(self.engine) as session:
             stmt = select(Schedules).where(
@@ -221,9 +235,9 @@ class Database:
             total_prompts = len(processes)
             print(f"TOTAL {total_prompts}")
             for process in processes:
-                if process.status == 'running':
-                    return 'running'
-        return 'completed' if total_prompts > 0 else 'not started'
+                if process.status == "running":
+                    return "running"
+        return "completed" if total_prompts > 0 else "not started"
 
     #  -------- Metrics ----------
 
