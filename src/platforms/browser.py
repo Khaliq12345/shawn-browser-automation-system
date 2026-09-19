@@ -378,11 +378,9 @@ class BrowserBase(ContextDecorator, ABC):
         common_options = {
             "window": (1920, 1080),
             "slow_mo": 1000,
-            "locale": f"en-{self.country.upper()}",
             "headless": headless,
             "proxy": proxy,
             "geoip": True,
-            "humanize": False,
             "os": "linux",
         }
 
@@ -393,15 +391,23 @@ class BrowserBase(ContextDecorator, ABC):
                     **common_options,
                     persistent_context=True,
                     user_data_dir="user_data_dir",
+                    locale=f"en-{self.country.upper()}",
+                    humanize=False,
                 )
             case "perplexity":
                 camoufox_options = Camoufox(
                     **common_options,
                     persistent_context=True,
                     user_data_dir="perplexity_user_data_dir",
+                    locale=f"en-{self.country.upper()}",
+                    humanize=False,
                 )
             case _:
-                camoufox_options = Camoufox(**common_options)
+                camoufox_options = Camoufox(
+                    **common_options,
+                    humanize=True,
+                    locale=f"en-{self.country.upper()}",
+                )
         # 3. Execution block
         with camoufox_options as browser:
             try:

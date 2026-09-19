@@ -77,9 +77,9 @@ class ChatGPTScraper(BrowserBase):
         self.page.get_by_role("textbox", name="Chat with ChatGPT").click()
         self.page.wait_for_timeout(2000)
         self.page.get_by_role("textbox", name="Chat with ChatGPT").fill(self.prompt)
-        self.page.wait_for_timeout(2000)
+        self.page.wait_for_timeout(5000)
         self.page.keyboard.press("Enter")
-        self.page.wait_for_timeout(2000)
+        self.page.wait_for_timeout(10000)
 
         self.logger.info("Done Filling")
         return True
@@ -89,10 +89,16 @@ class ChatGPTScraper(BrowserBase):
         if not self.page:
             return None
 
+        if self.page.url.startswith("https://auth.openai.com/log-in-or-create-account"):
+            raise RuntimeError("Redirected to Login, retring..")
+
+        force_login_locator = self.page.locator('section[data-gate-kind="force_login"]')
+        if force_login_locator.is_visible():
+            raise RuntimeError("Login modal visible, retring..")
+
+        self.page.wait_for_timeout(10000)
         content = None
-        content_selector = (
-            'div[class="_wdUoQG_messageCopy _A1mksG_dilContent _pKBN-W_sportsContent"]'
-        )
+        content_selector = 'li[data-message-role="assistant"]'
         self.wait_for_answer_complete(content_selector)
         self.find_and_click(
             content_selector,
