@@ -294,9 +294,7 @@ class BrowserBase(ContextDecorator, ABC):
         """Save, Log and raise Error"""
         self.debug_snapshot("on-failure")
         self.logger.error(error_message)
-        # if save:
-        #     self.database.update_process_status(self.process_id, "failed")
-        raise ValueError(error_message)
+        raise RuntimeError(error_message)
 
     def process_prompt(self, selector: str | None) -> None:
         if not self.page:
@@ -337,12 +335,6 @@ class BrowserBase(ContextDecorator, ABC):
         self.logger.info("Process Successfully ended !")
 
     def setup_page(self, browser: Browser):
-        self.logger.info(f"Workflow Starting - {self.name}")
-        try:
-            self.page = browser.new_page()
-        except Exception as e:
-            print(e)
-            raise e
         self.page = browser.new_page()
         self.logger.info(f"Workflow Started - {self.name}")
         self.database.start_process(
@@ -418,11 +410,13 @@ class BrowserBase(ContextDecorator, ABC):
                     locale=f"en-{self.country.upper()}",
                 )
 
-        self.logger.info(camoufox_options)
-        # 3. Execution block
-        with camoufox_options as browser:
-            try:
-                self.setup_page(browser)
-            except Exception as e:
-                print(e)
-                self.save_raise_error(f"Processing Error - {str(e)}")
+        try:
+            self.logger.info(camoufox_options)
+            # 3. Execution block
+            with camoufox_options as browser:
+                try:
+                    self.setup_page(browser)
+                except Exception as e:
+                    raise e
+        except Exception as e:
+            self.save_raise_error(f"Processing Error - {str(e)}")
