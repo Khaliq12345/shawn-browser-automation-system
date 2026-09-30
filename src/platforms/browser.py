@@ -337,6 +337,12 @@ class BrowserBase(ContextDecorator, ABC):
         self.logger.info("Process Successfully ended !")
 
     def setup_page(self, browser: Browser):
+        self.logger.info(f"Workflow Starting - {self.name}")
+        try:
+            self.page = browser.new_page()
+        except Exception as e:
+            print(e)
+            raise e
         self.page = browser.new_page()
         self.logger.info(f"Workflow Started - {self.name}")
         self.database.start_process(
