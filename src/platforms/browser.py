@@ -418,4 +418,5 @@ class BrowserBase(ContextDecorator, ABC):
             try:
                 self.setup_page(browser)
             except Exception as e:
+                print(e)
                 self.save_raise_error(f"Processing Error - {str(e)}")
