@@ -208,23 +208,20 @@ class Database:
                 session.rollback()
                 pass
 
-    def update_process_status(
-        self,
-        process_id: str,
-        status: str,
-    ):
+    def update_process_status(self, process_id: str, status: str):
         with Session(self.engine) as session:
             stmt = select(Browsers).where(Browsers.process_id == process_id)
-            process = session.scalars(stmt)
-            process = process.one()
-            process.status = status
-            process.end_time = datetime.now(timezone.utc)
-            process.duration = (
-                (process.end_time - process.start_time).total_seconds()
-                if process.end_time
-                else 0.0
-            )
-            session.commit()
+            process = session.scalars(stmt).first()
+
+            if process:
+                process.status = status
+                process.end_time = datetime.now(timezone.utc)
+                process.duration = (
+                    (process.end_time - process.start_time).total_seconds()
+                    if process.end_time and process.start_time
+                    else 0.0
+                )
+                session.commit()
 
     # Retrieve a process status
     def get_process_status(self, brand_report_id: str) -> str:
