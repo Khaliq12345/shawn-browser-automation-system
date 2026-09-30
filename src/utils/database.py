@@ -73,7 +73,7 @@ class Database:
             else:
                 stmt = (
                     select(Schedules)
-                    .where(Schedules.next_run < datetime.now())
+                    .where(Schedules.next_run < datetime.now(timezone.utc))
                     .with_for_update(skip_locked=True)
                     .order_by(Schedules.next_run)
                     .limit(1)
@@ -96,7 +96,7 @@ class Database:
             schedule = session.exec(stmt).first()
             # update the schedule if it exists
             if schedule:
-                schedule.last_run = datetime.now()
+                schedule.last_run = datetime.now(timezone.utc)
                 schedule.next_run = parse(f"In {minutes} minutes")
             # creating a new one
             else:
