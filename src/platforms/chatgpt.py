@@ -3,7 +3,6 @@ import sys
 
 sys.path.append(".")
 
-import time
 from typing import Optional
 from src.platforms.browser import BrowserBase
 
@@ -51,6 +50,7 @@ class ChatGPTScraper(BrowserBase):
         while self.page.evaluate("Date.now()") - start_time < timeout:
             try:
                 current_text = locator.inner_text().strip()
+                print(len(current_text))
                 if current_text == "Searching the web":
                     continue
 
@@ -72,14 +72,13 @@ class ChatGPTScraper(BrowserBase):
         self.logger.info("Filling input")
         if not self.page:
             return False
-        time.sleep(5)
+        self.page.wait_for_timeout(5000)
         # trying to fill the prompt
         self.page.get_by_role("textbox", name="Chat with ChatGPT").click()
+        self.page.get_by_role("textbox", name="Chat with ChatGPT").type(self.prompt)
         self.page.wait_for_timeout(2000)
-        self.page.get_by_role("textbox", name="Chat with ChatGPT").fill(self.prompt)
-        self.page.wait_for_timeout(5000)
         self.page.keyboard.press("Enter")
-        self.page.wait_for_timeout(10000)
+        self.page.keyboard.press("Enter")
 
         self.logger.info("Done Filling")
         return True
@@ -89,7 +88,8 @@ class ChatGPTScraper(BrowserBase):
         if not self.page:
             return None
 
-        if self.page.url.startswith("https://auth.openai.com/log-in-or-create-account"):
+        self.page.wait_for_load_state(state="load", timeout=30000)
+        if self.page.url.startswith("https://auth.openai.com"):
             raise RuntimeError("Redirected to Login, retring..")
 
         force_login_locator = self.page.locator('section[data-gate-kind="force_login"]')
@@ -99,11 +99,18 @@ class ChatGPTScraper(BrowserBase):
         self.page.wait_for_timeout(10000)
         content = None
         content_selector = 'li[data-message-role="assistant"]'
+        if self.page.url.startswith("https://auth.openai.com"):
+            raise RuntimeError("Redirected to Login, retring..")
+        self.find_and_click("main", "No main page", 20000, click=True)
+        answer = self.page.query_selector_all(content_selector)
+        print(answer)
+        if len(answer) == 0:
+            raise RuntimeError("No data, retring..")
         self.wait_for_answer_complete(content_selector)
         self.find_and_click(
             content_selector,
             error_message="Unable to find the content",
-            timeout=5 * 1000,
+            timeout=30 * 1000,
         )
         content = self.extract_content(content_selector)
         return content

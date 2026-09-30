@@ -17,6 +17,7 @@ import random
 from src.config.config import (
     PARSER_URL,
     PARSER_KEY,
+    PERPLEXITY_USER_FOLDER,
     SG_PROXY_PASSWORD,
     SG_PROXY_USERNAME,
     US_PROXY_PASSWORD,
@@ -374,6 +375,8 @@ class BrowserBase(ContextDecorator, ABC):
                 "username": US_PROXY_USERNAME,
                 "password": US_PROXY_PASSWORD,
             }
+
+        print(proxy)
         # 1. Group shared options to keep code DRY and maintainable
         common_options = {
             "window": (1920, 1080),
@@ -398,7 +401,7 @@ class BrowserBase(ContextDecorator, ABC):
                 camoufox_options = Camoufox(
                     **common_options,
                     persistent_context=True,
-                    user_data_dir="perplexity_user_data_dir",
+                    user_data_dir=PERPLEXITY_USER_FOLDER,
                     locale=f"en-{self.country.upper()}",
                     humanize=False,
                 )

@@ -10,7 +10,6 @@ dependencies = [
     "dateparser>=1.2.2",
     "fastapi[standard]>=0.116.1",
     "flower>=2.0.1",
-    "func-retry>=0.1.4",
     "html-to-markdown[lxml]>=1.9.0",
     "psycopg[binary]>=3.2.9",
     "ptpython>=3.0.30",
@@ -30,4 +29,5 @@ dependencies = [
     "pandas>=3.0.1",
     "pyhtml2md>=1.8.0",
     "camoufox[geoip]>=0.5.5",
+    "tenacity>=9.1.4",
 ]

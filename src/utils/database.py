@@ -5,7 +5,7 @@ from typing import Optional
 sys.path.append(".")
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from dateparser import parse
 from sqlmodel import Session, create_engine, select, text
@@ -38,7 +38,7 @@ class Database:
                     Schedules(
                         prompt=prompt.prompt,
                         prompt_id=prompt.prompt_id,
-                        last_run=datetime.now(),
+                        last_run=datetime.now(timezone.utc),
                         next_run=None,
                         brand_report_id=brand_report_id,
                     )
@@ -104,7 +104,7 @@ class Database:
                     prompt_id=prompt_id,
                     brand_report_id=brand_report_id,
                     prompt=prompt,
-                    last_run=datetime.now(),
+                    last_run=datetime.now(timezone.utc),
                     next_run=None,
                 )
             session.add(schedule)
@@ -197,7 +197,7 @@ class Database:
                     status="running",
                     platform=platform,
                     prompt=prompt,
-                    start_time=datetime.now(),
+                    start_time=datetime.now(timezone.utc),
                     end_time=None,
                     brand_report_id=brand_report_id,
                 )
@@ -218,7 +218,7 @@ class Database:
             process = session.scalars(stmt)
             process = process.one()
             process.status = status
-            process.end_time = datetime.now()
+            process.end_time = datetime.now(timezone.utc)
             process.duration = (
                 (process.end_time - process.start_time).total_seconds()
                 if process.end_time

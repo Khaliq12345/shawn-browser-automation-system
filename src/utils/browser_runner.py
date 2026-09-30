@@ -3,15 +3,18 @@ import logging
 import sys
 import threading
 
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
+
 sys.path.append(".")
 from datetime import datetime
 
-from func_retry import retry
 from src.config.config import MINUTES
 from src.platforms.chatgpt import ChatGPTScraper
 from src.platforms.google import GoogleScraper
 from src.platforms.perplexity import PerplexityScraper
 from src.utils.database import Database
+from tenacity import retry
 
 # Scraper configs
 SCRAPER_CONFIG = {
@@ -47,7 +50,7 @@ def _run_scraper(scraper_class, scraper_kwargs, result):
         loop.close()
 
 
-@retry(times=10, delay=5)
+@retry(stop=stop_after_attempt(10), wait=wait_fixed(5))
 def _run_in_thread(ScraperClass, scraper_kwargs, task_logger):
     """
     Spawns a fresh thread for each attempt — isolates asyncio state
@@ -89,10 +92,10 @@ def run_browser():
 
     prompt = to_run["prompt"]
     prompt_id = to_run["prompt_id"]
-    database.update_schedule(brand_report_id, prompt_id, prompt, minutes=MINUTES)
+    # database.update_schedule(brand_report_id, prompt_id, prompt, minutes=MINUTES)
     date = datetime.now()
 
-    for name in ["chatgpt", "perplexity", "google"]:
+    for name in ["chatgpt"] * 50:
         try:
             config = SCRAPER_CONFIG[name]
             ScraperClass = config["class"]
