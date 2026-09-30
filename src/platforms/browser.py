@@ -386,7 +386,7 @@ class BrowserBase(ContextDecorator, ABC):
             "geoip": True,
             "os": "linux",
         }
-
+        self.logger.info(self.name)
         # 2. Add case-specific overrides
         match self.name:
             case "google":
