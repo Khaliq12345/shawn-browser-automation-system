@@ -4,7 +4,6 @@ sys.path.append("..")
 
 import time
 import requests
-import pyhtml2md
 from playwright.sync_api import Browser, Page
 from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
@@ -28,6 +27,7 @@ from src.config.config import (
 )
 import httpx
 from camoufox.sync_api import Camoufox
+from html_to_markdown import convert
 
 # Proxy lists
 PROXIES = {
@@ -179,8 +179,8 @@ class BrowserBase(ContextDecorator, ABC):
             content = contents[-1]
             if not content:
                 return {"markdown": "", "html": ""}
-            content_markdown = pyhtml2md.convert(content.inner_html())
-            return {"markdown": content_markdown, "html": content.inner_html()}
+            content_markdown = convert(content.inner_html())
+            return {"markdown": content_markdown.content, "html": content.inner_html()}
         except Exception as e:
             self.logger.error("Unable to extract content")
             raise ValueError(f"Unable to extract content - {str(e)}")

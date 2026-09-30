@@ -5,7 +5,6 @@ sys.path.append(".")
 
 from src.platforms.browser import BrowserBase
 import pyperclip
-from playwright.sync_api import expect
 
 
 class PerplexityScraper(BrowserBase):

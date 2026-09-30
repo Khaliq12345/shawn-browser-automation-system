@@ -3,7 +3,6 @@ from celery.schedules import crontab
 from kombu import Exchange, Queue
 from src.config.config import REDIS_URL, SERVER_NAME, RUN_PER_BEAT_RUN
 from src.utils.browser_runner import run_browser
-from celery import group
 import logging
 
 logger = logging.getLogger(__name__)
