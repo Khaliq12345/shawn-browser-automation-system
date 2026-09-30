@@ -411,6 +411,8 @@ class BrowserBase(ContextDecorator, ABC):
                     humanize=True,
                     locale=f"en-{self.country.upper()}",
                 )
+
+        self.logger.info(camoufox_options)
         # 3. Execution block
         with camoufox_options as browser:
             try:
