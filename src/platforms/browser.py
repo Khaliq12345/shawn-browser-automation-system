@@ -292,7 +292,8 @@ class BrowserBase(ContextDecorator, ABC):
 
     def save_raise_error(self, error_message: str) -> None:
         """Save, Log and raise Error"""
-        # self.debug_snapshot("on-failure")
+        if self.page:
+            self.debug_snapshot("on-failure")
         self.logger.error(error_message)
         raise RuntimeError(error_message)
 
@@ -360,7 +361,7 @@ class BrowserBase(ContextDecorator, ABC):
         else:
             headless = "virtual"
 
-        PROXY_PORT = "10000"
+        PROXY_PORT = str(random.randint(10001, 10020))
         if self.country == "sg":
             proxy = {
                 "server": f"{self.get_proxy()}:{PROXY_PORT}",
