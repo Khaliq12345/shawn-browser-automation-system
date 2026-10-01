@@ -360,7 +360,7 @@ class BrowserBase(ContextDecorator, ABC):
         else:
             headless = "virtual"
 
-        PROXY_PORT = f"1000{random.randint(1, 7)}"
+        PROXY_PORT = "10000"
         if self.country == "sg":
             proxy = {
                 "server": f"{self.get_proxy()}:{PROXY_PORT}",
