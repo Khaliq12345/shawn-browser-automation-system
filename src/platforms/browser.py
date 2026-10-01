@@ -292,7 +292,7 @@ class BrowserBase(ContextDecorator, ABC):
 
     def save_raise_error(self, error_message: str) -> None:
         """Save, Log and raise Error"""
-        self.debug_snapshot("on-failure")
+        # self.debug_snapshot("on-failure")
         self.logger.error(error_message)
         raise RuntimeError(error_message)
 
