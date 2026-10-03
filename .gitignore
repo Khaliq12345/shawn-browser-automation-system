@@ -4,6 +4,7 @@ __pycache__/
 responses
 .env
 test.py
+test2.py
 database.db
 test.txt
 ./output/

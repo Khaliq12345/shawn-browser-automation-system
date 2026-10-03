@@ -30,4 +30,5 @@ dependencies = [
     "pyhtml2md>=1.8.0",
     "camoufox[geoip]>=0.5.5",
     "tenacity>=9.1.4",
+    "nodriver>=0.50.3",
 ]
