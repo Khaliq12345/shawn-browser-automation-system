@@ -174,7 +174,7 @@ class PerplexityScraper(BrowserBase):
         try:
             self.remove_modal()
             self.find_and_click(
-                "main", "Unable to click on main", 20 * 1000, click=True
+                "main", "Unable to click on main", 60 * 1000, click=True
             )
         except Exception as _:
             self.debug_snapshot("on-failure")  # <-- this is the money shot
