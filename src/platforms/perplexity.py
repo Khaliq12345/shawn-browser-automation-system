@@ -5,6 +5,8 @@ sys.path.append(".")
 
 from src.platforms.browser import BrowserBase
 import pyperclip
+from src.utils.email_service import EmailService
+from src.config.config import EMAIL_ACCOUNT, EMAIL_PASSWORD, IMAP_SERVER
 
 
 class PerplexityScraper(BrowserBase):
@@ -37,6 +39,60 @@ class PerplexityScraper(BrowserBase):
             languague,
             brand,
         )
+
+    def get_otp_code(self) -> str:
+        # Initialize the service with your config
+        email_service = EmailService(
+            IMAP_SERVER=IMAP_SERVER,
+            EMAIL_ACCOUNT=EMAIL_ACCOUNT,
+            EMAIL_PASSWORD=EMAIL_PASSWORD,
+        )
+
+        # Fetch the OTP
+        otp = email_service.fetch_latest_otp(
+            timeout=60,
+            poll_interval=5,
+            sender_email="team@mail.perplexity.ai",  # Set to None if not needed
+            subject_keyword="Sign in to Perplexity",
+        )
+        if otp:
+            print(f"\n[SUCCESS] Extracted OTP Code: **{otp}**")
+            return otp
+        else:
+            print("\n[FAILED] Could not retrieve OTP.")
+            raise RuntimeError("[FAILED] Could not retrieve OTP.")
+
+    def navigate(self) -> bool:
+        """Start the browser and navigate to the specified URL"""
+        if not self.page:
+            return False
+        try:
+            self.page.goto(self.url, timeout=self.timeout)
+            self.logger.info(self.page.title)
+            self.logger.info("Checking if we are logged in..")
+            sign_in_button = self.page.get_by_role("button", name="Sign In")
+            if sign_in_button.is_visible():
+                self.logger.info("We are not logged in..")
+                sign_in_button.click()
+                self.page.get_by_role("textbox", name="Enter your email").fill(
+                    EMAIL_ACCOUNT, timeout=self.timeout
+                )
+                self.page.get_by_role("button", name="Continue with email").click()
+                otp_code = self.get_otp_code()
+                self.page.get_by_role("textbox", name="Digit 1 of").fill(otp_code[0])
+                self.page.get_by_role("textbox", name="Digit 2 of").fill(otp_code[1])
+                self.page.get_by_role("textbox", name="Digit 3 of").fill(otp_code[2])
+                self.page.get_by_role("textbox", name="Digit 4 of").fill(otp_code[3])
+                self.page.get_by_role("textbox", name="Digit 5 of").fill(otp_code[4])
+                self.page.get_by_role("textbox", name="Digit 6 of").fill(otp_code[5])
+                self.page.wait_for_load_state(state="load", timeout=self.timeout)
+            else:
+                self.logger.info("We are logged in..")
+            self.page.click('button[aria-label^="Use incognito"]')
+            return True
+        except Exception as e:
+            self.logger.error(f"Error starting or navigating the page - {e}")
+            return False
 
     def wait_for_answer_complete(self, selector, timeout=60000, stable_for=2000):
         if not self.page:
@@ -90,81 +146,27 @@ class PerplexityScraper(BrowserBase):
         except Exception:
             self.logger.info("Portal not found within 3 seconds")
 
-    def get_valid_answer(self):
+    def find_and_fill_input(self) -> bool:
         if not self.page:
             return False
         prompt_input_selector = 'div[id="ask-input"]'
-        LOADING_SELECTOR = 'svg[class="animate-pplxIndicator fill-mode-both h-full w-auto shrink-0 transform-gpu will-change-transform"]'
         NEW_LOADING_SELECTOR = (
             'div[class="_sharedDuration_orhia_1 _defaultShimmer_orhia_9 min-w-0"]'
         )
-        for idx in range(1, 3):
-            self.page.type(prompt_input_selector, text=self.prompt)
-            self.page.wait_for_timeout(3000)
-            self.page.keyboard.press("Enter")
-            self.remove_modal()
-            try:
-                loading = self.page.locator(NEW_LOADING_SELECTOR).last
-                # Only wait briefly for loading to appear
-                loading.wait_for(state="visible", timeout=3000)
-                # If it appeared, wait for it to disappear
-                loading.wait_for(state="hidden", timeout=60000)
-                self.logger.info("LOCATOR IS HIDDEN!!")
-                # Wait until 'Thinking' is no longer present in the element's content
-                # expect(loading).not_to_contain_text("Thinking", timeout=60000)
-            except Exception:
-                self.logger.info("Loading indicator did not appear or is already gone")
-            self.remove_modal()
-            self.wait_for_answer_complete(
-                "div.break-words.min-w-0.flex-1",
-            )
-            # Get the latest answer
-            copy_button = self.page.locator('button[aria-label="Copy"]').last
-            copy_button.click()
-            copied_text = pyperclip.paste()
-            self.logger.info(f"COPIED TEXT {copied_text[:20]}")
-            # If we got a valid answer, stop the loop
-            if "Sign up and repeat your request" not in copied_text:
-                self.logger.info("Valid answer received. Stopping.")
-                return copied_text
-            self.logger.info(f"Attempt {idx} failed, retrying...")
-
-    def find_and_fill_input(self) -> bool:
-        return True
-
-    def get_markdown_content(self) -> str:
-        if not self.page:
-            raise ValueError("Browser is not started")
+        self.page.type(prompt_input_selector, text=self.prompt)
+        self.page.wait_for_timeout(3000)
+        self.page.keyboard.press("Enter")
+        self.remove_modal()
         try:
-            # wait for the button to actually be visible instead of blind sleep
-            self.page.wait_for_timeout(2000)
-            self.debug_snapshot("on-before-download-click")
-            self.page.get_by_role("button", name="Download").nth(-1).click(
-                timeout=20 * 1000
-            )
-            with self.page.expect_download(timeout=15000) as download_info:
-                self.page.get_by_role("menuitem", name="Markdown").click()
-
-            self.debug_snapshot("on-after-download")
-            download = download_info.value
-            path = download.path()
-            with open(path, "r", encoding="utf-8") as f:
-                markdown = f.read()
-
-            self.page.reload(timeout=20 * 1000, wait_until="load")
-            self.logger.info("Deleting the session")
-            self.page.get_by_label("Main", exact=True).get_by_role(
-                "button", name="Session actions"
-            ).click()
-
-            self.page.get_by_text("Delete").click(timeout=20 * 1000)
-            self.page.get_by_role("button", name="Delete").click(timeout=20 * 1000)
-            return markdown
-
-        except Exception as e:
-            self.debug_snapshot("on-failure")  # <-- this is the money shot
-            self.logger.error("Unable to download markdown")
-            raise ValueError(f"Unable to download markdown - {str(e)}")
+            loading = self.page.locator(NEW_LOADING_SELECTOR).last
+            # Only wait briefly for loading to appear
+            loading.wait_for(state="visible", timeout=3000)
+            # If it appeared, wait for it to disappear
+            loading.wait_for(state="hidden", timeout=60000)
+            self.logger.info("LOCATOR IS HIDDEN!!")
+        except Exception:
+            self.logger.info("Loading indicator did not appear or is already gone")
+        return True
 
     def extract_response(self) -> dict | None:
         self.logger.info("Extracting response")
@@ -179,7 +181,11 @@ class PerplexityScraper(BrowserBase):
         except Exception as _:
             self.debug_snapshot("on-failure")  # <-- this is the money shot
         self.page.keyboard.press("End")
-        content = self.get_valid_answer()
+        # Get the latest answer
+        copy_button = self.page.locator('button[aria-label="Copy"]').last
+        copy_button.click()
+        content = pyperclip.paste()
+        self.logger.info(f"COPIED TEXT {content[:20]}")
         if not content:
             raise RuntimeError("Perplexity Failed: Hit rate-limit / sign-up wall")
         return {"markdown": content or "", "html": ""}

@@ -54,3 +54,7 @@ RUN_PER_BEAT_RUN = int(os.getenv("RUN_PER_BEAT_RUN", 2))
 CAPTCHA_API_KEY = os.getenv("CAPTCHA_API_KEY", "")
 # Folder Path
 PERPLEXITY_USER_FOLDER = os.getenv("PERPLEXITY_USER_FOLDER", "/perplexity-user-folder")
+# EMAIL SERVICE
+IMAP_SERVER = os.getenv("IMAP_SERVER", "imap.yourprovider.com")
+EMAIL_ACCOUNT = os.getenv("EMAIL_ACCOUNT", "your_email@domain.com")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")

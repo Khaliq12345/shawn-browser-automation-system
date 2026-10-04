@@ -14,3 +14,4 @@ user-data-dir/
 google_test.py
 sample.py
 prompts_normalized.csv
+perplexity_user_folder/

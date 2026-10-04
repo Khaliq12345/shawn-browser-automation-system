@@ -310,6 +310,7 @@ class BrowserBase(ContextDecorator, ABC):
 
         # Step 2: Fill and Submit the input
         is_filled = self.find_and_fill_input()
+
         if not is_filled:
             error_message = "Error filling the prompt"
             self.save_raise_error(error_message)
@@ -381,7 +382,7 @@ class BrowserBase(ContextDecorator, ABC):
             "window": (1920, 1080),
             "slow_mo": 1000,
             "headless": headless,
-            # "proxy": proxy,
+            "proxy": proxy,
             "geoip": True,
             "os": "linux",
         }
@@ -399,8 +400,8 @@ class BrowserBase(ContextDecorator, ABC):
             case "perplexity":
                 camoufox_options = Camoufox(
                     **common_options,
-                    # persistent_context=True,
-                    # user_data_dir=PERPLEXITY_USER_FOLDER,
+                    persistent_context=True,
+                    user_data_dir=PERPLEXITY_USER_FOLDER,
                     locale=f"en-{self.country.upper()}",
                     humanize=False,
                 )
