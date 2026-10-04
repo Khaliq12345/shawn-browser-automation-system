@@ -210,12 +210,13 @@ class PerplexityScraper(BrowserBase):
                 "main", "Unable to click on main", 60 * 1000, click=True
             )
         except Exception as _:
-            self.debug_snapshot("on-failure")  # <-- this is the money shot
+            self.debug_snapshot("on-failure")
         self.page.keyboard.press("End")
         # Get the latest answer
         copy_button = self.page.locator('button[aria-label="Copy"]').last
         copy_button.click()
-        content = pyperclip.paste()
+        content = self.page.evaluate("navigator.clipboard.readText()")
+        # content = pyperclip.paste()
         self.logger.info(f"COPIED TEXT {content[:20]}")
         if not content:
             raise RuntimeError("Perplexity Failed: Hit rate-limit / sign-up wall")
