@@ -62,6 +62,31 @@ class PerplexityScraper(BrowserBase):
             print("\n[FAILED] Could not retrieve OTP.")
             raise RuntimeError("[FAILED] Could not retrieve OTP.")
 
+    def _wait_for_captcha(self, timeout_seconds: int = 60) -> bool:
+        """Wait for Cloudflare security verification to clear with a timeout"""
+        if not self.page:
+            return False
+        self.logger.info("Checking for security verification...")
+        interval = 5000  # 5 seconds
+        max_attempts = timeout_seconds // (interval // 1000)
+        attempts = 0
+
+        try:
+            while self.page.get_by_text(
+                "Performing security verification"
+            ).is_visible():
+                if attempts >= max_attempts:
+                    self.logger.error("Cloudflare security verification timed out.")
+                    return False
+
+                self.logger.info("Waiting for security verification to complete...")
+                self.page.wait_for_timeout(interval)
+                attempts += 1
+            return True
+        except Exception:
+            # If the element detaches or page reloads while checking, it's usually safe to proceed
+            return True
+
     def navigate(self) -> bool:
         """Start the browser and navigate to the specified URL"""
         if not self.page:
@@ -69,7 +94,13 @@ class PerplexityScraper(BrowserBase):
         try:
             self.page.goto(self.url, timeout=self.timeout)
             self.logger.info(self.page.title)
+
+            # Wait for Cloudflare security verification to clear if present
+            if not self._wait_for_captcha():
+                return False
+
             self.logger.info("Checking if we are logged in..")
+            self.page.wait_for_load_state(state="load", timeout=self.timeout)
             sign_in_button = self.page.get_by_role("button", name="Sign In")
             if sign_in_button.is_visible():
                 self.logger.info("We are not logged in..")

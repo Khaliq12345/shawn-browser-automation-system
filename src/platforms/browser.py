@@ -360,7 +360,7 @@ class BrowserBase(ContextDecorator, ABC):
         if HEADLESS == "yes":
             headless = True
         else:
-            headless = "virtual"
+            headless = False  # "virtual"
 
         PROXY_PORT = str(random.randint(10001, 10020))
         if self.country == "sg":
@@ -400,8 +400,8 @@ class BrowserBase(ContextDecorator, ABC):
             case "perplexity":
                 camoufox_options = Camoufox(
                     **common_options,
-                    persistent_context=True,
-                    user_data_dir=PERPLEXITY_USER_FOLDER,
+                    # persistent_context=True,
+                    # user_data_dir=PERPLEXITY_USER_FOLDER,
                     locale=f"en-{self.country.upper()}",
                     humanize=False,
                 )
