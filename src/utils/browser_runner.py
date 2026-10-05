@@ -71,8 +71,6 @@ def _run_in_thread(ScraperClass, scraper_kwargs, task_logger):
         raise RuntimeError("Thread exited without reporting a result")
 
     if result["status"] == "error":
-        print(result)
-        print(result["type"], result["message"])
         raise RuntimeError(f"{result['type']}: {result['message']}")
 
 

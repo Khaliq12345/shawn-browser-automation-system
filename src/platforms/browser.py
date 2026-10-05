@@ -35,6 +35,8 @@ PROXIES = {
     "us": ["isp.decodo.com"],
 }
 
+sys.tracebacklimit = 0
+
 
 class BrowserBase(ContextDecorator, ABC):
     def __init__(
@@ -292,9 +294,12 @@ class BrowserBase(ContextDecorator, ABC):
 
     def save_raise_error(self, error_message: str) -> None:
         """Save, Log and raise Error"""
-        if self.page:
-            self.debug_snapshot("on-failure")
         self.logger.error(error_message)
+        if self.page:
+            try:
+                self.debug_snapshot("on-failure")
+            except Exception as _:
+                self.logger.error("Error capturing the page's snapshot")
         raise RuntimeError(error_message)
 
     def process_prompt(self, selector: str | None) -> None:
