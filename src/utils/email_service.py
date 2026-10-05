@@ -101,25 +101,3 @@ class EmailService:
 
         print("Timeout reached: No OTP code found.")
         return None
-
-
-if __name__ == "__main__":
-    # Initialize the service with your config
-    email_service = EmailService(
-        IMAP_SERVER="mail.privateemail.com",
-        EMAIL_ACCOUNT="khaliq@tech2work.tech",
-        EMAIL_PASSWORD="MVPZ-JrTv-MxTx-tdzH-3DPn-9Cub",
-    )
-
-    # Fetch the OTP
-    otp = email_service.fetch_latest_otp(
-        timeout=60,
-        poll_interval=5,
-        sender_email="team@mail.perplexity.ai",  # Set to None if not needed
-        subject_keyword="Sign in to Perplexity",
-    )
-
-    if otp:
-        print(f"\n[SUCCESS] Extracted OTP Code: **{otp}**")
-    else:
-        print("\n[FAILED] Could not retrieve OTP.")

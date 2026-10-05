@@ -4,7 +4,6 @@ import sys
 sys.path.append(".")
 
 from src.platforms.browser import BrowserBase
-import pyperclip
 from src.utils.email_service import EmailService
 from src.config.config import EMAIL_ACCOUNT, EMAIL_PASSWORD, IMAP_SERVER
 
@@ -216,7 +215,6 @@ class PerplexityScraper(BrowserBase):
         copy_button = self.page.locator('button[aria-label="Copy"]').last
         copy_button.click()
         content = self.page.evaluate("navigator.clipboard.readText()")
-        # content = pyperclip.paste()
         self.logger.info(f"COPIED TEXT {content[:20]}")
         if not content:
             raise RuntimeError("Perplexity Failed: Hit rate-limit / sign-up wall")
