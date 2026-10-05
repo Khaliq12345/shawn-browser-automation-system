@@ -95,9 +95,12 @@ class Database:
             )
             schedule = session.exec(stmt).first()
             # update the schedule if it exists
+            parsed_minutes = parse(f"In {minutes} minutes")
+            if not parsed_minutes:
+                raise RuntimeError("Error converting string into datetime")
             if schedule:
                 schedule.last_run = datetime.now(timezone.utc)
-                schedule.next_run = parse(f"In {minutes} minutes")
+                schedule.next_run = parsed_minutes.replace(tzinfo=timezone.utc)
             # creating a new one
             else:
                 schedule = Schedules(
