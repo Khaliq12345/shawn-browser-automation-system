@@ -50,7 +50,6 @@ class ChatGPTScraper(BrowserBase):
         while self.page.evaluate("Date.now()") - start_time < timeout:
             try:
                 current_text = locator.inner_text().strip()
-                print(len(current_text))
                 if current_text == "Searching the web":
                     continue
 
