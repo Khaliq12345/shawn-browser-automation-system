@@ -184,7 +184,7 @@ class Database:
                 country=country,
                 brand=brand,
                 domain=domain,
-                date=date,
+                date=date.replace(tzinfo=timezone.utc),
             )
             session.add(item)
             session.commit()
@@ -254,7 +254,7 @@ class Database:
                     (COUNT(CASE WHEN status = 'success' THEN 1 END)::float / NULLIF(COUNT(*), 0)) * 100, 0
                 ) AS success_rate
             FROM browsers
-            WHERE start_time > '{start_date}'
+            WHERE start_time > '{start_date.replace(tzinfo=timezone.utc)}'
             GROUP BY ROLLUP(platform)
             """
             success_table = session.execute(text(stmt))
@@ -273,7 +273,7 @@ class Database:
                 COUNT(duration) AS total_jobs,
                 COALESCE(AVG(duration), 0) AS average_duration_seconds
             FROM browsers
-            WHERE start_time >= '{start_date}'
+            WHERE start_time >= '{start_date.replace(tzinfo=timezone.utc)}'
             GROUP BY ROLLUP(platform)
             """
             success_table = session.execute(text(stmt))
@@ -292,7 +292,7 @@ class Database:
                 COALESCE(AVG(duration), 0) AS average_total_time_seconds,
                 prompt as prompt
             FROM browsers
-            WHERE start_time >= '{start_date}'
+            WHERE start_time >= '{start_date.replace(tzinfo=timezone.utc)}'
             GROUP BY prompt
             """
             result = session.execute(text(stmt))
@@ -314,7 +314,7 @@ class Database:
                     (COUNT(CASE WHEN status = 'failed' THEN 1 END)::float / NULLIF(COUNT(*), 0)) * 100, 0
                 ) AS failed_rate
             FROM browsers
-            WHERE start_time >= '{start_date}'
+            WHERE start_time >= '{start_date.replace(tzinfo=timezone.utc)}'
             GROUP BY ROLLUP(platform)
             """
             result = session.execute(text(stmt))
@@ -332,7 +332,7 @@ class Database:
             SELECT
                 DISTINCT prompt as total
             FROM browsers
-            WHERE start_time >= '{start_date}'
+            WHERE start_time >= '{start_date.replace(tzinfo=timezone.utc)}'
             """
             result = session.execute(text(stmt))
             keys = result.keys()
@@ -383,7 +383,7 @@ class Database:
                     (COUNT(CASE WHEN status = 'running' THEN 1 END)::float / NULLIF(COUNT(*), 0)) * 100, 0
                 ) AS running_rate
             FROM browsers
-            WHERE start_time >= '{start_date}'
+            WHERE start_time >= '{start_date.replace(tzinfo=timezone.utc)}'
             GROUP BY ROLLUP(platform)
             """
             result = session.execute(text(stmt))

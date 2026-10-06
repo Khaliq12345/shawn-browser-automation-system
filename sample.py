@@ -3,13 +3,17 @@ import requests
 import time
 from urllib.parse import urlparse
 from src.config import config
+import random
 
 API_KEY = config.API_KEY
 BASE_URL = "https://scraper.beta.brandpeak.ai/api/browser/start"
 CSV_PATH = "prompts_normalized.csv"  # Update path if needed
 
 LANGUAGE = "en"
-COUNTRY = "us"
+
+
+def country():
+    return random.choice(["us", "sg"])
 
 
 def extract_domain(url: str) -> str:
@@ -25,7 +29,7 @@ def run_prompt(
     params = {
         "brand_report_id": brand_report_id,
         "languague": LANGUAGE,  # keeping the typo from the API spec
-        "country": COUNTRY,
+        "country": country(),
         "domain": domain,
         "brand": brand,
     }
